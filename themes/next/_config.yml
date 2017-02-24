@@ -282,7 +282,9 @@ mathjax:
 #baidu_analytics:
 
 # Duoshuo ShortName
-#duoshuo_shortname:
+duoshuo_shortname: mario2015  # 开启多说评论功能
+# Share
+duoshuo_share: true          # 开启多说的文章分享功能
 
 # Disqus
 #disqus_shortname:
