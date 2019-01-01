@@ -1,8 +1,0 @@
-# This is a comment
-
-# Ignore the file test.md
-test.md
-
-# Ignore everything in the directory "bin"
-_book/*
-node_modules/*

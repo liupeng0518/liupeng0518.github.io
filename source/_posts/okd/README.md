@@ -1,1 +1,0 @@
-openshift相关文档
