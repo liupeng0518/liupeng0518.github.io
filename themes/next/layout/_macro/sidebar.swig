@@ -8,9 +8,12 @@
   </div>
 
   <aside id="sidebar" class="sidebar">
+    {% if theme.sidebar.onmobile %}
+      <div id="sidebar-dimmer"></div>
+    {% endif %}
     <div class="sidebar-inner">
 
-      {% set display_toc = is_post and theme.toc.enable %}
+      {% set display_toc = is_post and theme.toc.enable or is_page and theme.toc.enable %}
 
       {% if display_toc and toc(page.content).length > 1 %}
         <ul class="sidebar-nav motion-element">
@@ -36,7 +39,7 @@
           {% endif %}
         </div>
         <nav class="site-state motion-element">
-        
+
           {% if config.archive_dir != '/' %}
             <div class="site-state-item site-state-posts">
               <a href="{{ url_for(theme.menu.archives) }}">
@@ -47,20 +50,24 @@
           {% endif %}
 
           {% if site.categories.length > 0 %}
+            {% set categoriesPageQuery = site.pages.find({type: 'categories'}, {lean: true}) %}
+            {% set hasCategoriesPage = categoriesPageQuery.length > 0 %}
             <div class="site-state-item site-state-categories">
-              {% if theme.menu.categories %}<a href="{{ url_for(theme.menu.categories) }}">{% endif %}
+              {% if hasCategoriesPage %}<a href="{{ url_for(categoriesPageQuery[0].path) }}">{% endif %}
                 <span class="site-state-item-count">{{ site.categories.length }}</span>
                 <span class="site-state-item-name">{{ __('state.categories') }}</span>
-              {% if theme.menu.categories %}</a>{% endif %}
+              {% if hasCategoriesPage %}</a>{% endif %}
             </div>
           {% endif %}
 
           {% if site.tags.length > 0 %}
+            {% set tagsPageQuery = site.pages.find({type: 'tags'}, {lean: true}) %}
+            {% set hasTagsPage = tagsPageQuery.length > 0 %}
             <div class="site-state-item site-state-tags">
-              {% if theme.menu.tags %}<a href="{{ url_for(theme.menu.tags) }}">{% endif %}
+              {% if hasTagsPage %}<a href="{{ url_for(tagsPageQuery[0].path) }}">{% endif %}
                 <span class="site-state-item-count">{{ site.tags.length }}</span>
                 <span class="site-state-item-name">{{ __('state.tags') }}</span>
-              {% if theme.menu.tags %}</a>{% endif %}
+              {% if hasTagsPage %}</a>{% endif %}
             </div>
           {% endif %}
 
@@ -83,7 +90,9 @@
                   {% if theme.social_icons.enable %}
                     <i class="fa fa-fw fa-{{ theme.social_icons[name] | default('globe') | lower }}"></i>
                   {% endif %}
-                  {{ name }}
+                    {% if not theme.social_icons.icons_only %}
+                      {{ name }}
+                    {% endif %}
                 </a>
               </span>
             {% endfor %}
