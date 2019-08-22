@@ -13,6 +13,12 @@ keywords: "Hexo, NexT"
 # Set rss to specific value if you have burned your feed already.
 rss:
 
+feed:
+    type: rss2
+    path: rss2.xml
+    limit: 5
+    hub:
+    content: 'true'
 # Specify the date when the site was setup
 #since: 2015
 
