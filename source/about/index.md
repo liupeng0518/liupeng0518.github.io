@@ -16,5 +16,5 @@ wechat:
 # OpenStack & DevOps
 目前正在做openstack和k8s相关的工作
 
-# Hadoop运维
+# Hadoop
 曾经做过hadoop相关的工作
