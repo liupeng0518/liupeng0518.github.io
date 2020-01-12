@@ -371,7 +371,7 @@ changyan:
 #google_site_verification:
 
 # Google Analytics
-#google_analytics:
+google_analytics: UA-155243829-1
 
 # Yandex Webmaster tools verification setting
 # See: https://webmaster.yandex.ru/
