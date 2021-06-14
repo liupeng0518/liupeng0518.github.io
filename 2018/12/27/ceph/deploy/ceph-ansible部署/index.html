@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="ceph,ansible,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="ceph-ansible 是ceph官方出品，可以极大简化工作效率，这里简单列出部署一个测试集群。 环境说明   hostname ip role os     k8s-m1 10.7.12.201 mon/osd/mgr CentOS Linux release 7.6.1810 (Core)   k8s-m2 10.7.12.202 mon/osd/mgr CentOS Linux relea">
+<meta name="keywords" content="ceph,ansible">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ceph-ansible部署">
+<meta property="og:url" content="http://liupeng0518.github.io/2018/12/27/ceph/deploy/ceph-ansible部署/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="ceph-ansible 是ceph官方出品，可以极大简化工作效率，这里简单列出部署一个测试集群。 环境说明   hostname ip role os     k8s-m1 10.7.12.201 mon/osd/mgr CentOS Linux release 7.6.1810 (Core)   k8s-m2 10.7.12.202 mon/osd/mgr CentOS Linux relea">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.936Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ceph-ansible部署">
+<meta name="twitter:description" content="ceph-ansible 是ceph官方出品，可以极大简化工作效率，这里简单列出部署一个测试集群。 环境说明   hostname ip role os     k8s-m1 10.7.12.201 mon/osd/mgr CentOS Linux release 7.6.1810 (Core)   k8s-m2 10.7.12.202 mon/osd/mgr CentOS Linux relea">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2018/12/27/ceph/deploy/ceph-ansible部署/">
+
+
+
+
+
+  <title>ceph-ansible部署 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2018/12/27/ceph/deploy/ceph-ansible部署/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">ceph-ansible部署</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-27T09:47:19+00:00">
+                2018-12-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/ceph/" itemprop="url" rel="index">
+                    <span itemprop="name">ceph</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>ceph-ansible 是ceph官方出品，可以极大简化工作效率，这里简单列出部署一个测试集群。</p>
+<h3 id="环境说明"><a href="#环境说明" class="headerlink" title="环境说明"></a>环境说明</h3><table>
+<thead>
+<tr>
+<th>hostname</th>
+<th>ip</th>
+<th>role</th>
+<th>os</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>k8s-m1</td>
+<td>10.7.12.201</td>
+<td>mon/osd/mgr</td>
+<td>CentOS Linux release 7.6.1810 (Core)</td>
+</tr>
+<tr>
+<td>k8s-m2</td>
+<td>10.7.12.202</td>
+<td>mon/osd/mgr</td>
+<td>CentOS Linux release 7.6.1810 (Core)</td>
+</tr>
+<tr>
+<td>k8s-m3</td>
+<td>10.7.12.203</td>
+<td>mon/osd/mgr</td>
+<td>CentOS Linux release 7.6.1810 (Core)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>可选：内核升级为 4.18.16-1.el7.elrepo.x86_64</p>
+</blockquote>
+<h3 id="部署环境安装"><a href="#部署环境安装" class="headerlink" title="部署环境安装"></a>部署环境安装</h3><p>这里我们打算使用版本3.2 的部署，这里要求ansible的版本最高不能超过2.6<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yum -y install epel-release</span><br><span class="line">yum -y install python-pip</span><br></pre></td></tr></table></figure></p>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><h4 id="下载项目"><a href="#下载项目" class="headerlink" title="下载项目"></a>下载项目</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/ceph/ceph-ansible.git</span><br><span class="line"><span class="built_in">cd</span> ceph-ansible/</span><br><span class="line">git checkout v3.2.0</span><br><span class="line"><span class="comment"># 依赖安装</span></span><br><span class="line">pip install -r requirements.txt</span><br></pre></td></tr></table></figure>
+<h4 id="host"><a href="#host" class="headerlink" title="host"></a>host</h4><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[mons]</span></span><br><span class="line">10.7.12.201</span><br><span class="line">10.7.12.202</span><br><span class="line">10.7.12.203</span><br><span class="line"></span><br><span class="line"><span class="section">[osds]</span></span><br><span class="line">10.7.12.201</span><br><span class="line">10.7.12.202</span><br><span class="line">10.7.12.203</span><br><span class="line"></span><br><span class="line"><span class="section">[mgrs]</span></span><br><span class="line">10.7.12.201</span><br><span class="line">10.7.12.202</span><br><span class="line">10.7.12.203</span><br><span class="line"></span><br><span class="line"><span class="section">[mdss]</span></span><br><span class="line">10.7.12.201</span><br><span class="line">10.7.12.202</span><br><span class="line">10.7.12.203</span><br><span class="line"></span><br><span class="line"><span class="section">[clients]</span></span><br><span class="line">10.7.12.201</span><br><span class="line">10.7.12.202</span><br><span class="line">10.7.12.203</span><br><span class="line">10.7.12.204</span><br><span class="line">10.7.12.205</span><br></pre></td></tr></table></figure>
+<h4 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h4><p>group_vars/all.yml<br><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="string">cp</span> <span class="string">group_vars/all.yml.sample</span> <span class="string">group_vars/all.yml</span></span><br><span class="line"></span><br><span class="line"><span class="string">vim</span> <span class="string">group_vars/all.yml</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ceph_origin: distro # 使用distro，则不会使用公网源</span></span><br><span class="line"><span class="comment"># ceph_repository: local </span></span><br><span class="line"><span class="comment"># ceph_stable_release: luminous # 想安装L版，写成 luminous 即可，确保你的repo中有此版本的包</span></span><br><span class="line"></span><br><span class="line"><span class="attr">ceph_origin:</span> <span class="string">repository</span></span><br><span class="line"><span class="attr">ceph_repository:</span> <span class="string">community</span></span><br><span class="line"><span class="attr">ceph_mirror:</span> <span class="string">http://mirrors.aliyun.com/ceph</span></span><br><span class="line"><span class="attr">ceph_stable_key:</span> <span class="string">http://mirrors.aliyun.com/ceph/keys/release.asc</span></span><br><span class="line"><span class="attr">ceph_stable_release:</span> <span class="string">luminous</span></span><br><span class="line"><span class="attr">ceph_stable_repo:</span> <span class="string">"<span class="template-variable">&#123;&#123; ceph_mirror &#125;&#125;</span>/rpm-<span class="template-variable">&#123;&#123; ceph_stable_release &#125;&#125;</span>"</span></span><br><span class="line"></span><br><span class="line"><span class="attr">fsid:</span> <span class="string">54d55c64-d458-4208-9592-36ce881cbcb7</span> <span class="comment">##通过uuidgen生成</span></span><br><span class="line"><span class="attr">generate_fsid:</span> <span class="literal">false</span></span><br><span class="line"></span><br><span class="line"><span class="attr">cephx:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="attr">public_network:</span> <span class="number">10.7</span><span class="number">.12</span><span class="number">.0</span><span class="string">/16</span></span><br><span class="line"><span class="attr">cluster_network:</span> <span class="number">10.7</span><span class="number">.12</span><span class="number">.0</span><span class="string">/16</span></span><br><span class="line"><span class="attr">monitor_interface:</span> <span class="string">eth0</span></span><br><span class="line"></span><br><span class="line"><span class="attr">ceph_conf_overrides:</span></span><br><span class="line">    <span class="attr">global:</span></span><br><span class="line">      <span class="attr">rbd_default_features:</span> <span class="number">7</span></span><br><span class="line">      <span class="attr">auth cluster required:</span> <span class="string">cephx</span></span><br><span class="line">      <span class="attr">auth service required:</span> <span class="string">cephx</span></span><br><span class="line">      <span class="attr">auth client required:</span> <span class="string">cephx</span></span><br><span class="line">      <span class="attr">osd journal size:</span> <span class="number">2048</span></span><br><span class="line">      <span class="attr">osd pool default size:</span> <span class="number">3</span></span><br><span class="line">      <span class="attr">osd pool default min size:</span> <span class="number">1</span></span><br><span class="line">      <span class="attr">mon_pg_warn_max_per_osd:</span> <span class="number">1024</span></span><br><span class="line">      <span class="attr">osd pool default pg num:</span> <span class="number">128</span></span><br><span class="line">      <span class="attr">osd pool default pgp num:</span> <span class="number">128</span></span><br><span class="line">      <span class="attr">max open files:</span> <span class="number">131072</span></span><br><span class="line">      <span class="attr">osd_deep_scrub_randomize_ratio:</span> <span class="number">0.01</span></span><br><span class="line"></span><br><span class="line">    <span class="attr">mgr:</span></span><br><span class="line">      <span class="attr">mgr modules:</span> <span class="string">dashboard</span></span><br><span class="line"></span><br><span class="line">    <span class="attr">mon:</span></span><br><span class="line">      <span class="attr">mon_allow_pool_delete:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line">    <span class="attr">client:</span></span><br><span class="line">      <span class="attr">rbd_cache:</span> <span class="literal">true</span></span><br><span class="line">      <span class="attr">rbd_cache_size:</span> <span class="number">335544320</span></span><br><span class="line">      <span class="attr">rbd_cache_max_dirty:</span> <span class="number">134217728</span></span><br><span class="line">      <span class="attr">rbd_cache_max_dirty_age:</span> <span class="number">10</span></span><br><span class="line"></span><br><span class="line">    <span class="attr">osd:</span></span><br><span class="line">      <span class="attr">osd mkfs type:</span> <span class="string">xfs</span></span><br><span class="line">      <span class="attr">osd mount options xfs:</span> <span class="string">"rw,noexec,nodev,noatime,nodiratime,nobarrier"</span></span><br><span class="line">      <span class="attr">ms_bind_port_max:</span> <span class="number">7100</span></span><br><span class="line">      <span class="attr">osd_client_message_size_cap:</span> <span class="number">2147483648</span></span><br><span class="line">      <span class="attr">osd_crush_update_on_start:</span> <span class="literal">true</span></span><br><span class="line">      <span class="attr">osd_deep_scrub_stride:</span> <span class="number">131072</span></span><br><span class="line">      <span class="attr">osd_disk_threads:</span> <span class="number">4</span></span><br><span class="line">      <span class="attr">osd_map_cache_bl_size:</span> <span class="number">128</span></span><br><span class="line">      <span class="attr">osd_max_object_name_len:</span> <span class="number">256</span></span><br><span class="line">      <span class="attr">osd_max_object_namespace_len:</span> <span class="number">64</span></span><br><span class="line">      <span class="attr">osd_max_write_size:</span> <span class="number">1024</span></span><br><span class="line">      <span class="attr">osd_op_threads:</span> <span class="number">8</span></span><br><span class="line"></span><br><span class="line">      <span class="attr">osd_recovery_op_priority:</span> <span class="number">1</span></span><br><span class="line">      <span class="attr">osd_recovery_max_active:</span> <span class="number">1</span></span><br><span class="line">      <span class="attr">osd_recovery_max_single_start:</span> <span class="number">1</span></span><br><span class="line">      <span class="attr">osd_recovery_max_chunk:</span> <span class="number">1048576</span></span><br><span class="line">      <span class="attr">osd_recovery_threads:</span> <span class="number">1</span></span><br><span class="line">      <span class="attr">osd_max_backfills:</span> <span class="number">4</span></span><br><span class="line">      <span class="attr">osd_scrub_begin_hour:</span> <span class="number">23</span></span><br><span class="line">      <span class="attr">osd_scrub_end_hour:</span> <span class="number">7</span></span><br><span class="line"></span><br><span class="line">     <span class="comment"># bluestore block create: true</span></span><br><span class="line">     <span class="comment"># bluestore block db size: 73014444032</span></span><br><span class="line">     <span class="comment"># bluestore block db create: true</span></span><br><span class="line">     <span class="comment"># bluestore block wal size: 107374182400</span></span><br><span class="line">     <span class="comment"># bluestore block wal create: true</span></span><br></pre></td></tr></table></figure></p>
+<p>groups_vars/osds.yml<br><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">cp</span> <span class="string">group_vars/osds.yml.sample</span> <span class="string">group_vars/osds.yml</span></span><br><span class="line"></span><br><span class="line"><span class="string">vim</span> <span class="string">group_vars/osds.yml</span></span><br><span class="line"><span class="attr">devices:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">/dev/vdb</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">/dev/vdc</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">/dev/vdd</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">/dev/vde</span></span><br><span class="line"><span class="attr">osd_scenario:</span> <span class="string">collocated</span></span><br><span class="line"><span class="attr">osd_objectstore:</span> <span class="string">bluestore</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#osd_scenario: non-collocated</span></span><br><span class="line"><span class="comment">#osd_objectstore: bluestore</span></span><br><span class="line"><span class="comment">#devices:</span></span><br><span class="line"><span class="comment">#  - /dev/sdc</span></span><br><span class="line"><span class="comment">#  - /dev/sdd</span></span><br><span class="line"><span class="comment">#  - /dev/sde</span></span><br><span class="line"><span class="comment">#dedicated_devices:</span></span><br><span class="line"><span class="comment">#  - /dev/sdf</span></span><br><span class="line"><span class="comment">#  - /dev/sdf</span></span><br><span class="line"><span class="comment">#  - /dev/sdf</span></span><br><span class="line"><span class="comment">#bluestore_wal_devices:</span></span><br><span class="line"><span class="comment">#  - /dev/sdg</span></span><br><span class="line"><span class="comment">#  - /dev/sdg</span></span><br><span class="line"><span class="comment">#  - /dev/sdg</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment">#monitor_address: 192.168.66.125</span></span><br></pre></td></tr></table></figure></p>
+<p>site.yml<br><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">cp</span> <span class="string">site.yml.sample</span> <span class="string">site.yml</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 选择需要部署的组件</span></span><br><span class="line"><span class="string">vim</span> <span class="string">site.yml</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="comment"># Defines deployment design and assigns role to server groups</span></span><br><span class="line"></span><br><span class="line"><span class="bullet">-</span> <span class="attr">hosts:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">mons</span></span><br><span class="line"><span class="comment">#  - agents</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">osds</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">mdss</span></span><br><span class="line"><span class="comment">#  - rgws</span></span><br><span class="line"><span class="comment">#  - nfss</span></span><br><span class="line"><span class="comment">#  - restapis</span></span><br><span class="line"><span class="comment">#  - rbdmirrors</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">clients</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">mgrs</span></span><br><span class="line"><span class="comment">#  - iscsigws</span></span><br><span class="line"><span class="comment">#  - iscsi-gws # for backward compatibility only!</span></span><br></pre></td></tr></table></figure></p>
+<h4 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ansible-playbook -i hosts site.yml</span><br></pre></td></tr></table></figure>
+<p>如果顺利，至此ceph部署完成，登陆ceph节点检查状态。</p>
+<h4 id="清空集群"><a href="#清空集群" class="headerlink" title="清空集群"></a>清空集群</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cp infrastructure-playbooks/purge-cluster.yml purge-cluster.yml </span><br><span class="line">ansible-playbook -i hosts purge-cluster.yml</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ceph/" rel="tag"># ceph</a>
+          
+            <a href="/tags/ansible/" rel="tag"># ansible</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/24/k8s/registry/registryv2/registry常用维护操作/" rel="next" title="registry常用维护操作">
+                <i class="fa fa-chevron-left"></i> registry常用维护操作
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/29/okd/deploy_cluster/openshift集群扩容/" rel="prev" title="opensshift集群扩容">
+                opensshift集群扩容 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#环境说明"><span class="nav-number">1.</span> <span class="nav-text">环境说明</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#部署环境安装"><span class="nav-number">2.</span> <span class="nav-text">部署环境安装</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安装"><span class="nav-number">3.</span> <span class="nav-text">安装</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#下载项目"><span class="nav-number">3.1.</span> <span class="nav-text">下载项目</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#host"><span class="nav-number">3.2.</span> <span class="nav-text">host</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#修改配置"><span class="nav-number">3.3.</span> <span class="nav-text">修改配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#部署"><span class="nav-number">3.4.</span> <span class="nav-text">部署</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#清空集群"><span class="nav-number">3.5.</span> <span class="nav-text">清空集群</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

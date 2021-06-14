@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="kubernetes,kube-proxy,iptables,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="在访问 k8s 服务时，有时会出现一直连不上的问题，我们可以通过分析 iptables 和抓包的方式观察报文是否正确到达。 Iptables 跟踪设置如下，具体参考[1]: 12345678# Load the (IPv4) netfilter log kernel modulemodprobe nf_log_ipv4# Enable logging for the IPv4 (AF Family">
+<meta name="keywords" content="kubernetes,kube-proxy,iptables">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[转]k8s iptables 规则查看">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/11/29/k8s/kube-proxy/trace iptables/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="在访问 k8s 服务时，有时会出现一直连不上的问题，我们可以通过分析 iptables 和抓包的方式观察报文是否正确到达。 Iptables 跟踪设置如下，具体参考[1]: 12345678# Load the (IPv4) netfilter log kernel modulemodprobe nf_log_ipv4# Enable logging for the IPv4 (AF Family">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="[转]k8s iptables 规则查看">
+<meta name="twitter:description" content="在访问 k8s 服务时，有时会出现一直连不上的问题，我们可以通过分析 iptables 和抓包的方式观察报文是否正确到达。 Iptables 跟踪设置如下，具体参考[1]: 12345678# Load the (IPv4) netfilter log kernel modulemodprobe nf_log_ipv4# Enable logging for the IPv4 (AF Family">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/11/29/k8s/kube-proxy/trace iptables/">
+
+
+
+
+
+  <title>[转]k8s iptables 规则查看 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/11/29/k8s/kube-proxy/trace iptables/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">[转]k8s iptables 规则查看</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-29T09:47:19+00:00">
+                2019-11-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>在访问 k8s 服务时，有时会出现一直连不上的问题，我们可以通过分析 iptables 和抓包的方式观察报文是否正确到达。</p>
+<h2 id="Iptables-跟踪"><a href="#Iptables-跟踪" class="headerlink" title="Iptables 跟踪"></a>Iptables 跟踪</h2><p>设置如下，具体参考[1]:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># Load the (IPv4) netfilter log kernel module</span><br><span class="line">modprobe nf_log_ipv4</span><br><span class="line"></span><br><span class="line"># Enable logging for the IPv4 (AF Family 2)</span><br><span class="line">sysctl net.netfilter.nf_log.2=nf_log_ipv4</span><br><span class="line"></span><br><span class="line"># restart rsyslogd</span><br><span class="line">systemctl restart rsyslog</span><br></pre></td></tr></table></figure>
+<p>这里我们以 k8s NodePort 类型的 service 为例，假如我们希望追踪 23741 端口的规则，设置如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">iptables -t raw -j TRACE -p tcp --dport 32741 -I PREROUTING 1</span><br><span class="line">iptables -t raw -j TRACE -p tcp --dport 32741 -I OUTPUT 1</span><br></pre></td></tr></table></figure>
+<h3 id="查看-var-log-messages-中的追踪记录"><a href="#查看-var-log-messages-中的追踪记录" class="headerlink" title="查看 /var/log/messages 中的追踪记录"></a>查看 <code>/var/log/messages</code> 中的追踪记录</h3><p>为了查看规则，现在某个机器上 curl 一下主机的 32741 端口。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">raw:PREROUTING:policy:2 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000)</span><br><span class="line">nat:PREROUTING:rule:1 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000)</span><br><span class="line">nat:KUBE-SERVICES:rule:9 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000)</span><br><span class="line">nat:KUBE-NODEPORTS:rule:1 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000)</span><br><span class="line">nat:KUBE-MARK-MASQ:rule:1 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000)</span><br><span class="line">nat:KUBE-MARK-MASQ:return:2 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000) MARK=0x4000</span><br><span class="line">nat:KUBE-NODEPORTS:rule:2 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000) MARK=0x4000</span><br><span class="line">nat:KUBE-SVC-4N57TFCL4MD7ZTDA:rule:1 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000) MARK=0x4000</span><br><span class="line">nat:KUBE-SEP-PJQYOXMI5CEBVECW:rule:2 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000) MARK=0x4000</span><br><span class="line">filter:FORWARD:rule:1 IN=enp0s3 OUT=cni0 MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.3.4 LEN=64 TOS=0x00 PREC=0x00 TTL=63 ID=0 DF PROTO=TCP SPT=50995 DPT=80 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000) MARK=0x4000</span><br><span class="line">filter:KUBE-FORWARD:rule:1 IN=enp0s3 OUT=cni0 MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.3.4 LEN=64 TOS=0x00 PREC=0x00 TTL=63 ID=0 DF PROTO=TCP SPT=50995 DPT=80 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000) MARK=0x4000</span><br><span class="line">nat:POSTROUTING:rule:1 IN= OUT=cni0 SRC=192.168.199.132 DST=192.168.3.4 LEN=64 TOS=0x00 PREC=0x00 TTL=63 ID=0 DF PROTO=TCP SPT=50995 DPT=80 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000) MARK=0x4000</span><br><span class="line">nat:KUBE-POSTROUTING:rule:1 IN= OUT=cni0 SRC=192.168.199.132 DST=192.168.3.4 LEN=64 TOS=0x00 PREC=0x00 TTL=63 ID=0 DF PROTO=TCP SPT=50995 DPT=80 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000) MARK=0x4000</span><br><span class="line">raw:PREROUTING:policy:2 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=52 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343890 ACK=3563071810 WINDOW=4106 RES=0x00 ACK URGP=0 OPT (0101080A08CB9A71008611F0)</span><br></pre></td></tr></table></figure>
+<p>根据上面的图我们知道报文是按照 <code>nat:PREROUTING</code> -&gt; <code>filter:FORWARD</code> -&gt; <code>nat:POSTROUTING</code> 传输的。</p>
+<p>按规则分析，先看第一条：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nat:PREROUTING:rule:1 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000)</span><br></pre></td></tr></table></figure>
+<p>iptables 的 PREROUTING 如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Chain PREROUTING (policy ACCEPT)</span><br><span class="line">target     prot opt source               destination</span><br><span class="line">KUBE-SERVICES  all  --  0.0.0.0/0            0.0.0.0/0            /* kubernetes service portals */</span><br><span class="line">DOCKER     all  --  0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL</span><br></pre></td></tr></table></figure>
+<p>可以看出所有报文都会匹配第一条规则，也就是 <code>KUBE-SERVICES</code>, 也就是 trace 里的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nat:KUBE-SERVICES:rule:9 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000)</span><br></pre></td></tr></table></figure>
+<p>再看 iptables 的 KUBE-SERVICES</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Chain KUBE-SERVICES (2 references)</span><br><span class="line">target     prot opt source               destination</span><br><span class="line">KUBE-MARK-MASQ  udp  -- !192.168.3.0/24       192.168.2.10         /* kube-system/kube-dns:dns cluster IP */ udp dpt:53</span><br><span class="line">KUBE-SVC-TCOU7JCQXEZGVUNU  udp  --  0.0.0.0/0            192.168.2.10         /* kube-system/kube-dns:dns cluster IP */ udp dpt:53</span><br><span class="line">KUBE-MARK-MASQ  tcp  -- !192.168.3.0/24       192.168.2.10         /* kube-system/kube-dns:dns-tcp cluster IP */ tcp dpt:53</span><br><span class="line">KUBE-SVC-ERIFXISQEP7F7OF4  tcp  --  0.0.0.0/0            192.168.2.10         /* kube-system/kube-dns:dns-tcp cluster IP */ tcp dpt:53</span><br><span class="line">KUBE-MARK-MASQ  tcp  -- !192.168.3.0/24       192.168.2.1          /* default/kubernetes:https cluster IP */ tcp dpt:443</span><br><span class="line">KUBE-SVC-NPX46M4PTMTKRN6Y  tcp  --  0.0.0.0/0            192.168.2.1          /* default/kubernetes:https cluster IP */ tcp dpt:443</span><br><span class="line">KUBE-MARK-MASQ  tcp  -- !192.168.3.0/24       192.168.2.125        /* default/nginx: cluster IP */ tcp dpt:80</span><br><span class="line">KUBE-SVC-4N57TFCL4MD7ZTDA  tcp  --  0.0.0.0/0            192.168.2.125        /* default/nginx: cluster IP */ tcp dpt:80</span><br><span class="line">KUBE-NODEPORTS  all  --  0.0.0.0/0            0.0.0.0/0            /* kubernetes service nodeports; NOTE: this must be the last rule in this chain */ ADDRTYPE match dst-type LOCAL</span><br></pre></td></tr></table></figure>
+<p>很明显匹配的是 <code>KUBE-NODEPORTS</code>, 也就是：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">TRACE: nat:KUBE-NODEPORTS:rule:1 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000)</span><br></pre></td></tr></table></figure>
+<p>iptables 的 KUBE-NODEPORTS 如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Chain KUBE-NODEPORTS (1 references)</span><br><span class="line">target     prot opt source               destination</span><br><span class="line">KUBE-MARK-MASQ  tcp  --  0.0.0.0/0            0.0.0.0/0            /* default/nginx: */ tcp dpt:32741</span><br><span class="line">KUBE-SVC-4N57TFCL4MD7ZTDA  tcp  --  0.0.0.0/0            0.0.0.0/0            /* default/nginx: */ tcp dpt:32741</span><br></pre></td></tr></table></figure>
+<p>先走第一个条 <code>KUBE-MARK-MASQ</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">TRACE: nat:KUBE-MARK-MASQ:rule:1 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000)</span><br></pre></td></tr></table></figure>
+<p>iptables 的 KUBE-MARK-MASQ 如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Chain KUBE-MARK-MASQ (11 references)</span><br><span class="line">target     prot opt source               destination</span><br><span class="line">MARK       all  --  0.0.0.0/0            0.0.0.0/0            MARK or 0x4000</span><br></pre></td></tr></table></figure>
+<p>k8s 会给报文打上 <code>0x4000</code> 的标签, 打完标签后会返回，然后继续匹配 <code>KUBE-NODEPORTS</code> 的下一条规则。也就是 <code>KUBE-SVC-4N57TFCL4MD7ZTDA</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">TRACE: nat:KUBE-MARK-MASQ:return:2 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000) MARK=0x4000</span><br><span class="line"></span><br><span class="line">TRACE: nat:KUBE-NODEPORTS:rule:2 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000) MARK=0x4000</span><br><span class="line"></span><br><span class="line">TRACE: nat:KUBE-SVC-4N57TFCL4MD7ZTDA:rule:1 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000) MARK=0x4000</span><br></pre></td></tr></table></figure>
+<p>iptables 的 KUBE-SVC-4N57TFCL4MD7ZTDA 如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Chain KUBE-SVC-4N57TFCL4MD7ZTDA (2 references)</span><br><span class="line">target     prot opt source               destination</span><br><span class="line">KUBE-SEP-PJQYOXMI5CEBVECW  all  --  0.0.0.0/0            0.0.0.0/0</span><br></pre></td></tr></table></figure>
+<p>进入 KUBE-SEP-PJQYOXMI5CEBVECW</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">TRACE: nat:KUBE-SEP-PJQYOXMI5CEBVECW:rule:2 IN=enp0s3 OUT= MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.199.119 LEN=64 TOS=0x00 PREC=0x00 TTL=64 ID=0 DF PROTO=TCP SPT=50995 DPT=32741 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000) MARK=0x4000</span><br></pre></td></tr></table></figure>
+<p>iptables 的 KUBE-SEP-PJQYOXMI5CEBVECW 如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Chain KUBE-SEP-PJQYOXMI5CEBVECW (1 references)</span><br><span class="line">target     prot opt source               destination</span><br><span class="line">KUBE-MARK-MASQ  all  --  192.168.3.4          0.0.0.0/0</span><br><span class="line">DNAT       tcp  --  0.0.0.0/0            0.0.0.0/0            tcp to:192.168.3.4:80</span><br></pre></td></tr></table></figure>
+<p>可以看到这里走的是 DNAT, 将报文中的目的地址换成了 <code>92.168.3.4:80</code>, 也就是 k8s 服务对应 pod 的 ip 和端口号。</p>
+<p>DNAT 完了之后会将报文发给 filter 表的 FORWARD 链。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">TRACE: filter:FORWARD:rule:1 IN=enp0s3 OUT=cni0 MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.3.4 LEN=64 TOS=0x00 PREC=0x00 TTL=63 ID=0 DF PROTO=TCP SPT=50995 DPT=80 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000) MARK=0x4000</span><br></pre></td></tr></table></figure>
+<p>iptables 的 FORWARD 如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Chain FORWARD (policy DROP)</span><br><span class="line">target     prot opt source               destination</span><br><span class="line">KUBE-FORWARD  all  --  0.0.0.0/0            0.0.0.0/0            /* kubernetes forwarding rules */</span><br><span class="line">DOCKER-ISOLATION  all  --  0.0.0.0/0            0.0.0.0/0</span><br><span class="line">DOCKER     all  --  0.0.0.0/0            0.0.0.0/0</span><br><span class="line">ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED</span><br><span class="line">ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0</span><br><span class="line">ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0</span><br><span class="line">ACCEPT     all  --  192.168.3.0/24       0.0.0.0/0</span><br><span class="line">ACCEPT     all  --  0.0.0.0/0            192.168.3.0/24</span><br></pre></td></tr></table></figure>
+<p>可以看到匹配第一条，进入 KUBE-FORWARD</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">TRACE: filter:KUBE-FORWARD:rule:1 IN=enp0s3 OUT=cni0 MAC=08:00:27:63:c4:b1:f0:18:98:36:f6:c4:08:00 SRC=192.168.199.132 DST=192.168.3.4 LEN=64 TOS=0x00 PREC=0x00 TTL=63 ID=0 DF PROTO=TCP SPT=50995 DPT=80 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000) MARK=0x4000</span><br></pre></td></tr></table></figure>
+<p>iptables 的 KUBE-FORWARD 如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Chain KUBE-FORWARD (1 references)</span><br><span class="line">target     prot opt source               destination</span><br><span class="line">ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0            /* kubernetes forwarding rules */ mark match 0x4000/0x4000</span><br><span class="line">ACCEPT     all  --  192.168.3.0/24       0.0.0.0/0            /* kubernetes forwarding conntrack pod source rule */ ctstate RELATED,ESTABLISHED</span><br><span class="line">ACCEPT     all  --  0.0.0.0/0            192.168.3.0/24       /* kubernetes forwarding conntrack pod destination rule */ ctstate RELATED,ESTABLISHED</span><br></pre></td></tr></table></figure>
+<p>forward 完了之后会转给 iptables 的 nat 表的 POSTROUTING:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">TRACE: nat:POSTROUTING:rule:1 IN= OUT=cni0 SRC=192.168.199.132 DST=192.168.3.4 LEN=64 TOS=0x00 PREC=0x00 TTL=63 ID=0 DF PROTO=TCP SPT=50995 DPT=80 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000) MARK=0x4000</span><br></pre></td></tr></table></figure>
+<p>iptables 的 POSTROUTING 如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Chain POSTROUTING (policy ACCEPT)</span><br><span class="line">target     prot opt source               destination</span><br><span class="line">KUBE-POSTROUTING  all  --  0.0.0.0/0            0.0.0.0/0            /* kubernetes postrouting rules */</span><br><span class="line">MASQUERADE  all  --  172.17.0.0/16        0.0.0.0/0</span><br><span class="line">RETURN     all  --  192.168.3.0/24       192.168.3.0/24</span><br><span class="line">MASQUERADE  all  --  192.168.3.0/24      !224.0.0.0/4</span><br><span class="line">RETURN     all  -- !192.168.3.0/24       192.168.3.0/24</span><br><span class="line">MASQUERADE  all  -- !192.168.3.0/24       192.168.3.0/24</span><br></pre></td></tr></table></figure>
+<p>命中第一条，转给 KUBE-POSTROUTING</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">TRACE: nat:KUBE-POSTROUTING:rule:1 IN= OUT=cni0 SRC=192.168.199.132 DST=192.168.3.4 LEN=64 TOS=0x00 PREC=0x00 TTL=63 ID=0 DF PROTO=TCP SPT=50995 DPT=80 SEQ=1677343889 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020405B4010303050101080A08CB9A710000000004020000) MARK=0x4000</span><br></pre></td></tr></table></figure>
+<p>iptables 的 KUBE-POSTROUTING 如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Chain KUBE-POSTROUTING (1 references)</span><br><span class="line">target     prot opt source               destination</span><br><span class="line">MASQUERADE  all  --  0.0.0.0/0            0.0.0.0/0            /* kubernetes service traffic requiring SNAT */ mark match 0x4000/0x4000</span><br></pre></td></tr></table></figure>
+<p>汇总一下，大概路线如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">--&gt; [nat]PREROUTING</span><br><span class="line">            |</span><br><span class="line">            |</span><br><span class="line">            V</span><br><span class="line">    [nat]KUBE-SERVICES</span><br><span class="line">            |</span><br><span class="line">            |</span><br><span class="line">            V</span><br><span class="line">    [nat]KUBE-NODEPORTS</span><br><span class="line">            |</span><br><span class="line">            |</span><br><span class="line">            V</span><br><span class="line">    [nat]KUBE-MARK-MASQ (打0x4000的标签)</span><br><span class="line">            |</span><br><span class="line">            |</span><br><span class="line">            V</span><br><span class="line">    [nat]KUBE-NODEPORTS</span><br><span class="line">            |</span><br><span class="line">            |</span><br><span class="line">            V               </span><br><span class="line">    [nat]KUBE-SVC-4N57TFCL4MD7ZTDA               [filter]KUBE-FORWARD -----&gt; [nat]POSTROUTING</span><br><span class="line">            |                                              ^                          |</span><br><span class="line">            |                                              |                          |</span><br><span class="line">            V                                              |                          V</span><br><span class="line">    [nat]KUBE-SEP-PJQYOXMI5CEBVECW  ------------&gt;[filter]FORWARD            [nat]KUBE-POSTROUTING</span><br><span class="line">(DNAT, 替换DST和DPT, 将物理机地址换成pod地址)</span><br></pre></td></tr></table></figure>
+<h3 id="清除追踪规则"><a href="#清除追踪规则" class="headerlink" title="清除追踪规则"></a>清除追踪规则</h3><ul>
+<li><p>查看规则 number</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ sudo iptables -t raw -nL --line-number</span><br><span class="line">Chain PREROUTING (policy ACCEPT)</span><br><span class="line">num  target     prot opt source               destination</span><br><span class="line">1    TRACE      tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:32741</span><br><span class="line"></span><br><span class="line">Chain OUTPUT (policy ACCEPT)</span><br><span class="line">num  target     prot opt source               destination</span><br><span class="line">1    TRACE      tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:32741</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>删除规则<br>上面查到的 number 是 <code>1</code>, 这里删除第一条规则：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ sudo iptables -t raw -D PREROUTING 1</span><br><span class="line">$ sudo iptables -t raw -D OUTPUT 1</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>[1] <a href="http://www.opensourcerers.org/how-to-trace-iptables-in-rhel7-centos7/" target="_blank" rel="noopener">How to trace IPTables</a></p>
+<p>原文：<a href="https://www.dazhuanlan.com/2019/10/22/5daee17b80349/" target="_blank" rel="noopener">https://www.dazhuanlan.com/2019/10/22/5daee17b80349/</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/kubernetes/" rel="tag"># kubernetes</a>
+          
+            <a href="/tags/kube-proxy/" rel="tag"># kube-proxy</a>
+          
+            <a href="/tags/iptables/" rel="tag"># iptables</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/11/28/dev/k8s/crd/crd/" rel="next" title="crd">
+                <i class="fa fa-chevron-left"></i> crd
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/12/24/k8s/registry/registryv2/镜像仓库/" rel="prev" title="镜像仓库">
+                镜像仓库 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Iptables-跟踪"><span class="nav-number">1.</span> <span class="nav-text">Iptables 跟踪</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#查看-var-log-messages-中的追踪记录"><span class="nav-number">1.1.</span> <span class="nav-text">查看 /var/log/messages 中的追踪记录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#清除追踪规则"><span class="nav-number">1.2.</span> <span class="nav-text">清除追踪规则</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文献"><span class="nav-number">2.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

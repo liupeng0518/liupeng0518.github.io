@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="linux,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="本文由 简悦 SimpRead 转码， 原文地址 https://juejin.im/post/5cc0214e6fb9a0324018fb90#heading-42  1 构成master: SZE-L0149625 node1: SZE-L0149628 在 node1 上启动 httpd。 在 master 上通过 curl 执行请求。 12master  ----------------">
+<meta name="keywords" content="linux">
+<meta property="og:type" content="article">
+<meta property="og:title" content="tmpfs">
+<meta property="og:url" content="http://liupeng0518.github.io/2018/06/28/linux/常用命令/tcpdump/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="本文由 简悦 SimpRead 转码， 原文地址 https://juejin.im/post/5cc0214e6fb9a0324018fb90#heading-42  1 构成master: SZE-L0149625 node1: SZE-L0149628 在 node1 上启动 httpd。 在 master 上通过 curl 执行请求。 12master  ----------------">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://user-gold-cdn.xitu.io/2019/5/22/16adfcc68d97e23c?imageView2/0/w/1280/h/960/format/webp/ignore-error/1">
+<meta property="og:image" content="https://user-gold-cdn.xitu.io/2019/5/22/16adfe52b78dcd14?imageView2/0/w/1280/h/960/format/webp/ignore-error/1">
+<meta property="og:image" content="https://user-gold-cdn.xitu.io/2019/5/23/16ae2a5936f60c53?imageView2/0/w/1280/h/960/format/webp/ignore-error/1">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.996Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="tmpfs">
+<meta name="twitter:description" content="本文由 简悦 SimpRead 转码， 原文地址 https://juejin.im/post/5cc0214e6fb9a0324018fb90#heading-42  1 构成master: SZE-L0149625 node1: SZE-L0149628 在 node1 上启动 httpd。 在 master 上通过 curl 执行请求。 12master  ----------------">
+<meta name="twitter:image" content="https://user-gold-cdn.xitu.io/2019/5/22/16adfcc68d97e23c?imageView2/0/w/1280/h/960/format/webp/ignore-error/1">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2018/06/28/linux/常用命令/tcpdump/">
+
+
+
+
+
+  <title>tmpfs | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2018/06/28/linux/常用命令/tcpdump/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">tmpfs</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-28T10:10:39+00:00">
+                2018-06-28
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/linux/" itemprop="url" rel="index">
+                    <span itemprop="name">linux</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>本文由 <a href="http://ksria.com/simpread/" target="_blank" rel="noopener">简悦 SimpRead</a> 转码， 原文地址 <a href="https://juejin.im/post/5cc0214e6fb9a0324018fb90#heading-42" target="_blank" rel="noopener">https://juejin.im/post/5cc0214e6fb9a0324018fb90#heading-42</a></p>
+</blockquote>
+<h1 id="1-构成"><a href="#1-构成" class="headerlink" title="1 构成"></a>1 构成</h1><p>master: SZE-L0149625</p>
+<p>node1: SZE-L0149628</p>
+<p>在 node1 上启动 httpd。 在 master 上通过 curl 执行请求。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">master  -------------------- &gt; node1</span><br><span class="line">curl http://node1:2800           httpd(port=2800)</span><br></pre></td></tr></table></figure>
+<h1 id="2-环境"><a href="#2-环境" class="headerlink" title="2 环境"></a>2 环境</h1><p>master, node1 的 OS 都是 CentOS 7.5。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@SZE-L0149625 ~]# cat /etc/system-release</span><br><span class="line">CentOS Linux release 7.5.1804 (Core)</span><br></pre></td></tr></table></figure>
+<h1 id="3-TCP-包的采集方法"><a href="#3-TCP-包的采集方法" class="headerlink" title="3 TCP 包的采集方法"></a>3 TCP 包的采集方法</h1><h2 id="3-1-SYN-flag-1-包的采集方法"><a href="#3-1-SYN-flag-1-包的采集方法" class="headerlink" title="3.1 SYN flag(=1) 包的采集方法"></a>3.1 SYN flag(=1) 包的采集方法</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><span class="line">---------</span><br><span class="line">0. 目标</span><br><span class="line">---------</span><br><span class="line"></span><br><span class="line">从 master 发送 TCP 包到 node1 的 2800 端口，采集★1和★2的包。</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">   master                            node1</span><br><span class="line">     |                                 |</span><br><span class="line">     |------------- SYN --------------&gt;|★1</span><br><span class="line">     |&lt;------------ SYN +ACK ----------|★2</span><br><span class="line">     |------------- ACK --------------&gt;|</span><br><span class="line">     |                                 |</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">--------------------</span><br><span class="line">1. 在 node1 执行</span><br><span class="line">--------------------</span><br><span class="line"></span><br><span class="line">安装 nc 工具</span><br><span class="line"></span><br><span class="line">[root@SZE-L0149628 ~]# yum install nmap-ncat</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">启动 nc 工具在 80 端口待机。</span><br><span class="line"></span><br><span class="line">[root@SZE-L0149628 ~]# nc -l 80 &amp;</span><br><span class="line">[1] 23268</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">确认 nc 工具正在待机。</span><br><span class="line"></span><br><span class="line">[root@SZE-L0149628 ~]# lsof -i :80</span><br><span class="line">COMMAND   PID USER   FD   TYPE   DEVICE SIZE/OFF NODE NAME</span><br><span class="line">nc      23798 root    3u  IPv6 13435053      0t0  TCP *:http (LISTEN)</span><br><span class="line">nc      23798 root    4u  IPv4 13435054      0t0  TCP *:http (LISTEN)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">执行 tcpdump。采集带有 SYN flag 的 TCP 包（上面的★1,★2）。</span><br><span class="line"></span><br><span class="line">[root@node1 ~]# tcpdump -i eth0 &apos;(tcp[tcpflags] &amp; tcp-syn)&apos; != 0</span><br><span class="line"></span><br><span class="line">--------------------</span><br><span class="line">2. 在 master 执行</span><br><span class="line">--------------------</span><br><span class="line"></span><br><span class="line">安装 nc 工具。</span><br><span class="line"></span><br><span class="line">[root@SZE-L0149625 ~]# yum install nmap-ncat</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">往 node1 (30.99.142.165) 的 80 端口发送 TCP 包。</span><br><span class="line"></span><br><span class="line">[root@SZE-L0149625 ~]# nc sysnode-01.local 80 -vv</span><br><span class="line">Ncat: Version 7.50 ( https://nmap.org/ncat )</span><br><span class="line">NCAT DEBUG: Using system default trusted CA certificates and those in /usr/share/ncat/ca-bundle.crt.</span><br><span class="line">NCAT DEBUG: Unable to load trusted CA certificates from /usr/share/ncat/ca-bundle.crt: error:02001002:system library:fopen:No such file or directory</span><br><span class="line">libnsock nsi_new2(): nsi_new (IOD #1)</span><br><span class="line">libnsock nsock_connect_tcp(): TCP connection requested to 30.99.142.165:80 (IOD #1) EID 8</span><br><span class="line">libnsock nsock_trace_handler_callback(): Callback: CONNECT SUCCESS for EID 8 [30.99.142.165:80]</span><br><span class="line">Ncat: Connected to 30.99.142.165:80.</span><br><span class="line">libnsock nsi_new2(): nsi_new (IOD #2)</span><br><span class="line">libnsock nsock_read(): Read request from IOD #1 [30.99.142.165:80] (timeout: -1ms) EID 18</span><br><span class="line">libnsock nsock_readbytes(): Read request for 0 bytes from IOD #2 [peer unspecified] EID 26</span><br><span class="line">test</span><br><span class="line">libnsock nsock_trace_handler_callback(): Callback: READ SUCCESS for EID 26 [peer unspecified] (5 bytes): test.</span><br><span class="line">libnsock nsock_trace_handler_callback(): Callback: WRITE SUCCESS for EID 35 [30.99.142.165:80]</span><br><span class="line">libnsock nsock_readbytes(): Read request for 0 bytes from IOD #2 [peer unspecified] EID 42</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">test    =&gt; 输入 &quot;test&quot;。</span><br><span class="line"></span><br><span class="line">--------------------</span><br><span class="line">3. 在 node1 确认结果</span><br><span class="line">--------------------</span><br><span class="line"></span><br><span class="line">采集 SYN flag 包(★1,★2)。</span><br><span class="line"></span><br><span class="line">[root@SZE-L0149628 ~]# tcpdump -i eth0 &apos;(tcp[tcpflags] &amp; tcp-syn)&apos; != 0 | grep -i http</span><br><span class="line">tcpdump: verbose output suppressed, use -v or -vv for full protocol decode</span><br><span class="line">listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes</span><br><span class="line">18:12:42.972573 IP master-01.local.directplaysrvr &gt; SZE-L0149628.http: Flags ★1[S], seq 1119439142, win 64240, options [mss 1460,sackOK,TS val 792704556 ecr 0,nop,wscale 7], length 0</span><br><span class="line">18:12:42.972705 IP SZE-L0149628.http &gt; master-01.local.directplaysrvr: Flags ★2[S.], seq 116118424, ack 1119439143, win 65160, options [mss 1460,sackOK,TS val 3344984844 ecr 792704556,nop,wscale 7], length 0</span><br><span class="line">test</span><br><span class="line"></span><br><span class="line">test   =&gt;在master输入的&quot;test&quot;在node1成功确认了。</span><br></pre></td></tr></table></figure>
+<h2 id="3-2-只采集-SYN-包-只有-SYN-flag"><a href="#3-2-只采集-SYN-包-只有-SYN-flag" class="headerlink" title="3.2 只采集 SYN 包 (只有 SYN flag)"></a>3.2 只采集 SYN 包 (只有 SYN flag)</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><span class="line">采集★1的数据包</span><br><span class="line"></span><br><span class="line">   master                            node1</span><br><span class="line">     |                                 |</span><br><span class="line">     |------------- SYN --------------&gt;|★1</span><br><span class="line">     |------------- SYN --------------&gt;|★1（重发）</span><br><span class="line">     |------------- SYN --------------&gt;|★1（重发）</span><br><span class="line">     |------------- SYN --------------&gt;|★1（重发）</span><br><span class="line">     |                                 |</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">--------------------</span><br><span class="line">1. 在 node1 执行</span><br><span class="line">--------------------</span><br><span class="line">丢弃进入 80 端口的 TCP 包。</span><br><span class="line">[root@SZE-L0149628 ~]# iptables -A INPUT -p tcp --dport 80 -j DROP</span><br><span class="line"></span><br><span class="line">检查设定。</span><br><span class="line">[root@SZE-L0149628 ~]# iptables -nvL INPUT --line-numbers</span><br><span class="line">Chain INPUT (policy ACCEPT 58 packets, 18279 bytes)</span><br><span class="line">num   pkts bytes target     prot opt in     out     source               destination</span><br><span class="line">1        0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80</span><br><span class="line"></span><br><span class="line">启动nc进程监听80端口。</span><br><span class="line">[root@SZE-L0149628 ~]# nc -l 80 &amp;</span><br><span class="line">[1] 2518</span><br><span class="line"></span><br><span class="line">确认nc进程监听的端口。</span><br><span class="line">[root@SZE-L0149628 ~]# lsof -i:80</span><br><span class="line">COMMAND  PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME</span><br><span class="line">nc      2518 root    3u  IPv6  30891      0t0  TCP *:http (LISTEN)</span><br><span class="line">nc      2518 root    4u  IPv4  30892      0t0  TCP *:http (LISTEN)</span><br><span class="line"></span><br><span class="line">启动tcpdump。设定为只截取SYN包。</span><br><span class="line">[root@SZE-L0149628 ~]# tcpdump -i eth0 &apos;(tcp[tcpflags] &amp; tcp-syn)&apos; != 0 and &apos;(tcp[tcpflags] &amp; tcp-ack) ==0&apos;</span><br><span class="line"></span><br><span class="line">--------------------</span><br><span class="line">2. 在master执行</span><br><span class="line">--------------------</span><br><span class="line">往node1的80端口发送TCP包。</span><br><span class="line">[root@SZE-L0149625 sar]# nc sysnode-01.local 80 -vv</span><br><span class="line">Ncat: Version 6.40 ( http://nmap.org/ncat )</span><br><span class="line">libnsock nsi_new2(): nsi_new (IOD #1)</span><br><span class="line">libnsock nsock_connect_tcp(): TCP connection requested to 30.99.142.165:80 (IOD #1) EID 8</span><br><span class="line">libnsock nsock_trace_handler_callback(): Callback: CONNECT TIMEOUT for EID 8 [30.99.142.165:80]</span><br><span class="line">Ncat: Connection timed out.  =&gt; </span><br><span class="line">在达到SYN的重复发送次数的最大值之前，nc工具好像已经timeout并终结了。</span><br><span class="line"></span><br><span class="line">--------------------</span><br><span class="line">3. 在node1确认结果</span><br><span class="line">--------------------</span><br><span class="line">确认tcpdump的执行结果。可以看到只捕获到了SYN包(★记号)。</span><br><span class="line">[root@SZE-L0149628 ~]# tcpdump -i eth0 &apos;(tcp[tcpflags] &amp; tcp-syn)&apos; != 0 and &apos;(tcp[tcpflags] &amp; tcp-ack) ==0&apos;</span><br><span class="line">tcpdump: verbose output suppressed, use -v or -vv for full protocol decode</span><br><span class="line">listening on eth0, link-type EN10MB (Ethernet), capture size 65535 bytes</span><br><span class="line">11:20:35.970211 IP master-01.local.48298 &gt; SZE-L0149628.http: Flags ★[S], seq 149498950, win 29200, options [mss 1460,sackOK,TS val 8276013 ecr 0,nop,wscale 7], length 0</span><br><span class="line">11:20:36.971734 IP master-01.local.48298 &gt; SZE-L0149628.http: Flags ★[S], seq 149498950, win 29200, options [mss 1460,sackOK,TS val 8277017 ecr 0,nop,wscale 7], length 0</span><br><span class="line">11:20:39.252406 IP master-01.local.48298 &gt; SZE-L0149628.http: Flags ★[S], seq 149498950, win 29200, options [mss 1460,sackOK,TS val 8279024 ecr 0,nop,wscale 7], length 0</span><br><span class="line">11:20:42.986909 IP master-01.local.48298 &gt; SZE-L0149628.http: Flags ★[S], seq 149498950, win 29200, options [mss 1460,sackOK,TS val 8283032 ecr 0,nop,wscale 7], length 0</span><br><span class="line">- 因为nc工具timeout了，捕获到这里就结束了 -</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">-----------------------------</span><br><span class="line">4. 清理(iptables规则消除)</span><br><span class="line">-----------------------------</span><br><span class="line">[root@SZE-L0149628 ~]# iptables -L INPUT --line-numbers</span><br><span class="line">Chain INPUT (policy ACCEPT)</span><br><span class="line">num  target     prot opt source               destination</span><br><span class="line">1    DROP       tcp  --  anywhere             anywhere             tcp dpt:http</span><br><span class="line">[root@SZE-L0149628 ~]# iptables -D INPUT 1</span><br><span class="line">[root@SZE-L0149628 ~]# iptables -L INPUT --line-numbers</span><br><span class="line">Chain INPUT (policy ACCEPT)</span><br><span class="line">num  target     prot opt source               destination</span><br><span class="line">[root@node1 ~]#</span><br></pre></td></tr></table></figure>
+<h2 id="3-3-捕获-FIN-包的方法"><a href="#3-3-捕获-FIN-包的方法" class="headerlink" title="3.3 捕获 FIN 包的方法"></a>3.3 捕获 FIN 包的方法</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">捕获★1和★2</span><br><span class="line"></span><br><span class="line">   master                            node1</span><br><span class="line">     |                                 |</span><br><span class="line">     |------------- SYN --------------&gt;|</span><br><span class="line">     |&lt;------------ SYN + ACK ---------|</span><br><span class="line">     |------------- ACK --------------&gt;|</span><br><span class="line">     |                                 |</span><br><span class="line">     |                                 |</span><br><span class="line">     |------------- FIN --------------&gt;|★1</span><br><span class="line">     |&lt;------------ FIN + ACK ---------|★2</span><br><span class="line">     |------------- ACK --------------&gt;|</span><br><span class="line">     |                                 |</span><br><span class="line">     |                                 |</span><br><span class="line"></span><br><span class="line">[root@SZE-L0149628 ~]# tcpdump -i eth0 &apos;(tcp[tcpflags] &amp; tcp-fin)&apos; != 0</span><br><span class="line">-中略-</span><br><span class="line">20:46:33.720744 IP master-01.local.35582 &gt; SZE-L0149628.http: Flags [F.], seq 635647794, ack 894972442, win 319, options [nop,nop,TS val 4009862 ecr 3088873], length 0</span><br><span class="line">20:46:33.721687 IP SZE-L0149628.http &gt; master-01.local.35582: Flags [F.], seq 1, ack 1, win 227, options [nop,nop,TS val 3088875 ecr 4009862], length 0</span><br><span class="line">-以下，省略-</span><br></pre></td></tr></table></figure>
+<h2 id="3-4-其他"><a href="#3-4-其他" class="headerlink" title="3.4 其他"></a>3.4 其他</h2><p>根据 man 的描述，下列为 flag 可选项。</p>
+<p>tcp-fin, tcp-syn, tcp-rst, tcp-push, tcp-act, tcp-urg</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">以下为，从man tcpdump抽取的内容。</span><br><span class="line">Some offsets and field values may be expressed as names rather than as numeric values. </span><br><span class="line">For example tcp[13] may be replaced with tcp[tcpflags]. </span><br><span class="line">The following TCP flag field values are also available: </span><br><span class="line">    tcp-fin,  tcp-syn,  tcp-rst,  tcp-push, tcp-act, tcp-urg.</span><br><span class="line"></span><br><span class="line">This can be demonstrated as:</span><br><span class="line">       tcpdump -i xl0 &apos;tcp[tcpflags] &amp; tcp-push != 0&apos;</span><br><span class="line"></span><br><span class="line">Note  that  you should use single quotes or a backslash in the expression </span><br><span class="line">to hide the AND (&apos;&amp;&apos;) special character from the shell.</span><br></pre></td></tr></table></figure>
+<h1 id="4-显示-MAC-address-的方法-e"><a href="#4-显示-MAC-address-的方法-e" class="headerlink" title="4 显示 MAC address 的方法 (-e)"></a>4 显示 MAC address 的方法 (-e)</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@SZE-L0149628 ~]# tcpdump -e -i eth0 port 80</span><br><span class="line">21:04:41.208201 00:0c:29:18:5c:90 (oui Unknown) &gt; 00:0c:29:a5:64:c8 (oui Unknown), ethertype IPv4 (0x0800), length 74: master-01.local.35770 &gt; SZE-L0149628.http: Flags [S], seq 844789185, win 29200, options [mss 1460,sackOK,TS val 5097353 ecr 0,nop,wscale 7], length 0</span><br><span class="line">-以下，省略-</span><br></pre></td></tr></table></figure>
+<h1 id="5-展示出-multicast-包"><a href="#5-展示出-multicast-包" class="headerlink" title="5 展示出 multicast 包"></a>5 展示出 multicast 包</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[root@drbd1 ~]# tcpdump -i eth0 -n multicast</span><br><span class="line">tcpdump: verbose output suppressed, use -v or -vv for full protocol decode</span><br><span class="line">listening on eth0, link-type EN10MB (Ethernet), capture size 65535 bytes</span><br><span class="line">21:45:03.460753 IP 192.168.0.3.mdns &gt; 224.0.0.251.mdns: 0 [1au] PTR (QU)? _sleep-proxy._udp.local. (70)</span><br><span class="line">21:45:03.577732 IP6 fe80::1029:98b2:4512:713b.mdns &gt; ff02::fb.mdns: 0 [1au] PTR (QU)? _sleep-proxy._udp.local. (70)</span><br><span class="line">21:45:04.484650 IP 192.168.0.3.mdns &gt; 224.0.0.251.mdns: 0 [1au] PTR (QM)? _sleep-proxy._udp.local. (70)</span><br><span class="line">21:45:04.486289 IP6 fe80::1029:98b2:4512:713b.mdns &gt; ff02::fb.mdns: 0 [1au] PTR (QM)? _sleep-proxy._udp.local. (70)</span><br><span class="line">21:45:07.101206 ARP, Request who-has 192.168.0.60 tell 192.168.0.6, length 46</span><br><span class="line">21:45:07.556694 IP 192.168.0.3.mdns &gt; 224.0.0.251.mdns: 0 [1au] PTR (QM)? _sleep-proxy._udp.local. (70)</span><br><span class="line">以下，省略</span><br></pre></td></tr></table></figure>
+<h1 id="6-表示绝对-sequence-号码而不是相对-sequence-号码-S"><a href="#6-表示绝对-sequence-号码而不是相对-sequence-号码-S" class="headerlink" title="6 表示绝对 sequence 号码而不是相对 sequence 号码 (-S)"></a>6 表示绝对 sequence 号码而不是相对 sequence 号码 (-S)</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@server ~]# tcpdump -i eth0 -S port 11111 -nn</span><br><span class="line">tcpdump: verbose output suppressed, use -v or -vv for full protocol decode</span><br><span class="line">listening on eth0, link-type EN10MB (Ethernet), capture size 65535 bytes</span><br><span class="line">11:26:33.080764 IP 192.168.0.110.48428 &gt; 192.168.0.100.11111: Flags [S], seq 2964223143, win 29200, options [mss 1460,sackOK,TS val 1278557 ecr 0,nop,wscale 7], length 0</span><br><span class="line">11:26:33.080981 IP 192.168.0.100.11111 &gt; 192.168.0.110.48428: Flags [S.], seq 3868874227, ack 2964223144, win 28960, options [mss 1460,sackOK,TS val 1318048 ecr 1278557,nop,wscale 7], length 0</span><br><span class="line">11:26:33.081787 IP 192.168.0.110.48428 &gt; 192.168.0.100.11111: Flags [.], ack 3868874228, win 229, options [nop,nop,TS val 1278559 ecr 1318048], length 0</span><br></pre></td></tr></table></figure>
+<h1 id="7-以简洁方式表示-q"><a href="#7-以简洁方式表示-q" class="headerlink" title="7 以简洁方式表示 (-q)"></a>7 以简洁方式表示 (-q)</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@SZE-L0149628 ~]# tcpdump -i eth0 port 80 -q</span><br><span class="line">-中间省略-</span><br><span class="line">22:08:54.904012 IP master-01.local.36554 &gt; SZE-L0149628.http: tcp 0</span><br><span class="line">22:08:54.904207 IP SZE-L0149628.http &gt; master-01.local.36554: tcp 0</span><br><span class="line">22:08:54.904678 IP master-01.local.36554 &gt; SZE-L0149628.http: tcp 0</span><br><span class="line">22:08:54.905582 IP master-01.local.36554 &gt; SZE-L0149628.http: tcp 69</span><br><span class="line">-以下省略-</span><br></pre></td></tr></table></figure>
+<h1 id="8-指定网卡的方法"><a href="#8-指定网卡的方法" class="headerlink" title="8 指定网卡的方法"></a>8 指定网卡的方法</h1><h2 id="8-1-列出可以使用的网卡-D"><a href="#8-1-列出可以使用的网卡-D" class="headerlink" title="8.1 列出可以使用的网卡 (-D)"></a>8.1 列出可以使用的网卡 (-D)</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[root@SZE-L0149628 ~]# tcpdump -D</span><br><span class="line">1.eth0</span><br><span class="line">2.cbr0</span><br><span class="line">3.nflog (Linux netfilter log (NFLOG) interface)</span><br><span class="line">4.nfqueue (Linux netfilter queue (NFQUEUE) interface)</span><br><span class="line">5.usbmon1 (USB bus number 1)</span><br><span class="line">6.usbmon2 (USB bus number 2)</span><br><span class="line">7.any (Pseudo-device that captures on all interfaces)</span><br><span class="line">8.lo</span><br><span class="line">[root@SZE-L0149628 ~]#</span><br><span class="line"></span><br><span class="line">  (*) cbr0是Docker的custom bridge</span><br></pre></td></tr></table></figure>
+<h2 id="8-2-指定所有网卡的方法-i-any"><a href="#8-2-指定所有网卡的方法-i-any" class="headerlink" title="8.2 指定所有网卡的方法 (-i any)"></a>8.2 指定所有网卡的方法 (-i any)</h2><p>如果将网卡指定为 any，则为指定所有的网卡。 any 之际上是 8.1 中显示的 “any (Pseudo-device that captures on all interfaces)”。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">监听端口11111。</span><br><span class="line">[root@SZE-L0149628 ~]# nc -kl 11111</span><br><span class="line"></span><br><span class="line">打开另一个终端（为方便，称之为terminal-2）。执行tcpdump。指定网卡为&quot;any&quot;。</span><br><span class="line">[root@SZE-L0149628 ~]# tcpdump -i any port 11111 -nn</span><br><span class="line">tcpdump: verbose output suppressed, use -v or -vv for full protocol decode</span><br><span class="line">listening on any, link-type LINUX_SLL (Linux cooked), capture size 65535 bytes</span><br><span class="line"></span><br><span class="line">再打开一个终端。在端口11111上建立TCP连接。SZE-L0149628为host名。</span><br><span class="line">[root@SZE-L0149628 ~]# nc SZE-L0149628 11111</span><br><span class="line"></span><br><span class="line">terminal-2的标准输出中，可以看到tcpdump的执行有信息显示出来了。</span><br><span class="line">[root@node1 ~]# tcpdump -i any port 11111 -nn</span><br><span class="line">tcpdump: verbose output suppressed, use -v or -vv for full protocol decode</span><br><span class="line">listening on any, link-type LINUX_SLL (Linux cooked), capture size 65535 bytes</span><br><span class="line">18:33:57.390145 IP 192.168.0.20.50330 &gt; 192.168.0.20.11111: Flags [S], seq 1061960766, win 43690, options [mss 65495,sackOK,TS val 546666 ecr 0,nop,wscale 6], length 0</span><br><span class="line">13:11:53.442157 IP 192.168.0.20.11111 &gt; 192.168.0.20.50330: Flags [S.], seq 3185839519, ack 1061960767, win 43690, options [mss 65495,sackOK,TS val 546666 ecr 546666,nop,wscale 6], length 0</span><br><span class="line">18:33:57.390245 IP 192.168.0.20.50330 &gt; 192.168.0.20.11111: Flags [.], ack 1, win 683, options [nop,nop,TS val 546666 ecr 546666], length 0</span><br><span class="line">-以下，省略-</span><br></pre></td></tr></table></figure>
+<h1 id="9-指定端口号"><a href="#9-指定端口号" class="headerlink" title="9 指定端口号"></a>9 指定端口号</h1><h2 id="9-1-指定多个端口号-or"><a href="#9-1-指定多个端口号-or" class="headerlink" title="9.1 指定多个端口号 (or)"></a>9.1 指定多个端口号 (or)</h2><p>通过 or 来指定多个端口号。 以下的例子为，捕获接收方为 TCP 端口号 80 以及接收方为 UDP 端口号 123 的包。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">-------</span><br><span class="line">1. 环境</span><br><span class="line">-------</span><br><span class="line">命令的执行顺序也记录下来。</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">                   node1                admin</span><br><span class="line">              (192.168.0.20)       (192.168.0.10)</span><br><span class="line">                     |                    |</span><br><span class="line">                     |                    | # systemctl start httpd</span><br><span class="line">                     |                    | # systemctl start chronyd</span><br><span class="line">                     |                    |</span><br><span class="line">                     |                    | # tcpdump -i eth0 tcp dst port 80 or udp dst port 123 -nn</span><br><span class="line">                     |                    |</span><br><span class="line">                     |                    |</span><br><span class="line"> # curl http://admin |                    |</span><br><span class="line">                     |                    |</span><br><span class="line">                     |                    |</span><br><span class="line"></span><br><span class="line">-----------</span><br><span class="line">2. 执行结果</span><br><span class="line">-----------</span><br><span class="line">为了测试启动了httpd和chronyd。</span><br><span class="line">[root@admin ~]# systemctl start httpd</span><br><span class="line">[root@admin ~]# systemctl start chronyd</span><br><span class="line"></span><br><span class="line">执行tcpdump。</span><br><span class="line">[root@admin ~]# tcpdump -i eth0 tcp dst port 80 or udp dst port 123 -nn</span><br><span class="line">可以从★看到，接收方TCP端口80的包被捕获到。</span><br><span class="line">19:40:09.350977 IP 192.168.0.20.55996 &gt; 192.168.0.10.80: Flags [S], seq 3461504268, win 29200, options [mss 1460,sackOK,TS val 4294753712 ecr 0,nop,wscale 7], length 0</span><br><span class="line">19:40:09.351719 IP 192.168.0.20.55996 &gt; 192.168.0.10.80: Flags [.], ack 3444255170, win 229, options [nop,nop,TS val 4294753713 ecr 262765], length 0</span><br><span class="line">19:40:09.351735 IP 192.168.0.20.55996 &gt; 192.168.0.10.80: Flags [P.], seq 0:69, ack 1, win 229, options [nop,nop,TS val 4294753713 ecr 262765], length 69</span><br><span class="line">19:40:09.353311 IP 192.168.0.20.55996 &gt; 192.168.0.10.80: Flags [.], ack 245, win 237, options [nop,nop,TS val 4294753714 ecr 262766], length 0</span><br><span class="line">19:40:09.353633 IP 192.168.0.20.55996 &gt; 192.168.0.10.80: Flags [F.], seq 69, ack 245, win 237, options [nop,nop,TS val 4294753715 ecr 262766], length 0</span><br><span class="line">19:40:09.366762 IP 192.168.0.20.55996 &gt; 192.168.0.10.80: Flags [.], ack 246, win 237, options [nop,nop,TS val 4294753717 ecr 262767], length 0</span><br><span class="line"></span><br><span class="line">可以从★看到，接收方UDP端口123的包被捕获到。</span><br><span class="line">19:40:41.333550 IP 192.168.0.20.53503 &gt; 157.7.153.56.123: NTPv4, Client, length 48 </span><br><span class="line">19:40:43.601143 IP 192.168.0.20.52104 &gt; 160.16.75.242.123: NTPv4, Client, length 48</span><br></pre></td></tr></table></figure>
+<h2 id="9-2-指定端口范围的方法-portrange"><a href="#9-2-指定端口范围的方法-portrange" class="headerlink" title="9.2 指定端口范围的方法 (portrange)"></a>9.2 指定端口范围的方法 (portrange)</h2><p>使用 portrange 来指定端口范围。 假如输入 portrange 10000-10010、就可以捕获端口 10000～10010 的包。 man 里面并没有 portrange 的说明。在网上搜索了以下，偶然发现了下面的信息。 <a href="https://link.juejin.im?target=https%3A%2F%2Fwww.nri-secure.co.jp%2Fncsirt%2F2010%2F0609.html" target="_blank" rel="noopener">tcpdump について知らない可能性のあるトップ 10</a> <a href="https://link.juejin.im?target=https%3A%2F%2Frationallyparanoid.com%2Farticles%2Ftcpdump.html" target="_blank" rel="noopener">Tcpdump usage examples</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">-------------------------------------------------</span><br><span class="line">1. 执行例子(接收方为TCP端口号10000)</span><br><span class="line">-------------------------------------------------</span><br><span class="line">指定端口范围（访问接收方TCP端口为10000-10010）。</span><br><span class="line">[root@admin ~]# tcpdump -i eth0 tcp dst portrange 10000-10010 -nn</span><br><span class="line"></span><br><span class="line">在admin服务器上用启动nc工具。指定Listen端口号为10000。</span><br><span class="line">[root@admin ~]# nc -l 10000</span><br><span class="line"></span><br><span class="line">node1服务器上执行nc命令。</span><br><span class="line">[root@SZE-L0149628 ~]# nc admin 10000</span><br><span class="line"></span><br><span class="line">可以看到接收方TCP端口号10000(★记号)的包。</span><br><span class="line">[root@admin ~]# tcpdump -i eth0 tcp dst portrange 10000-10010 -nn</span><br><span class="line">20:02:02.412649 IP 192.168.0.20.36590 &gt; 192.168.0.10.★10000: Flags [S], seq 3934696008, win 29200, options [mss 1460,sackOK,TS val 1099483 ecr 0,nop,wscale 7], length 0</span><br><span class="line">20:02:02.413076 IP 192.168.0.20.36590 &gt; 192.168.0.10.★10000: Flags [.], ack 2120320125, win 229, options [nop,nop,TS val 1099483 ecr 1575826], length 0</span><br><span class="line"></span><br><span class="line">-------------------------------------------------</span><br><span class="line">2. 执行例子(访问接收方TCP端口10005)</span><br><span class="line">-------------------------------------------------</span><br><span class="line">指定端口范围（接收方为TCP端口10000-10010），执行tcpdump。</span><br><span class="line">[root@admin ~]# tcpdump -i eth0 tcp dst portrange 10000-10010 -nn</span><br><span class="line"></span><br><span class="line">启动nc工具。监听端口为10005。</span><br><span class="line">[root@admin ~]# nc -l 10005</span><br><span class="line"></span><br><span class="line">node1服务器上执行nc命令。</span><br><span class="line">[root@SZE-L0149628 ~]# nc admin 10005</span><br><span class="line"></span><br><span class="line">可以看到接收方TCP端口号10005(★记号)的包。</span><br><span class="line">[root@admin ~]# tcpdump -i eth0 tcp dst portrange 10000-10010 -nn</span><br><span class="line">20:05:41.231969 IP 192.168.0.20.34196 &gt; 192.168.0.10.★10005: Flags [S], seq 882864997, win 29200, options [mss 1460,sackOK,TS val 1318301 ecr 0,nop,wscale 7], length 0</span><br><span class="line">20:05:41.234158 IP 192.168.0.20.34196 &gt; 192.168.0.10.★10005: Flags [.], ack 1724908027, win 229, options [nop,nop,TS val 1318304 ecr 1794647], length 0</span><br></pre></td></tr></table></figure>
+<h1 id="10-以单位时间来做-logrotate-G-z"><a href="#10-以单位时间来做-logrotate-G-z" class="headerlink" title="10 以单位时间来做 logrotate(-G,-z)"></a>10 以单位时间来做 logrotate(-G,-z)</h1><h2 id="10-1-只指定-G-的时候-可以切换，但文件会无限增加）"><a href="#10-1-只指定-G-的时候-可以切换，但文件会无限增加）" class="headerlink" title="10.1 只指定 - G 的时候 (可以切换，但文件会无限增加）"></a>10.1 只指定 - G 的时候 (可以切换，但文件会无限增加）</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">[root@SZE-L0149628 ~]# id</span><br><span class="line">uid=0(root) gid=0(root) groups=0(root)</span><br><span class="line"></span><br><span class="line">创建执行tcddump的目录。</span><br><span class="line">[root@SZE-L0149628 ~]# mkdir tcpdump</span><br><span class="line">[root@SZE-L0149628 ~]# ls -ld tcpdump</span><br><span class="line">drwxr-xr-x 2 root root 6  2月 11 23:29 tcpdump</span><br><span class="line">[root@SZE-L0149628 ~]# chown tcpdump:tcpdump tcpdump</span><br><span class="line">[root@SZE-L0149628 ~]# ls -ld tcpdump</span><br><span class="line">drwxr-xr-x 2 tcpdump tcpdump 6  2月 11 22:41 tcpdump</span><br><span class="line"></span><br><span class="line">[root@SZE-L0149628 ~]# cd tcpdump/</span><br><span class="line"></span><br><span class="line">每隔10秒钟捕获一次数据，并创建下一个保存数据用的文件(-G)。</span><br><span class="line">[root@node1 tcpdump]# tcpdump -i eth0 -G 10 -w tcpdump_%Y%m%d_%H%M%S.cap</span><br><span class="line"></span><br><span class="line">可以看到捕获到的数据被保存到文件里了。每10秒钟生成一个文件。</span><br><span class="line">[root@node1 tcpdump]# ls -l --full-time</span><br><span class="line">total 104</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 18004 2017-02-11 22:45:11.073577507 +0900 tcpdump_20170211_224501.cap</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 21492 2017-02-11 22:45:21.111767063 +0900 tcpdump_20170211_224511.cap</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 24196 2017-02-11 22:45:31.145956545 +0900 tcpdump_20170211_224521.cap</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 20946 2017-02-11 22:45:41.166145762 +0900 tcpdump_20170211_224531.cap</span><br><span class="line">-以下，省略-</span><br></pre></td></tr></table></figure>
+<h2 id="10-2-G-z-通过-shell-脚本，将就文件删除）"><a href="#10-2-G-z-通过-shell-脚本，将就文件删除）" class="headerlink" title="10.2 -G + -z (通过 shell 脚本，将就文件删除）"></a>10.2 -G + -z (通过 shell 脚本，将就文件删除）</h2><p>用 10.1 的方法的话，会无限新增文件。 如果要抑制磁盘使用率，需要定期删除旧文件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">写一个shell脚本，在捕获到数据并保存之后执行。</span><br><span class="line">保持保存的文件不超过4个，也就是保持3个文件。</span><br><span class="line">[root@SZE-L0149628 tcpdump]# cat limit.sh</span><br><span class="line">#!/usr/bin/env bash</span><br><span class="line">file_num=$(ls tcpdump_*|wc -l)</span><br><span class="line"></span><br><span class="line">if [ $file_num -gt 3 ]; then</span><br><span class="line">  file_name=$(ls -tr tcpdump_*|head -n 1)</span><br><span class="line">  rm -f $file_name</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">把脚本所有权、group改成tcpdump。</span><br><span class="line">[root@SZE-L0149628 tcpdump]# ls -l limit.sh</span><br><span class="line">-rwxr--r-- 1 tcpdump tcpdump 35  2月 12 09:41 limit.sh</span><br><span class="line"></span><br><span class="line">启动tcpdump。每隔10秒删除一个旧文件。</span><br><span class="line">[root@SZE-L0149628 tcpdump]# tcpdump -i eth0 -G 10 -w tcpdump_%Y%m%d_%H%M%S.cap -z ./limit.sh</span><br><span class="line">-以下，省略-</span><br></pre></td></tr></table></figure>
+<h1 id="11-指定文件大小来做-logrotate-C-z"><a href="#11-指定文件大小来做-logrotate-C-z" class="headerlink" title="11 指定文件大小来做 logrotate(-C,-z)"></a>11 指定文件大小来做 logrotate(-C,-z)</h1><h2 id="11-1-只指定-C-可以切换保存的文件，但文件数会无限增加）"><a href="#11-1-只指定-C-可以切换保存的文件，但文件数会无限增加）" class="headerlink" title="11.1 只指定 - C(可以切换保存的文件，但文件数会无限增加）"></a>11.1 只指定 - C(可以切换保存的文件，但文件数会无限增加）</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">创建执行tcpdump的工作目录。</span><br><span class="line">[root@SZE-L0149628 ~]# mkdir tcpdump</span><br><span class="line">[root@SZE-L0149628 ~]# chown tcpdump:tcpdump tcpdump</span><br><span class="line">[root@SZE-L0149628 ~]# ls -ld tcpdump</span><br><span class="line">drwxr-xr-x 2 tcpdump tcpdump 6  2月 11 22:41 tcpdump</span><br><span class="line"></span><br><span class="line">[root@SZE-L0149628 ~]# cd tcpdump/</span><br><span class="line"></span><br><span class="line">以1M为单位捕获数据并保存为新增文件。(-C)。</span><br><span class="line">[root@SZE-L0149628 tcpdump]# tcpdump -i eth0 -C 1 -w tcpdump.cap</span><br><span class="line">-以下，省略-</span><br><span class="line"></span><br><span class="line">确认保存了数据的文件。可以看到文件大小为1M。</span><br><span class="line">[root@SZE-L0149628 tcpdump]# ls -l</span><br><span class="line">total 20560</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1000895  2月 26 17:33 tcpdump.cap</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1000753  2月 26 17:33 tcpdump.cap1</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1000794  2月 26 17:35 tcpdump.cap10</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1000011  2月 26 17:35 tcpdump.cap11</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1000072  2月 26 17:35 tcpdump.cap12</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1001184  2月 26 17:35 tcpdump.cap13</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1001498  2月 26 17:35 tcpdump.cap14</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1000372  2月 26 17:35 tcpdump.cap15</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1001118  2月 26 17:35 tcpdump.cap16</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1001198  2月 26 17:35 tcpdump.cap17</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1001276  2月 26 17:35 tcpdump.cap18</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1000664  2月 26 17:35 tcpdump.cap19</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1000752  2月 26 17:33 tcpdump.cap2</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump  536576  2月 26 17:35 tcpdump.cap20</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1000146  2月 26 17:34 tcpdump.cap3</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1000094  2月 26 17:35 tcpdump.cap4</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1001523  2月 26 17:35 tcpdump.cap5</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1000928  2月 26 17:35 tcpdump.cap6</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1001232  2月 26 17:35 tcpdump.cap7</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1000980  2月 26 17:35 tcpdump.cap8</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 1001383  2月 26 17:35 tcpdump.cap9</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">如果环境中可以使用Dockker，一边执行docker pull centos等等，一边执行</span><br><span class="line">tcpdump -i eth0 -C 1 -w tcpdump.cap的话，就能直观地看到文件被一个个生成出来。</span><br></pre></td></tr></table></figure>
+<h2 id="11-2-C-z-执行-shell，将旧文件删除的方法）"><a href="#11-2-C-z-执行-shell，将旧文件删除的方法）" class="headerlink" title="11.2 -C + -z (执行 shell，将旧文件删除的方法）"></a>11.2 -C + -z (执行 shell，将旧文件删除的方法）</h2><p>使用 11.1 的方法的话，文件将会无限增加。 想要抑制磁盘使用量，需要将旧文件定期删除。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">编写一个脚本，在捕获并保存数据后执行。</span><br><span class="line">使文件数不会超过4个，也就是保持3个数据文件。</span><br><span class="line">[root@SZE-L0149628 tcpdump]# cat limit.sh</span><br><span class="line">#!/usr/bin/bash</span><br><span class="line">file_num=$(ls tcpdump.cap*|wc -l)</span><br><span class="line"></span><br><span class="line">if [ $file_num -gt 3 ]; then</span><br><span class="line">  file_name=$(ls -tr tcpdump.cap*|head -n 1)</span><br><span class="line">  rm -f $file_name</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">把脚本的所有者和group改成tcpdump。</span><br><span class="line">[root@SZE-L0149628 tcpdump]# chown  tcpdump:tcpdump limit.sh</span><br><span class="line">[root@SZE-L0149628 tcpdump]# ls -l limit.sh</span><br><span class="line">-rwxr--r-- 1 tcpdump tcpdump 35  2月 12 09:41 limit.sh</span><br><span class="line"></span><br><span class="line">启动tcpdump。</span><br><span class="line">可以观察到文件大小保持在1M，会生成多个达到logrotate效果。</span><br><span class="line">保持的文件为最近的3个。</span><br><span class="line">[root@SZE-L0149628 tcpdump]# tcpdump -i eth0 -C 1 -w tcpdump.cap -z ./limit.sh</span><br><span class="line">-以下，省略-</span><br></pre></td></tr></table></figure>
+<h1 id="12-切换-tcpdump-的进程-UID-Z"><a href="#12-切换-tcpdump-的进程-UID-Z" class="headerlink" title="12 切换 tcpdump 的进程 UID(-Z)"></a>12 切换 tcpdump 的进程 UID(-Z)</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">----------------------------</span><br><span class="line">1. 通过tcpdump权限来启动。</span><br><span class="line">---------------------------</span><br><span class="line">确认tcpdump执行前的用户权限。可以看到当前login账户为root。</span><br><span class="line">[root@SZE-L0149628 tcpdump]# id</span><br><span class="line">uid=0(root) gid=0(root) groups=0(root)</span><br><span class="line"></span><br><span class="line">执行tcpdump。</span><br><span class="line">[root@SZE-L0149628 tcpdump]# tcpdump -i eth0 port 80</span><br><span class="line">-中略-</span><br><span class="line"></span><br><span class="line">另外启动terminal，确认tcpdump的UID。</span><br><span class="line">[root@SZE-L0149628 tcpdump]# ps -C tcpdump -o comm,uid,euid</span><br><span class="line">COMMAND           UID  EUID</span><br><span class="line">tcpdump            72    72</span><br><span class="line"></span><br><span class="line">并不是UID=0(root)，可以看到UID=72(tcpdumpのUID)为tcpdump这个用户的ID号。</span><br><span class="line">[root@SZE-L0149628 tcpdump]# cat /etc/passwd|grep 72</span><br><span class="line">tcpdump:x:72:72::/:/sbin/nologin</span><br><span class="line"></span><br><span class="line">-----------------------</span><br><span class="line">2. 通过root权限启动。</span><br><span class="line">-----------------------</span><br><span class="line">通过root权限启动tcpdump。</span><br><span class="line">[root@SZE-L0149628 tcpdump]# tcpdump -Z root -i eth0 port 80</span><br><span class="line">-中略-</span><br><span class="line"></span><br><span class="line">另启动terminal查看tcpdump进程的UID。</span><br><span class="line">[root@SZE-L0149628 tcpdump]# ps -C tcpdump -o comm,uid,euid</span><br><span class="line">COMMAND           UID  EUID</span><br><span class="line">tcpdump             0     0</span><br></pre></td></tr></table></figure>
+<h1 id="13-限制捕获的包的大小-s"><a href="#13-限制捕获的包的大小-s" class="headerlink" title="13 限制捕获的包的大小 (-s)"></a>13 限制捕获的包的大小 (-s)</h1><p>-s128 限制捕获包的大小为 128 byte。 -s0 不限制包的大小。如果是捕获 NFS 服务的数据包，则需要指定 - s0。</p>
+<h1 id="14-和时刻相关"><a href="#14-和时刻相关" class="headerlink" title="14 和时刻相关"></a>14 和时刻相关</h1><p>##14.1 上显示上一次抓包后经过了多久 (-ttt)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@SZE-L0149628 ~]# tcpdump -ttt -i eth0 port 80</span><br><span class="line">-中略-</span><br><span class="line">00:00:00.000000 IP master-01.local.45591 &gt; SZE-L0149628.http: Flags [S], seq 3130128384, win 29200, options [mss 1460,sackOK,TS val 1308684 ecr 0,nop,wscale 7], length 0</span><br><span class="line">00:00:00.000573 IP SZE-L0149628.http &gt; master-01.local.45591: Flags [S.], seq 2731073810, ack 3130128385, win 28960, options [mss 1460,sackOK,TS val 8901 ecr 1308684,nop,wscale 7], length 0</span><br><span class="line">00:00:00.000590 IP master-01.local.45591 &gt; SZE-L0149628.http: Flags [.], ack 1, win 229, options [nop,nop,TS val 1308687 ecr 8901], length 0</span><br><span class="line">-以下，省略-</span><br></pre></td></tr></table></figure>
+<p>##14.2 用易读的格式表示时刻 (-tttt)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@SZE-L0149628 tcpdump]# tcpdump -tttt -i eth0 port 80</span><br><span class="line">-中略-</span><br><span class="line">2017-02-11 23:48:24.601156 IP master-01.local.37570 &gt; SZE-L0149628.http: Flags [S], seq 1753606276, win 29200, options [mss 1460,sackOK,TS val 14920793 ecr 0,nop,wscale 7], length 0</span><br><span class="line">2017-02-11 23:48:24.601327 IP SZE-L0149628.http &gt; master-01.local.37570: Flags [S.], seq 2174856607, ack 1753606277, win 28960, options [mss 1460,sackOK,TS val 13999755 ecr 14920793,nop,wscale 7], length 0</span><br><span class="line">2017-02-11 23:48:24.630309 IP master-01.local.37570 &gt; SZE-L0149628.http: Flags [.], ack 1, win 229, options [nop,nop,TS val 14920796 ecr 13999755], length 0</span><br><span class="line">-以下，省略-</span><br></pre></td></tr></table></figure>
+<h2 id="14-3-表示从最初抓包之后经过的时间-ttttt"><a href="#14-3-表示从最初抓包之后经过的时间-ttttt" class="headerlink" title="14.3 表示从最初抓包之后经过的时间 (-ttttt)"></a>14.3 表示从最初抓包之后经过的时间 (-ttttt)</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">[root@SZE-L0149628 tcpdump]# tcpdump -ttttt -i eth0 port 80</span><br><span class="line">-中略-</span><br><span class="line">00:00:00.000000 IP master-01.local.37609 &gt; SZE-L0149628.http: Flags [S], seq 1814350362, win 29200, options [mss 1460,sackOK,TS val 15104880 ecr 0,nop,wscale 7], length 0</span><br><span class="line">00:00:00.000130 IP SZE-L0149628.http &gt; master-01.local.37609: Flags [S.], seq 3384514235, ack 1814350363, win 28960, options [mss 1460,sackOK,TS val 14183842 ecr 15104880,nop,wscale 7], length 0</span><br><span class="line">00:00:00.000503 IP master-01.local.37609 &gt; SZE-L0149628.http: Flags [.], ack 1, win 229, options [nop,nop,TS val 15104880 ecr 14183842], length 0</span><br><span class="line">00:00:00.000827 IP master-01.local.37609 &gt; SZE-L0149628.http: Flags [P.], seq 1:70, ack 1, win 229, options [nop,nop,TS val 15104881 ecr 14183842], length 69</span><br><span class="line">00:00:00.000910 IP SZE-L0149628.http &gt; master-01.local.37609: Flags [.], ack 70, win 227, options [nop,nop,TS val 14183843 ecr 15104881], length 0</span><br><span class="line">00:00:00.001818 IP SZE-L0149628.http &gt; master-01.local.37609: Flags [.], seq 1:4345, ack 70, win 227, options [nop,nop,TS val 14183844 ecr 15104881], length 4344</span><br><span class="line">00:00:00.002032 IP SZE-L0149628.http &gt; master-01.local.37609: Flags [P.], seq 4345:5150, ack 70, win 227, options [nop,nop,TS val 14183844 ecr 15104881], length 805</span><br><span class="line">00:00:00.002447 IP master-01.local.37609 &gt; SZE-L0149628.http: Flags [.], ack 4345, win 296, options [nop,nop,TS val 15104882 ecr 14183844], length 0</span><br><span class="line">00:00:00.002521 IP master-01.local.37609 &gt; SZE-L0149628.http: Flags [.], ack 5150, win 319, options [nop,nop,TS val 15104882 ecr 14183844], length 0</span><br><span class="line">00:00:00.003245 IP master-01.local.37609 &gt; SZE-L0149628.http: Flags [F.], seq 70, ack 5150, win 319, options [nop,nop,TS val 15104883 ecr 14183844], length 0</span><br><span class="line">00:00:00.003504 IP SZE-L0149628.http &gt; master-01.local.37609: Flags [F.], seq 5150, ack 71, win 227, options [nop,nop,TS val 14183845 ecr 15104883], length 0</span><br><span class="line">00:00:00.004282 IP master-01.local.37609 &gt; SZE-L0149628.http: Flags [.], ack 5151, win 319, options [nop,nop,TS val 15104884 ecr 14183845], length 0</span><br><span class="line">00:00:12.419958 IP master-01.local.37610 &gt; SZE-L0149628.http: Flags [S], seq 3751257265, win 29200, options [mss 1460,sackOK,TS val 15117299 ecr 0,nop,wscale 7], length 0</span><br><span class="line">00:00:12.420080 IP SZE-L0149628.http &gt; master-01.local.37610: Flags [S.], seq 2826492114, ack 3751257266, win 28960, options [mss 1460,sackOK,TS val 14196262 ecr 15117299,nop,wscale 7], length 0</span><br><span class="line">00:00:12.420785 IP master-01.local.37610 &gt; SZE-L0149628.http: Flags [.], ack 1, win 229, options [nop,nop,TS val 15117300 ecr 14196262], length 0</span><br><span class="line">00:00:12.420819 IP master-01.local.37610 &gt; SZE-L0149628.http: Flags [P.], seq 1:70, ack 1, win 229, options [nop,nop,TS val 15117300 ecr 14196262], length 69</span><br><span class="line">00:00:12.420867 IP SZE-L0149628.http &gt; master-01.local.37610: Flags [.], ack 70, win 227, options [nop,nop,TS val 14196263 ecr 15117300], length 0</span><br><span class="line">00:00:12.421848 IP SZE-L0149628.http &gt; master-01.local.37610: Flags [.], seq 1:4345, ack 70, win 227, options [nop,nop,TS val 14196263 ecr 15117300], length 4344</span><br><span class="line">00:00:12.422183 IP SZE-L0149628.http &gt; master-01.local.37610: Flags [P.], seq 4345:5150, ack 70, win 227, options [nop,nop,TS val 14196264 ecr 15117300], length 805</span><br><span class="line">00:00:12.422851 IP master-01.local.37610 &gt; SZE-L0149628.http: Flags [.], ack 2897, win 274, options [nop,nop,TS val 15117302 ecr 14196263], length 0</span><br><span class="line">00:00:12.422900 IP master-01.local.37610 &gt; SZE-L0149628.http: Flags [.], ack 4345, win 296, options [nop,nop,TS val 15117302 ecr 14196263], length 0</span><br><span class="line">00:00:12.422911 IP master-01.local.37610 &gt; SZE-L0149628.http: Flags [.], ack 5150, win 319, options [nop,nop,TS val 15117302 ecr 14196264], length 0</span><br><span class="line">00:00:12.423754 IP master-01.local.37610 &gt; SZE-L0149628.http: Flags [F.], seq 70, ack 5150, win 319, options [nop,nop,TS val 15117303 ecr 14196264], length 0</span><br><span class="line">00:00:12.842416 IP SZE-L0149628.http &gt; master-01.local.37610: Flags [F.], seq 5150, ack 71, win 227, options [nop,nop,TS val 14196483 ecr 15117303], length 0</span><br><span class="line">00:00:12.843931 IP master-01.local.37610 &gt; SZE-L0149628.http: Flags [F.], seq 70, ack 5150, win 319, options [nop,nop,TS val 15117532 ecr 14196264], length 0</span><br><span class="line">00:00:12.843997 IP SZE-L0149628.http &gt; master-01.local.37610: Flags [.], ack 71, win 227, options [nop,nop,TS val 14196686 ecr 15117532,nop,nop,sack 1 &#123;70:71&#125;], length 0</span><br><span class="line">00:00:12.846918 IP master-01.local.37610 &gt; SZE-L0149628.http: Flags [.], ack 5151, win 319, options [nop,nop,TS val 15117725 ecr 14196483], length 0</span><br><span class="line">-以下，省略-</span><br></pre></td></tr></table></figure>
+<h1 id="15-混杂模式-p"><a href="#15-混杂模式-p" class="headerlink" title="15 混杂模式 (-p)"></a>15 混杂模式 (-p)</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">从master往router执行ping的时候，在node1上抓包(执行tcpdump)。</span><br><span class="line">确认下加上-p选项，和不加的区别。</span><br><span class="line"></span><br><span class="line">       master                        node1</span><br><span class="line">     192.168.0.10                 192.168.0.20</span><br><span class="line">         |                             |</span><br><span class="line">         |  ping                       |  tcpdump実行</span><br><span class="line">         |   |                         |</span><br><span class="line">         |   |                         |</span><br><span class="line">         |   |                         |</span><br><span class="line">    +--------|----------------------------------+</span><br><span class="line">    |        |     VMware Workstation           |</span><br><span class="line">    +--------|----------------------------------+</span><br><span class="line">             |           |</span><br><span class="line">             |           |</span><br><span class="line">             V           |</span><br><span class="line">                     192.168.0.1</span><br><span class="line">                       Router</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">----------------------------------------</span><br><span class="line">1. 不带-p的情况下(启用混杂模式时)</span><br><span class="line">----------------------------------------</span><br><span class="line">[root@SZE-L0149625 ~]# ping -c 1 192.168.0.1</span><br><span class="line"></span><br><span class="line">另启一个终端，执行tcpdump。可以看到往Route发送的IMCP包。</span><br><span class="line">也就是说，可以捕获到目标并非为自己的包。</span><br><span class="line">[root@SZE-L0149628 ~]# tcpdump -i eth0 icmp</span><br><span class="line">20:15:07.404762 IP master-01.local &gt; 192.168.0.1: ICMP echo request, id 2395, seq 1, length 64</span><br><span class="line">20:15:07.408709 IP 192.168.0.1 &gt; master-01.local: ICMP echo reply, id 2395, seq 1, length 64</span><br><span class="line"></span><br><span class="line">-----------------</span><br><span class="line">2. 带-p参数的情况</span><br><span class="line">-----------------</span><br><span class="line">[root@SZE-L0149625 ~]# ping -c 1 192.168.0.1</span><br><span class="line"></span><br><span class="line">另起终端，执行tcpdump。</span><br><span class="line">因为没有启用混杂模式，发给别人的包是抓不到的。</span><br><span class="line">root@SZE-L0149628 ~]# tcpdump -p -i eth0 icmp</span><br><span class="line">tcpdump: verbose output suppressed, use -v or -vv for full protocol decode</span><br><span class="line">listening on eth0, link-type EN10MB (Ethernet), capture size 65535 bytes</span><br><span class="line">到这里就结束了。</span><br></pre></td></tr></table></figure>
+<h1 id="16-只捕获接收-发送的数据包-P"><a href="#16-只捕获接收-发送的数据包-P" class="headerlink" title="16 只捕获接收 / 发送的数据包 (-P)"></a>16 只捕获接收 / 发送的数据包 (-P)</h1><h2 id="16-1-只捕获发送的数据包-P-out"><a href="#16-1-只捕获发送的数据包-P-out" class="headerlink" title="16.1 只捕获发送的数据包 (-P out)"></a>16.1 只捕获发送的数据包 (-P out)</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">执行ping。</span><br><span class="line">[root@master-01.local ~]# ping 192.168.0.1</span><br><span class="line">PING 192.168.0.1 (192.168.0.1) 56(84) bytes of data.</span><br><span class="line">64 bytes from 192.168.0.1: icmp_seq=1 ttl=255 time=1.30 ms</span><br><span class="line">64 bytes from 192.168.0.1: icmp_seq=2 ttl=255 time=2.08 ms</span><br><span class="line">64 bytes from 192.168.0.1: icmp_seq=3 ttl=255 time=1.38 ms</span><br><span class="line">64 bytes from 192.168.0.1: icmp_seq=4 ttl=255 time=1.28 ms</span><br><span class="line">64 bytes from 192.168.0.1: icmp_seq=5 ttl=255 time=2.65 ms</span><br><span class="line">-以下，省略-</span><br><span class="line"></span><br><span class="line">另启终端。可以看到只捕获到ICMP echo request(★记号)。</span><br><span class="line">[root@master-01.local ~]# tcpdump -i eth0 -P out icmp</span><br><span class="line">tcpdump: verbose output suppressed, use -v or -vv for full protocol decode</span><br><span class="line">listening on eth0, link-type EN10MB (Ethernet), capture size 65535 bytes</span><br><span class="line">19:49:30.824851 IP master-01.local &gt; gateway: ★ICMP echo request, id 8383, seq 1, length 64</span><br><span class="line">19:49:31.826870 IP master-01.local &gt; gateway: ★ICMP echo request, id 8383, seq 2, length 64</span><br><span class="line">19:49:32.829000 IP master-01.local &gt; gateway: ★ICMP echo request, id 8383, seq 3, length 64</span><br><span class="line">19:49:33.831066 IP master-01.local &gt; gateway: ★ICMP echo request, id 8383, seq 4, length 64</span><br><span class="line">19:49:34.833142 IP master-01.local &gt; gateway: ★ICMP echo request, id 8383, seq 5, length 64</span><br></pre></td></tr></table></figure>
+<h2 id="16-2-只捕获接收的包-P-in"><a href="#16-2-只捕获接收的包-P-in" class="headerlink" title="16.2 只捕获接收的包 (-P in)"></a>16.2 只捕获接收的包 (-P in)</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">执行ping。</span><br><span class="line">[root@master-01.local ~]# ping 192.168.0.1</span><br><span class="line">PING 192.168.0.1 (192.168.0.1) 56(84) bytes of data.</span><br><span class="line">64 bytes from 192.168.0.1: icmp_seq=1 ttl=255 time=1.60 ms</span><br><span class="line">64 bytes from 192.168.0.1: icmp_seq=2 ttl=255 time=1.45 ms</span><br><span class="line">64 bytes from 192.168.0.1: icmp_seq=3 ttl=255 time=0.957 ms</span><br><span class="line">64 bytes from 192.168.0.1: icmp_seq=4 ttl=255 time=1.24 ms</span><br><span class="line"></span><br><span class="line">另开终端执行tcpdump。可以看到只捕获到ICMP echo reply(★记号)。</span><br><span class="line">[root@master-01.local ~]# tcpdump -i eth0 -P in icmp</span><br><span class="line">tcpdump: verbose output suppressed, use -v or -vv for full protocol decode</span><br><span class="line">listening on eth0, link-type EN10MB (Ethernet), capture size 65535 bytes</span><br><span class="line">19:52:01.518368 IP gateway &gt; master-01.local: ★ICMP echo reply, id 8389, seq 1, length 64</span><br><span class="line">19:52:02.523845 IP gateway &gt; master-01.local: ★ICMP echo reply, id 8389, seq 2, length 64</span><br><span class="line">19:52:03.533297 IP gateway &gt; master-01.local: ★ICMP echo reply, id 8389, seq 3, length 64</span><br><span class="line">19:52:04.536053 IP gateway &gt; master-01.local: ★ICMP echo reply, id 8389, seq 4, length 64</span><br><span class="line">19:52:05.545274 IP gateway &gt; master-01.local: ★ICMP echo reply, id 8389, seq 5, length 64</span><br></pre></td></tr></table></figure>
+<h1 id="17-用-ASCII-码表示包的内容-x-xx"><a href="#17-用-ASCII-码表示包的内容-x-xx" class="headerlink" title="17 用 ASCII 码表示包的内容 (-x,-xx)"></a>17 用 ASCII 码表示包的内容 (-x,-xx)</h1><h2 id="17-1-表示包含-IP-header-的包的内容的方法-x"><a href="#17-1-表示包含-IP-header-的包的内容的方法-x" class="headerlink" title="17.1 表示包含 IP header 的包的内容的方法 (-x)"></a>17.1 表示包含 IP header 的包的内容的方法 (-x)</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">在server侧监听11111端口。</span><br><span class="line">[root@server ~]# nc -l 11111</span><br><span class="line"></span><br><span class="line">另开终端，执行tcpdump。</span><br><span class="line">[root@server ~]# tcpdump -i eth0 port 11111 -X</span><br><span class="line"></span><br><span class="line">从客户端向服务器建立TCP连接，发送数据。以下例子中，一共发送了111...555的50个byte，以及换行符(0x0a)合计51byte。</span><br><span class="line">[root@client ~]# nc server 11111</span><br><span class="line">11111111112222222222333333333344444444445555555555</span><br><span class="line"></span><br><span class="line">确认执行结果。可以确认到包括IP header，发送的数据内容。</span><br><span class="line">[root@server ~]# tcpdump -i eth0 port 11111 -X</span><br></pre></td></tr></table></figure>
+<p><img src="https://user-gold-cdn.xitu.io/2019/5/22/16adfcc68d97e23c?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt></p>
+<h2 id="17-2-表示包含了-ethernet-header-的数据包的内容-xx"><a href="#17-2-表示包含了-ethernet-header-的数据包的内容-xx" class="headerlink" title="17.2 表示包含了 ethernet header 的数据包的内容 (-xx)"></a>17.2 表示包含了 ethernet header 的数据包的内容 (-xx)</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">在server端监听11111端口。</span><br><span class="line">[root@server ~]# nc -l 11111</span><br><span class="line"></span><br><span class="line">另开一个终端，执行tcpdump。</span><br><span class="line">[root@server ~]# tcpdump -i eth0 port 11111 -XX</span><br><span class="line"></span><br><span class="line">从client端向server建立TCP连接，发送数据。</span><br><span class="line">以下例子中，发送了111...555的50个byte以及换行符(0x0a)一共51个byte。</span><br><span class="line">[root@client ~]# nc server 11111</span><br><span class="line">11111111112222222222333333333344444444445555555555</span><br><span class="line"></span><br><span class="line">确认执行结果。可以确认到包含ethernet header的发送数据内容。</span><br><span class="line">[root@server ~]# tcpdump -i eth0 port 11111 -XX</span><br></pre></td></tr></table></figure>
+<p><img src="https://user-gold-cdn.xitu.io/2019/5/22/16adfe52b78dcd14?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt></p>
+<h1 id="18-读取保存的-pcap-文件的方法-r"><a href="#18-读取保存的-pcap-文件的方法-r" class="headerlink" title="18 读取保存的 pcap 文件的方法 (-r)"></a>18 读取保存的 pcap 文件的方法 (-r)</h1><h2 id="18-1-只采集-SYN-包的方法"><a href="#18-1-只采集-SYN-包的方法" class="headerlink" title="18.1 只采集 SYN 包的方法"></a>18.1 只采集 SYN 包的方法</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@admin tcpdump]# tcpdump -r test.cap &apos;(tcp[tcpflags] &amp; tcp-syn)&apos; != 0 and &apos;(tcp[tcpflags] &amp; tcp-ack)&apos; ==0</span><br><span class="line">reading from file test.cap, link-type EN10MB (Ethernet)</span><br><span class="line">21:23:03.301427 IP admin.37958 &gt; ftp.jaist.ac.jp.http: Flags [S], seq 2552724747, win 29200, options [mss 1460,sackOK,TS val 2642270 ecr 0,nop,wscale 7], length 0</span><br></pre></td></tr></table></figure>
+<h2 id="18-2-只采集-SYN-SYN-ACK-包的方法"><a href="#18-2-只采集-SYN-SYN-ACK-包的方法" class="headerlink" title="18.2 只采集 SYN,SYN+ACK 包的方法"></a>18.2 只采集 SYN,SYN+ACK 包的方法</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@admin tcpdump]# tcpdump -r test.cap &apos;(tcp[tcpflags] &amp; tcp-syn)&apos; != 0</span><br><span class="line">reading from file test.cap, link-type EN10MB (Ethernet)</span><br><span class="line">21:23:03.301427 IP admin.37958 &gt; ftp.jaist.ac.jp.http: Flags [S], seq 2552724747, win 29200, options [mss 1460,sackOK,TS val 2642270 ecr 0,nop,wscale 7], length 0</span><br><span class="line">21:23:03.327373 IP ftp.jaist.ac.jp.http &gt; admin.37958: Flags [S.], seq 2234169755, ack 2552724748, win 32851, options [sackOK,TS val 606933891 ecr 2642270,mss 1460,nop,wscale 4], length 0</span><br></pre></td></tr></table></figure>
+<h1 id="19-捕获经过-Netlink-的流量包"><a href="#19-捕获经过-Netlink-的流量包" class="headerlink" title="19 捕获经过 Netlink 的流量包"></a>19 捕获经过 Netlink 的流量包</h1><h2 id="19-1-准备抓包工具软件"><a href="#19-1-准备抓包工具软件" class="headerlink" title="19.1 准备抓包工具软件"></a>19.1 准备抓包工具软件</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">加载kernel的nlmon模块。</span><br><span class="line">[root@master-01.local ~]# modprobe nlmon</span><br><span class="line">[root@master-01.local ~]# lsmod |grep nlmon</span><br><span class="line">nlmon                  12924  0</span><br><span class="line"></span><br><span class="line">追加nlmon类型的设备。</span><br><span class="line">[root@master-01.local ~]# ip link add nlmon0 type nlmon</span><br><span class="line">[root@master-01.local ~]# ip link set nlmon0 up</span><br><span class="line">[root@master-01.local ~]# ip link show dev nlmon0</span><br><span class="line">6: nlmon0: &lt;NOARP,UP,LOWER_UP&gt; mtu 3776 qdisc noqueue state UNKNOWN mode DEFAULT qlen 1</span><br><span class="line">    link/[824]</span><br><span class="line"></span><br><span class="line">执行tcpdump。</span><br><span class="line">另外，使用NETLINK类型的情况下，并没有支持把数据输出到标准输出。需要使用-w将数据保存为文件。</span><br><span class="line">[root@master-01.local ~]# tcpdump -i nlmon0 -s0 -w test.pcap</span><br><span class="line">tcpdump: listening on nlmon0, link-type NETLINK (Linux netlink), capture size 65535 bytes</span><br><span class="line">13 packets captured</span><br><span class="line">14 packets received by filter</span><br><span class="line">0 packets dropped by kernel</span><br><span class="line"></span><br><span class="line">为了将数据包传输到NETLINK上，另开一个终端，执行以下命令。</span><br><span class="line">[root@master-01.local ~]# ip a</span><br><span class="line">[root@master-01.local ~]# ip r</span><br><span class="line">[root@master-01.local ~]# ip n</span><br></pre></td></tr></table></figure>
+<h2 id="19-2-查阅抓包软件的方法"><a href="#19-2-查阅抓包软件的方法" class="headerlink" title="19.2 查阅抓包软件的方法"></a>19.2 查阅抓包软件的方法</h2><p>使用 Wireshark 来查阅捕获到的数据。 像以下的方式，可以将传输到 Netlink 的数据包表示出来。</p>
+<p><img src="https://user-gold-cdn.xitu.io/2019/5/23/16ae2a5936f60c53?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt></p>
+<h2 id="19-3-环境清理"><a href="#19-3-环境清理" class="headerlink" title="19.3 环境清理"></a>19.3 环境清理</h2><p>删除测试用的设备，以及卸载模块。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">删除设备(nlmon0)。</span><br><span class="line">[root@master-01.local ~]# ip link delete nlmon0</span><br><span class="line">[root@master-01.local ~]# ip link</span><br><span class="line">1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT qlen 1</span><br><span class="line">    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00</span><br><span class="line">2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast state UP mode DEFAULT qlen 1000</span><br><span class="line">    link/ether 00:0c:29:18:5c:90 brd ff:ff:ff:ff:ff:ff</span><br><span class="line">3: cbr0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1430 qdisc noqueue state UNKNOWN mode DEFAULT qlen 1000</span><br><span class="line">    link/ether 46:40:75:d9:7d:d5 brd ff:ff:ff:ff:ff:ff</span><br><span class="line"></span><br><span class="line">删除nlmon模块。</span><br><span class="line">[root@master-01.local ~]# rmmod nlmon</span><br><span class="line">[root@master-01.local ~]# lsmod |grep nlmon</span><br><span class="line">[root@master-01.local ~]#</span><br></pre></td></tr></table></figure>
+<h1 id="20-将采集到的-tcpdump-数据表示出来的方法-r"><a href="#20-将采集到的-tcpdump-数据表示出来的方法-r" class="headerlink" title="20 将采集到的 tcpdump 数据表示出来的方法 (-r)"></a>20 将采集到的 tcpdump 数据表示出来的方法 (-r)</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">捕获(-w)测试用的tcpdump。</span><br><span class="line">[root@SZE-L0149628 ~]# tcpdump -i eth0 port 80 -w http.cap</span><br><span class="line">-以下，省略-</span><br><span class="line"></span><br><span class="line">确认采集下来的tcpdump。</span><br><span class="line">[root@SZE-L0149628 ~]# ls -l http.cap</span><br><span class="line">-rw-r--r-- 1 tcpdump tcpdump 38313  2月 11 21:48 http.cap</span><br><span class="line">[root@SZE-L0149628 ~]#</span><br><span class="line"></span><br><span class="line">表示(-r)捕获到的tcpdump。</span><br><span class="line">[root@SZE-L0149628 ~]# tcpdump -r http.cap</span><br><span class="line">-中略-</span><br><span class="line">21:47:39.816741 IP master-01.local.36345 &gt; SZE-L0149628.http: Flags [S], seq 1437916452, win 29200, options [mss 1460,sackOK,TS val 7676049 ecr 0,nop,wscale 7], length 0</span><br><span class="line">21:47:39.816879 IP SZE-L0149628.http &gt; master-01.local.36345: Flags [S.], seq 296354756, ack 1437916453, win 28960, options [mss 1460,sackOK,TS val 6754970 ecr 7676049,nop,wscale 7], length 0</span><br><span class="line">21:47:39.818131 IP master-01.local.36345 &gt; SZE-L0149628.http: Flags [.], ack 1, win 229, options [nop,nop,TS val 7676050 ecr 6754970], length 0</span><br><span class="line">21:47:39.818180 IP master-01.local.36345 &gt; SZE-L0149628.http: Flags [P.], seq 1:70, ack 1, win 229, options [nop,nop,TS val 7676051 ecr 6754970], length 69</span><br><span class="line">21:47:39.818234 IP SZE-L0149628.http &gt; master-01.local.36345: Flags [.], ack 70, win 227, options [nop,nop,TS val 6754972 ecr 7676051], length 0</span><br><span class="line">21:47:39.818968 IP SZE-L0149628.http &gt; master-01.local.36345: Flags [.], seq 1:4345, ack 70, win 227, options [nop,nop,TS val 6754972 ecr 7676051], length 4344</span><br><span class="line">21:47:39.819210 IP SZE-L0149628.http &gt; master-01.local.36345: Flags [P.], seq 4345:5150, ack 70, win 227, options [nop,nop,TS val 6754973 ecr 7676051], length 805</span><br><span class="line">21:47:39.820037 IP master-01.local.36345 &gt; SZE-L0149628.http: Flags [.], ack 4345, win 296, options [nop,nop,TS val 7676052 ecr 6754972], length 0</span><br><span class="line">21:47:39.820077 IP master-01.local.36345 &gt; SZE-L0149628.http: Flags [.], ack 5150, win 319, options [nop,nop,TS val 7676053 ecr 6754973], length 0</span><br><span class="line">21:47:39.822032 IP master-01.local.36345 &gt; SZE-L0149628.http: Flags [F.], seq 70, ack 5150, win 319, options [nop,nop,TS val 7676053 ecr 6754973], length 0</span><br><span class="line">21:47:39.822277 IP SZE-L0149628.http &gt; master-01.local.36345: Flags [F.], seq 5150, ack 71, win 227, options [nop,nop,TS val 6754976 ecr 7676053], length 0</span><br><span class="line">21:47:39.826081 IP master-01.local.36345 &gt; SZE-L0149628.http: Flags [.], ack 5151, win 319, options [nop,nop,TS val 7676055 ecr 6754976], length 0</span><br><span class="line">21:47:43.474723 IP master-01.local.36346 &gt; SZE-L0149628.http: Flags [S], seq 3975369367, win 29200, options [mss 1460,sackOK,TS val 7679705 ecr 0,nop,wscale 7], length 0</span><br><span class="line">21:47:43.474894 IP SZE-L0149628.http &gt; master-01.local.36346: Flags [S.], seq 3828837720, ack 3975369368, win 28960, options [mss 1460,sackOK,TS val 6758628 ecr 7679705,nop,wscale 7], length 0</span><br><span class="line">-以下，省略-</span><br><span class="line"></span><br><span class="line">----------------------------</span><br><span class="line">2. 使用sed筛选时间</span><br><span class="line">----------------------------</span><br><span class="line">[root@SZE-L0149628 ~]# tcpdump -r http.cap |sed -n &apos;/21:47:39\.816741/,/21:47:39\.826081/p&apos;</span><br><span class="line">-中略-</span><br><span class="line">21:47:39.816741 IP master-01.local.36345 &gt; SZE-L0149628.http: Flags [S], seq 1437916452, win 29200, options [mss 1460,sackOK,TS val 7676049 ecr 0,nop,wscale 7], length 0</span><br><span class="line">21:47:39.816879 IP SZE-L0149628.http &gt; master-01.local.36345: Flags [S.], seq 296354756, ack 1437916453, win 28960, options [mss 1460,sackOK,TS val 6754970 ecr 7676049,nop,wscale 7], length 0</span><br><span class="line">21:47:39.818131 IP master-01.local.36345 &gt; SZE-L0149628.http: Flags [.], ack 1, win 229, options [nop,nop,TS val 7676050 ecr 6754970], length 0</span><br><span class="line">21:47:39.818180 IP master-01.local.36345 &gt; SZE-L0149628.http: Flags [P.], seq 1:70, ack 1, win 229, options [nop,nop,TS val 7676051 ecr 6754970], length 69</span><br><span class="line">21:47:39.818234 IP SZE-L0149628.http &gt; master-01.local.36345: Flags [.], ack 70, win 227, options [nop,nop,TS val 6754972 ecr 7676051], length 0</span><br><span class="line">21:47:39.818968 IP SZE-L0149628.http &gt; master-01.local.36345: Flags [.], seq 1:4345, ack 70, win 227, options [nop,nop,TS val 6754972 ecr 7676051], length 4344</span><br><span class="line">21:47:39.819210 IP SZE-L0149628.http &gt; master-01.local.36345: Flags [P.], seq 4345:5150, ack 70, win 227, options [nop,nop,TS val 6754973 ecr 7676051], length 805</span><br><span class="line">21:47:39.820037 IP master-01.local.36345 &gt; SZE-L0149628.http: Flags [.], ack 4345, win 296, options [nop,nop,TS val 7676052 ecr 6754972], length 0</span><br><span class="line">21:47:39.820077 IP master-01.local.36345 &gt; SZE-L0149628.http: Flags [.], ack 5150, win 319, options [nop,nop,TS val 7676053 ecr 6754973], length 0</span><br><span class="line">21:47:39.822032 IP master-01.local.36345 &gt; SZE-L0149628.http: Flags [F.], seq 70, ack 5150, win 319, options [nop,nop,TS val 7676053 ecr 6754973], length 0</span><br><span class="line">21:47:39.822277 IP SZE-L0149628.http &gt; master-01.local.36345: Flags [F.], seq 5150, ack 71, win 227, options [nop,nop,TS val 6754976 ecr 7676053], length 0</span><br><span class="line">21:47:39.826081 IP master-01.local.36345 &gt; SZE-L0149628.http: Flags [.], ack 5151, win 319, options [nop,nop,TS val 7676055 ecr 6754976], length 0</span><br><span class="line">-以下，省略-</span><br></pre></td></tr></table></figure>
+<h1 id="21-NFLOG-的使用方法"><a href="#21-NFLOG-的使用方法" class="headerlink" title="21 NFLOG 的使用方法"></a>21 NFLOG 的使用方法</h1><p>iptables 中有个叫 NFLOG 的 target。 以下展示如何捕获处于这个 target 的交互的数据包。</p>
+<h2 id="21-1-实验结果"><a href="#21-1-实验结果" class="headerlink" title="21.1 实验结果"></a>21.1 实验结果</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">事前准备。接收方TCP端口11111，将会往NFLOG这个target发送。</span><br><span class="line">[root@master-01.local ~]# iptables -I INPUT -p tcp --dport 11111 -j NFLOG</span><br><span class="line"></span><br><span class="line">确认设定。</span><br><span class="line">[root@master-01.local ~]# iptables -nvL INPUT --line-numbers</span><br><span class="line">Chain INPUT (policy ACCEPT 44 packets, 4256 bytes)</span><br><span class="line">num   pkts bytes target     prot opt in     out     source               destination</span><br><span class="line">1        0     0 NFLOG      tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:11111</span><br><span class="line"></span><br><span class="line">另开终端。为方便称之为&quot;terminal2&quot;。监听端口11111。</span><br><span class="line">[root@master-01.local ~]# nc -kl 11111 &amp;</span><br><span class="line">[1] 1982</span><br><span class="line"></span><br><span class="line">在terminal2执行tcpdump。将网卡指定为nflog。</span><br><span class="line">[root@master-01.local ~]# tcpdump -i nflog -nn</span><br><span class="line">-以下，省略-</span><br><span class="line"></span><br><span class="line">另外再开一个终端。对11111端口建立TCP连接.</span><br><span class="line">[root@master-01.local ~]# nc master-01.local 11111</span><br><span class="line"></span><br><span class="line">确认terminal2的标准输出。</span><br><span class="line">[root@master-01.local ~]# tcpdump -i nflog -nn</span><br><span class="line">tcpdump: WARNING: SIOCGIFADDR: nflog: No such device</span><br><span class="line">tcpdump: verbose output suppressed, use -v or -vv for full protocol decode</span><br><span class="line">listening on nflog, link-type NFLOG (Linux netfilter log messages), capture size 65535 bytes</span><br><span class="line">20:55:35.574281 IP 192.168.0.10.49970 &gt; 192.168.0.10.11111: Flags [S], seq 426419978, win 43690, options [mss 65495,sackOK,TS val 1711742 ecr 0,nop,wscale 7], length 0</span><br><span class="line">20:55:35.574608 IP 192.168.0.10.49970 &gt; 192.168.0.10.11111: Flags [.], ack 381759371, win 342, options [nop,nop,TS val 1711742 ecr 1711742], length 0</span><br></pre></td></tr></table></figure>
+<h2 id="21-2-疑问"><a href="#21-2-疑问" class="headerlink" title="21.2 疑问"></a>21.2 疑问</h2><p>可以确认到 nflog 这个 interface 有数据包传输。但是 3 way hand shake 的第二个包捕获不到。这是为什么呢？？？</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">|---- SYN ----&gt;|</span><br><span class="line">|&lt;-- SYN+ACK --| &lt;===这个包在tcpdump执行结果中没有显示。。。为什么呢???</span><br><span class="line">|---- ACK ----&gt;|</span><br></pre></td></tr></table></figure>
+<h2 id="99-常用"><a href="#99-常用" class="headerlink" title="99 常用"></a>99 常用</h2><p>抓取keepalived 的vrrp包<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tcpdump -i eth0 vrrp -n</span><br></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/06/28/linux/常用命令/curl和wget下载文件/" rel="next" title="tmpfs">
+                <i class="fa fa-chevron-left"></i> tmpfs
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/06/28/linux/linux-tmpfs/" rel="prev" title="tmpfs">
+                tmpfs <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-构成"><span class="nav-number">1.</span> <span class="nav-text">1 构成</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-环境"><span class="nav-number">2.</span> <span class="nav-text">2 环境</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-TCP-包的采集方法"><span class="nav-number">3.</span> <span class="nav-text">3 TCP 包的采集方法</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-SYN-flag-1-包的采集方法"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 SYN flag(=1) 包的采集方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-只采集-SYN-包-只有-SYN-flag"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 只采集 SYN 包 (只有 SYN flag)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-3-捕获-FIN-包的方法"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 捕获 FIN 包的方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-4-其他"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 其他</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-显示-MAC-address-的方法-e"><span class="nav-number">4.</span> <span class="nav-text">4 显示 MAC address 的方法 (-e)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-展示出-multicast-包"><span class="nav-number">5.</span> <span class="nav-text">5 展示出 multicast 包</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-表示绝对-sequence-号码而不是相对-sequence-号码-S"><span class="nav-number">6.</span> <span class="nav-text">6 表示绝对 sequence 号码而不是相对 sequence 号码 (-S)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-以简洁方式表示-q"><span class="nav-number">7.</span> <span class="nav-text">7 以简洁方式表示 (-q)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-指定网卡的方法"><span class="nav-number">8.</span> <span class="nav-text">8 指定网卡的方法</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#8-1-列出可以使用的网卡-D"><span class="nav-number">8.1.</span> <span class="nav-text">8.1 列出可以使用的网卡 (-D)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-2-指定所有网卡的方法-i-any"><span class="nav-number">8.2.</span> <span class="nav-text">8.2 指定所有网卡的方法 (-i any)</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#9-指定端口号"><span class="nav-number">9.</span> <span class="nav-text">9 指定端口号</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#9-1-指定多个端口号-or"><span class="nav-number">9.1.</span> <span class="nav-text">9.1 指定多个端口号 (or)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-2-指定端口范围的方法-portrange"><span class="nav-number">9.2.</span> <span class="nav-text">9.2 指定端口范围的方法 (portrange)</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#10-以单位时间来做-logrotate-G-z"><span class="nav-number">10.</span> <span class="nav-text">10 以单位时间来做 logrotate(-G,-z)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#10-1-只指定-G-的时候-可以切换，但文件会无限增加）"><span class="nav-number">10.1.</span> <span class="nav-text">10.1 只指定 - G 的时候 (可以切换，但文件会无限增加）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-2-G-z-通过-shell-脚本，将就文件删除）"><span class="nav-number">10.2.</span> <span class="nav-text">10.2 -G + -z (通过 shell 脚本，将就文件删除）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#11-指定文件大小来做-logrotate-C-z"><span class="nav-number">11.</span> <span class="nav-text">11 指定文件大小来做 logrotate(-C,-z)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#11-1-只指定-C-可以切换保存的文件，但文件数会无限增加）"><span class="nav-number">11.1.</span> <span class="nav-text">11.1 只指定 - C(可以切换保存的文件，但文件数会无限增加）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-2-C-z-执行-shell，将旧文件删除的方法）"><span class="nav-number">11.2.</span> <span class="nav-text">11.2 -C + -z (执行 shell，将旧文件删除的方法）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#12-切换-tcpdump-的进程-UID-Z"><span class="nav-number">12.</span> <span class="nav-text">12 切换 tcpdump 的进程 UID(-Z)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#13-限制捕获的包的大小-s"><span class="nav-number">13.</span> <span class="nav-text">13 限制捕获的包的大小 (-s)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#14-和时刻相关"><span class="nav-number">14.</span> <span class="nav-text">14 和时刻相关</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#14-3-表示从最初抓包之后经过的时间-ttttt"><span class="nav-number">14.1.</span> <span class="nav-text">14.3 表示从最初抓包之后经过的时间 (-ttttt)</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#15-混杂模式-p"><span class="nav-number">15.</span> <span class="nav-text">15 混杂模式 (-p)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#16-只捕获接收-发送的数据包-P"><span class="nav-number">16.</span> <span class="nav-text">16 只捕获接收 / 发送的数据包 (-P)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#16-1-只捕获发送的数据包-P-out"><span class="nav-number">16.1.</span> <span class="nav-text">16.1 只捕获发送的数据包 (-P out)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#16-2-只捕获接收的包-P-in"><span class="nav-number">16.2.</span> <span class="nav-text">16.2 只捕获接收的包 (-P in)</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#17-用-ASCII-码表示包的内容-x-xx"><span class="nav-number">17.</span> <span class="nav-text">17 用 ASCII 码表示包的内容 (-x,-xx)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#17-1-表示包含-IP-header-的包的内容的方法-x"><span class="nav-number">17.1.</span> <span class="nav-text">17.1 表示包含 IP header 的包的内容的方法 (-x)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#17-2-表示包含了-ethernet-header-的数据包的内容-xx"><span class="nav-number">17.2.</span> <span class="nav-text">17.2 表示包含了 ethernet header 的数据包的内容 (-xx)</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#18-读取保存的-pcap-文件的方法-r"><span class="nav-number">18.</span> <span class="nav-text">18 读取保存的 pcap 文件的方法 (-r)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#18-1-只采集-SYN-包的方法"><span class="nav-number">18.1.</span> <span class="nav-text">18.1 只采集 SYN 包的方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#18-2-只采集-SYN-SYN-ACK-包的方法"><span class="nav-number">18.2.</span> <span class="nav-text">18.2 只采集 SYN,SYN+ACK 包的方法</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#19-捕获经过-Netlink-的流量包"><span class="nav-number">19.</span> <span class="nav-text">19 捕获经过 Netlink 的流量包</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#19-1-准备抓包工具软件"><span class="nav-number">19.1.</span> <span class="nav-text">19.1 准备抓包工具软件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#19-2-查阅抓包软件的方法"><span class="nav-number">19.2.</span> <span class="nav-text">19.2 查阅抓包软件的方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#19-3-环境清理"><span class="nav-number">19.3.</span> <span class="nav-text">19.3 环境清理</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#20-将采集到的-tcpdump-数据表示出来的方法-r"><span class="nav-number">20.</span> <span class="nav-text">20 将采集到的 tcpdump 数据表示出来的方法 (-r)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#21-NFLOG-的使用方法"><span class="nav-number">21.</span> <span class="nav-text">21 NFLOG 的使用方法</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#21-1-实验结果"><span class="nav-number">21.1.</span> <span class="nav-text">21.1 实验结果</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#21-2-疑问"><span class="nav-number">21.2.</span> <span class="nav-text">21.2 疑问</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#99-常用"><span class="nav-number">21.3.</span> <span class="nav-text">99 常用</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="docker,network,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="docker容器网络通常情况下，Docker提供有有四种single-host网络模式：bridge mode host mode container mode no networking 基于iptables的Docker网络隔离与通信前边提到，Docker提供了bridge, host, overlay等多种网络。同一个Docker宿主机上同时存在多个不同类型的网络。位于不同网络中的容器，彼此">
+<meta name="keywords" content="docker,network">
+<meta property="og:type" content="article">
+<meta property="og:title" content="docker网络">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/03/28/docker/network/docker网络/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="docker容器网络通常情况下，Docker提供有有四种single-host网络模式：bridge mode host mode container mode no networking 基于iptables的Docker网络隔离与通信前边提到，Docker提供了bridge, host, overlay等多种网络。同一个Docker宿主机上同时存在多个不同类型的网络。位于不同网络中的容器，彼此">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.956Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="docker网络">
+<meta name="twitter:description" content="docker容器网络通常情况下，Docker提供有有四种single-host网络模式：bridge mode host mode container mode no networking 基于iptables的Docker网络隔离与通信前边提到，Docker提供了bridge, host, overlay等多种网络。同一个Docker宿主机上同时存在多个不同类型的网络。位于不同网络中的容器，彼此">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/03/28/docker/network/docker网络/">
+
+
+
+
+
+  <title>docker网络 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/03/28/docker/network/docker网络/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">docker网络</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-28T09:47:19+00:00">
+                2019-03-28
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index">
+                    <span itemprop="name">docker</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="docker容器网络"><a href="#docker容器网络" class="headerlink" title="docker容器网络"></a>docker容器网络</h1><p>通常情况下，Docker提供有有四种single-host网络模式：<br>bridge mode</p>
+<p>host mode</p>
+<p>container mode</p>
+<p>no networking</p>
+<h1 id="基于iptables的Docker网络隔离与通信"><a href="#基于iptables的Docker网络隔离与通信" class="headerlink" title="基于iptables的Docker网络隔离与通信"></a>基于iptables的Docker网络隔离与通信</h1><p>前边提到，Docker提供了bridge, host, overlay等多种网络。同一个Docker宿主机上同时存在多个不同类型的网络。位于不同网络中的容器，彼此之间是无法通信的。Docker容器的跨网络隔离与通信，是借助了iptables的机制。</p>
+<p>我们知道，iptables的filter表中默认划分为IPNUT, FORWARD和OUTPUT共3个链。Docker在FORWARD链中，还额外提供了自己的链，以实现bridge网络之间的隔离与通信。</p>
+<h2 id="Docker在iptables的filter表中的链"><a href="#Docker在iptables的filter表中的链" class="headerlink" title="Docker在iptables的filter表中的链"></a>Docker在iptables的filter表中的链</h2><p>在2015.12之前版本，Docker只额外提供了 <strong><em> DOCKER </em></strong> 链。之后直到Docker 17.06.0（2017.6）之前的版本中，Docker提供了如下2个链:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">DOCKER</span><br><span class="line">DOCKER-ISOLATION</span><br></pre></td></tr></table></figure></p>
+<p>在Docker 17.06.0（2017.6）及之后，Docker 18.03.1（2018.4）及之前的版本中，Docker提供了如下3个链:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">DOCKER</span><br><span class="line">DOCKER-ISOLATION</span><br><span class="line">DOCKER-USER</span><br></pre></td></tr></table></figure></p>
+<p>我们可以查看Docker的iptables如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">        Chain FORWARD (policy ACCEPT)</span><br><span class="line">        target     prot opt source               destination         </span><br><span class="line">        DOCKER-USER  all  --  0.0.0.0/0            0.0.0.0/0           </span><br><span class="line">        DOCKER-ISOLATION-STAGE-1  all  --  0.0.0.0/0            0.0.0.0/0           </span><br><span class="line">        DOCKER     all  --  0.0.0.0/0            0.0.0.0/0</span><br></pre></td></tr></table></figure></p>
+<p>在Docker 18.05.0（2018.5）及之后的版本中，提供如下4个chain:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">DOCKER</span><br><span class="line">DOCKER-ISOLATION-STAGE-1</span><br><span class="line">DOCKER-ISOLATION-STAGE-2</span><br><span class="line">DOCKER-USER</span><br></pre></td></tr></table></figure>
+<p>Docker daemon启动后默认设置的iptables过滤规则：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">iptables -N DOCKER</span><br><span class="line">iptables -N DOCKER-ISOLATION-STAGE-1</span><br><span class="line">iptables -N DOCKER-ISOLATION-STAGE-2</span><br><span class="line">iptables -N DOCKER-USER</span><br><span class="line">iptables -t nat -N DOCKER</span><br><span class="line">iptables -t nat -A PREROUTING -m addrtype --dst-type LOCAL -j DOCKER</span><br><span class="line">iptables -t nat -A OUTPUT ! -d 127.0.0.0/8 -m addrtype --dst-type LOCAL -j DOCKER</span><br><span class="line">iptables -t nat -A POSTROUTING -s 172.17.0.0/16 ! -o docker0 -j MASQUERADE</span><br><span class="line">iptables -t nat -A DOCKER -i docker0 -j RETURN</span><br><span class="line">iptables -A FORWARD -j DOCKER-USER</span><br><span class="line">iptables -A FORWARD -j DOCKER-ISOLATION-STAGE-1</span><br><span class="line">iptables -A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT</span><br><span class="line">iptables -A FORWARD -o docker0 -j DOCKER</span><br><span class="line">iptables -A FORWARD -i docker0 ! -o docker0 -j ACCEPT</span><br><span class="line">iptables -A FORWARD -i docker0 -o docker0 -j ACCEPT</span><br><span class="line">iptables -A DOCKER-ISOLATION-STAGE-1 -i docker0 ! -o docker0 -j DOCKER-ISOLATION-STAGE-2</span><br><span class="line">iptables -A DOCKER-ISOLATION-STAGE-1 -j RETURN</span><br><span class="line">iptables -A DOCKER-ISOLATION-STAGE-2 -o docker0 -j DROP</span><br><span class="line">iptables -A DOCKER-ISOLATION-STAGE-2 -j RETURN</span><br><span class="line">iptables -A DOCKER-USER -j RETURN</span><br></pre></td></tr></table></figure></p>
+<p>以版本 18.09为例，启动一个nginx容器并映射80端口到8080：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">root@work:~# docker run -d -p 8080:80 nginx</span><br></pre></td></tr></table></figure></p>
+<p>我们查看会发现，比之前多了如下3条规则：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">root@work:~# iptables -S -t nat</span><br><span class="line">...</span><br><span class="line">-A POSTROUTING -s 172.17.0.2/32 -d 172.17.0.2/32 -p tcp -m tcp --dport 80 -j MASQUERADE</span><br><span class="line">// -A DOCKER -i docker0 -j RETURN</span><br><span class="line">-A DOCKER ! -i docker0 -p tcp -m tcp --dport 8080 -j DNAT --to-destination 172.17.0.2:80</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">root@work:~# iptables -S </span><br><span class="line">...</span><br><span class="line">-A DOCKER -d 172.17.0.2/32 ! -i docker0 -o docker0 -p tcp -m tcp --dport 80 -j ACCEPT</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<h2 id="Docker的DOCKER-ISOLATION链"><a href="#Docker的DOCKER-ISOLATION链" class="headerlink" title="Docker的DOCKER-ISOLATION链"></a>Docker的DOCKER-ISOLATION链</h2><p>可以看到，为了隔离在不同的bridge网络之间的容器，Docker提供了两个DOCKER-ISOLATION阶段实现。DOCKER-ISOLATION-STAGE-1链过滤源地址是bridge网络（默认docker0）的IP数据包，匹配的IP数据包再进入DOCKER-ISOLATION-STAGE-2链处理，不匹配就返回到父链FORWARD。在DOCKER-ISOLATION-STAGE-2链中，进一步处理目的地址是bridge网络的IP数据包，匹配的IP数据包表示该IP数据包是从一个bridge网络的网桥发出，到另一个bridge网络的网桥，这样的IP数据包来自其他bridge网络，将被直接DROP；不匹配的IP数据包就返回到父链FORWARD继续进行后续处理。</p>
+<h2 id="Docker的DOCKER-USER链"><a href="#Docker的DOCKER-USER链" class="headerlink" title="Docker的DOCKER-USER链"></a>Docker的DOCKER-USER链</h2><p>Docker启动时，会加载DOCKER链和DOCKER-ISOLATION（现在是DOCKER-ISOLATION-STAGE-1）链中的过滤规则，并使之生效。绝对禁止修改这里的过滤规则。</p>
+<p>如果用户要补充Docker的过滤规则，强烈建议追加到DOCKER-USER链。DOCKER-USER链中的过滤规则，将先于Docker默认创建的规则被加载，从而能够覆盖Docker在DOCKER链和DOCKER-ISOLATION链中的默认过滤规则。例如，Docker启动后，默认任何外部source IP都被允许转发，从而能够从该source IP连接到宿主机上的任何Docker容器实例。如果只允许一个指定的IP访问容器实例，可以插入路由规则到DOCKER-USER链中，从而能够在DOCKER链之前被加载。示例如下：</p>
+<p>只允许192.168.1.1访问容器<br>        iptables -A DOCKER-USER -i docker0 ! -s 192.168.1.1 -j DROP<br>只允许192.168.1.0/24网段中的IP访问容器<br>        iptables -A DOCKER-USER -i docker0 ! -s 192.168.1.0/24 -j DROP<br>只允许192.168.1.1-192.168.1.3网段中的IP访问容器（需要借助于iprange模块）<br>        iptables -A DOCKER-USER -m iprange -i docker0 ! –src-range 192.168.1.1-192.168.1.3 -j DROP</p>
+<h2 id="Docker在iptables的nat表中的规则"><a href="#Docker在iptables的nat表中的规则" class="headerlink" title="Docker在iptables的nat表中的规则"></a>Docker在iptables的nat表中的规则</h2><p>为了能够从容器中访问其他Docker宿主机，Docker需要在iptables的nat表中的POSTROUTING链中插入转发规则，示例如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -t nat -A POSTROUTING -s 172.18.0.0/16 -j MASQUERADE</span><br></pre></td></tr></table></figure></p>
+<h2 id="Docker中禁止修改iptables过滤表"><a href="#Docker中禁止修改iptables过滤表" class="headerlink" title="Docker中禁止修改iptables过滤表"></a>Docker中禁止修改iptables过滤表</h2><p>dockerd启动时，参数–iptables默认为true，表示允许修改iptables路由表。</p>
+<p>要禁用该功能，可以有两个选择：</p>
+<ul>
+<li>设置启动参数–iptables=false</li>
+<li>修改配置文件/etc/docker/daemon.json，设置”iptables”: “false”；然后执行systemctl reload docker重新加载</li>
+</ul>
+<h2 id="为什么docker创建的网络命名空间在ip-netns-不可见"><a href="#为什么docker创建的网络命名空间在ip-netns-不可见" class="headerlink" title="为什么docker创建的网络命名空间在ip netns 不可见"></a>为什么docker创建的网络命名空间在ip netns 不可见</h2><p>创建docker容器后本来应该有新的命名空间（如果有独立网络的话），那么可以通过 ip netns 命令查看到命名空间，但是实际上却看不到。</p>
+<p>因为，ip netns 只能查看到 /var/run/netns 下面的网络命名空间。docker 不像openstack  neutron 会自动在这个文件创建命名空间名字，如果需要的话，我们可以手动创建。</p>
+<p>创建方法:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pid=`docker inspect -f &apos;&#123;&#123;.State.Pid&#125;&#125;&apos; $container_id`</span><br><span class="line">ln -s /proc/$pid/ns/net /var/run/netns/$container_id</span><br></pre></td></tr></table></figure>
+<h1 id="nsenter"><a href="#nsenter" class="headerlink" title="nsenter"></a>nsenter</h1><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># nsenter  -h</span></span><br><span class="line"></span><br><span class="line">用法：</span><br><span class="line"> nsenter [options] &lt;program&gt; [&lt;argument&gt;...]</span><br><span class="line"></span><br><span class="line">Run a program with namespaces of other processes.</span><br><span class="line"></span><br><span class="line">选项：</span><br><span class="line"> -t, --target &lt;pid&gt;     要获取名字空间的目标进程</span><br><span class="line"> -m, --mount[=&lt;file&gt;]   enter mount namespace</span><br><span class="line"> -u, --uts[=&lt;file&gt;]     enter UTS namespace (hostname etc)</span><br><span class="line"> -i, --ipc[=&lt;file&gt;]     enter System V IPC namespace</span><br><span class="line"> -n, --net[=&lt;file&gt;]     enter network namespace</span><br><span class="line"> -p, --pid[=&lt;file&gt;]     enter pid namespace</span><br><span class="line"> -U, --user[=&lt;file&gt;]    enter user namespace</span><br><span class="line"> -S, --setuid &lt;uid&gt;     <span class="built_in">set</span> uid <span class="keyword">in</span> entered namespace</span><br><span class="line"> -G, --setgid &lt;gid&gt;     <span class="built_in">set</span> gid <span class="keyword">in</span> entered namespace</span><br><span class="line">     --preserve-credentials <span class="keyword">do</span> not touch uids or gids</span><br><span class="line"> -r, --root[=&lt;dir&gt;]     <span class="built_in">set</span> the root directory</span><br><span class="line"> -w, --wd[=&lt;dir&gt;]       <span class="built_in">set</span> the working directory</span><br><span class="line"> -F, --no-fork          执行 &lt;程序&gt; 前不 fork</span><br><span class="line"> -Z, --follow-context   <span class="built_in">set</span> SELinux context according to --target PID</span><br><span class="line"></span><br><span class="line"> -h, --<span class="built_in">help</span>     显示此帮助并退出</span><br><span class="line"> -V, --version  输出版本信息并退出</span><br></pre></td></tr></table></figure>
+<p>从 help 来看，只要使用了 -p 选项，就可以进入目标进程的pid名字空间，换言之，就可以只看到目标进程所在的名字空间的进程，用法如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nsenter -p -t $pid $cmd</span><br></pre></td></tr></table></figure></p>
+<p>事实上，<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nsenter -p -t 6806 top -n 1</span><br></pre></td></tr></table></figure></p>
+<p>看到的却是nsenter 当前所在名字空间 （严格来讲，这样描述也不太准确） 的所有进程，为什么呢？</p>
+<p>因为top参考的是 /proc 文件系统，所以，进入相应的mount空间也很重要，所以，正确的写法为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nsenter -m -p -t 6806 top -n 1</span><br></pre></td></tr></table></figure></p>
+<p>man手册： <a href="http://www.man7.org/linux/man-pages/man1/nsenter.1.html" target="_blank" rel="noopener">http://www.man7.org/linux/man-pages/man1/nsenter.1.html</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/docker/" rel="tag"># docker</a>
+          
+            <a href="/tags/network/" rel="tag"># network</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/28/docker/image/Multi Architecture Docker Builds/" rel="next" title="多架构 CPU docker 镜像构建">
+                <i class="fa fa-chevron-left"></i> 多架构 CPU docker 镜像构建
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/03/30/linux/性能/sysbench/" rel="prev" title="sysbench使用">
+                sysbench使用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#docker容器网络"><span class="nav-number">1.</span> <span class="nav-text">docker容器网络</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#基于iptables的Docker网络隔离与通信"><span class="nav-number">2.</span> <span class="nav-text">基于iptables的Docker网络隔离与通信</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Docker在iptables的filter表中的链"><span class="nav-number">2.1.</span> <span class="nav-text">Docker在iptables的filter表中的链</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Docker的DOCKER-ISOLATION链"><span class="nav-number">2.2.</span> <span class="nav-text">Docker的DOCKER-ISOLATION链</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Docker的DOCKER-USER链"><span class="nav-number">2.3.</span> <span class="nav-text">Docker的DOCKER-USER链</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Docker在iptables的nat表中的规则"><span class="nav-number">2.4.</span> <span class="nav-text">Docker在iptables的nat表中的规则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Docker中禁止修改iptables过滤表"><span class="nav-number">2.5.</span> <span class="nav-text">Docker中禁止修改iptables过滤表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么docker创建的网络命名空间在ip-netns-不可见"><span class="nav-number">2.6.</span> <span class="nav-text">为什么docker创建的网络命名空间在ip netns 不可见</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#nsenter"><span class="nav-number">3.</span> <span class="nav-text">nsenter</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="docker,runtime,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="这是关于容器运行时的四篇系列文章中的第2篇。在第1篇中，我概述了容器运行时，并讨论了low-level 和high-level runtimes之间的区别。在这篇文章中，我将详细介绍 low-level container runtimes。 Low-level runtimes具有有限的特性集，通常执行 low-level tasks以运行容器。大多数开发人员应该不会在日常工作中使用它们。 Lo">
+<meta name="keywords" content="docker,runtime">
+<meta property="og:type" content="article">
+<meta property="og:title" content="容器运行时 2 - Low-Level Container Runtime剖析">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/10/08/docker/runtimes/Container Runtimes Part 2/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="这是关于容器运行时的四篇系列文章中的第2篇。在第1篇中，我概述了容器运行时，并讨论了low-level 和high-level runtimes之间的区别。在这篇文章中，我将详细介绍 low-level container runtimes。 Low-level runtimes具有有限的特性集，通常执行 low-level tasks以运行容器。大多数开发人员应该不会在日常工作中使用它们。 Lo">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.956Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="容器运行时 2 - Low-Level Container Runtime剖析">
+<meta name="twitter:description" content="这是关于容器运行时的四篇系列文章中的第2篇。在第1篇中，我概述了容器运行时，并讨论了low-level 和high-level runtimes之间的区别。在这篇文章中，我将详细介绍 low-level container runtimes。 Low-level runtimes具有有限的特性集，通常执行 low-level tasks以运行容器。大多数开发人员应该不会在日常工作中使用它们。 Lo">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/10/08/docker/runtimes/Container Runtimes Part 2/">
+
+
+
+
+
+  <title>容器运行时 2 - Low-Level Container Runtime剖析 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/10/08/docker/runtimes/Container Runtimes Part 2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">容器运行时 2 - Low-Level Container Runtime剖析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-10-08T09:47:19+00:00">
+                2019-10-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index">
+                    <span itemprop="name">docker</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>这是关于容器运行时的四篇系列文章中的第2篇。在第1篇中，我概述了容器运行时，并讨论了low-level 和high-level runtimes之间的区别。在这篇文章中，我将详细介绍 low-level container runtimes。</p>
+<p>Low-level runtimes具有有限的特性集，通常执行 low-level tasks以运行容器。大多数开发人员应该不会在日常工作中使用它们。 Low-level runtimes 通常是作为简单的工具或库，供开发人员来实现 higher level runtimes和工具。虽然大多数开发人员不会直接使用低级运行时，但是应该了解它们，以便故障排除和调试。</p>
+<p>正如我在第1部分中所解释的，容器是使用<a href="https://en.wikipedia.org/wiki/Linux_namespaces" target="_blank" rel="noopener">Linux namespaces</a> 和 <a href="https://en.wikipedia.org/wiki/Cgroups" target="_blank" rel="noopener">cgroups</a>实现的。Namespaces 允许您虚拟化系统资源，比如每个容器的文件系统或网络。另一方面，cgroups提供了一种方法来限制每个容器可以使用的资源数量，比如CPU和内存。 low-level container runtimes的核心是负责为容器设置这些Namespaces和cgroup，然后在这些Namespaces和cgroup中运行命令。大多数容器运行时实现了更多的特性，但这些是最基本的部分。</p>
+<p>Liz Rice在<a href="https://www.youtube.com/watch?v=Utf-A4rODH8" target="_blank" rel="noopener">“Building a container from scratch in Go”</a>的演讲很好地介绍了如何实现low-level container runtimes。Liz通过许多步骤实现，但是一个最简单的运行时，仍然可以称之为“container runtime”，会做如下的事情:</p>
+<ul>
+<li>创建cgroup</li>
+<li>在cgroup中运行命令 </li>
+<li><a href="http://man7.org/linux/man-pages/man2/unshare.2.html" target="_blank" rel="noopener">Unshare</a>以移至其自己的namespaces</li>
+<li>命令完成后清理cgroup（正在运行的进程未引用namespaces 时，它们会自动删除）</li>
+</ul>
+<p>但是，一个健壮的底层容器运行时可以做更多的事情，比如允许在cgroup上设置资源限制、设置根文件系统以及将容器的进程配置(chrooting)到根文件系统。</p>
+<h1 id="Building-a-Sample-Runtime"><a href="#Building-a-Sample-Runtime" class="headerlink" title="Building a Sample Runtime"></a>Building a Sample Runtime</h1><p>让我们通过一个简单的 ad hoc 运行时来配置一个容器。我们可以使用标准的Linux <a href="https://linux.die.net/man/1/cgcreate" target="_blank" rel="noopener">cgcreate</a>, <a href="https://linux.die.net/man/1/cgset" target="_blank" rel="noopener">cgset</a>, <a href="https://linux.die.net/man/1/cgexec" target="_blank" rel="noopener">cgexec</a>, <a href="http://man7.org/linux/man-pages/man2/chroot.2.html" target="_blank" rel="noopener">chroot</a> and <a href="http://man7.org/linux/man-pages/man1/unshare.1.html" target="_blank" rel="noopener">unshare</a> 命令执行以下步骤。您将需要用root用户运行下面的大多数命令。</p>
+<p>首先，让我们为容器设置一个根文件系统。我们将使用busybox Docker容器作为基础。在这里，我们创建一个临时目录并将busybox解压缩到其中。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># CID=$(docker create busybox)</span></span><br><span class="line"><span class="comment"># ROOTFS=$(mktemp -d)</span></span><br><span class="line"><span class="comment"># docker export $CID | tar -xf - -C $ROOTFS</span></span><br></pre></td></tr></table></figure>
+<p>现在，让我们创建cgroup并设置对内存和CPU的限制。内存限制以字节为单位设置。在这里，我们将限制设置为100MB。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># UUID=$(uuidgen)</span></span><br><span class="line"><span class="comment"># cgcreate -g cpu,memory:$UUID</span></span><br><span class="line"><span class="comment"># cgset -r memory.limit_in_bytes=100000000 $UUID</span></span><br><span class="line"><span class="comment"># cgset -r cpu.shares=512 $UUID</span></span><br></pre></td></tr></table></figure>
+<p>可以通过以下两种方式之一限制CPU的使用。这里我们使用CPU“shares”设置CPU限制。Shares 是相对于同时运行的其他进程的CPU。单独运行的容器可以使用整个CPU，但是如果其他容器正在运行，它们会按照比例分配cpu资源。</p>
+<p>基于CPU内核的CPU限制稍微复杂一些。它们允许您对容器可以使用的CPU内核数量设置严格的限制。限制CPU核心需要在cgroup上设置两个选项:<code>cfs_period_us</code> 和<code>cfs_quota_us</code>。<code>cfs_period_us</code> 指定检查CPU使用情况的频率，cfs_quota_us指定任务在一个时间段内在一个核心上运行的时间量。两者都以微秒为单位指定。</p>
+<p>例如，如果我们希望将容器限制为两个核心，我们可以指定一秒的周期和两秒的配额(一秒是1,000,000微秒)，这将有效地允许我们的进程在一秒内使用两个内核。<a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/resource_management_guide/sec-cpu" target="_blank" rel="noopener">这篇文章</a>将深入解释这一概念。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># cgset -r cpu.cfs_period_us=1000000 $UUID</span></span><br><span class="line"><span class="comment"># cgset -r cpu.cfs_quota_us=2000000 $UUID</span></span><br></pre></td></tr></table></figure>
+<p>接下来，我们可以在容器中执行一个命令。这将在我们创建的cgroup中执行命令，unshare 指定的namespaces，设置主机名和chroot至我们的文件系统。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># cgexec -g cpu,memory:$UUID \</span></span><br><span class="line">&gt;     unshare -uinpUrf --mount-proc \</span><br><span class="line">&gt;     sh -c <span class="string">"/bin/hostname <span class="variable">$UUID</span> &amp;&amp; chroot <span class="variable">$ROOTFS</span> /bin/sh"</span></span><br><span class="line">/ <span class="comment"># echo "Hello from in a container"</span></span><br><span class="line">Hello from <span class="keyword">in</span> a container</span><br><span class="line">/ <span class="comment"># exit</span></span><br></pre></td></tr></table></figure>
+<p>最后，在命令执行结束之后，我们可以通过删除创建的cgroup和临时目录来进行清理。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># cgdelete -r -g cpu,memory:$UUID</span></span><br><span class="line"><span class="comment"># rm -r $ROOTFS</span></span><br></pre></td></tr></table></figure>
+<p>为了进一步演示这是如何工作的，我用bash编写了一个名为<a href="https://github.com/ianlewis/execc" target="_blank" rel="noopener">execc</a>的简单运行时。支持 mount, user, pid, ipc, uts, and network namespaces;设置内存的限制;按核数设置CPU限制;挂载proc文件系统;并在其自己的根文件系统中运行容器。</p>
+<h1 id="Examples-of-Low-Level-Container-Runtimes"><a href="#Examples-of-Low-Level-Container-Runtimes" class="headerlink" title="Examples of Low-Level Container Runtimes"></a>Examples of Low-Level Container Runtimes</h1><p>为了更好地理解low-level container runtimes，一些示例很有用。这些运行时实现了不同的功能并强调了容器化的不同方面。</p>
+<h2 id="lmctfy"><a href="#lmctfy" class="headerlink" title="lmctfy"></a>lmctfy</h2><p><a href="https://github.com/google/lmctfy" target="_blank" rel="noopener">lmctfy</a>虽然没有被广泛使用，但是却值得一提。lmctfy是Google的一个项目，它是<a href="https://research.google.com/pubs/pub43438.html" target="_blank" rel="noopener">Borg</a>使用的容器运行时。它最有趣的功能之一是，它支持通过容器名称使用cgroup层次结构的容器层次结构。例如，一个名为“busybox”的root容器可以创建名为“busybox/sub1”或“busybox/sub2”的子容器，这其中的名称构成一种路径结构。因此，每个子容器可以有自己的cgroup，然后受父容器的cgroup限制。这是受Borg启发的，它使lmctfy中的容器能够在服务器上预先分配的一组资源下运行子任务容器，从而实现了比运行时本身所提供的更为严格的SLO。</p>
+<p>虽然lmctfy提供了一些有趣的特性和想法，但其他运行时的可用性更好，因此谷歌决定让社区将重点放在Docker的libcontainer上，而不是lmctfy。</p>
+<h2 id="runc"><a href="#runc" class="headerlink" title="runc"></a>runc</h2><p>runc是目前使用最广泛的容器运行时。它最初是作为Docker的一部分开发的，后来被提取出来作为一个单独的工具和库。</p>
+<p>runc运行容器的方式与我上面描述的类似，但是runc实现了OCI runtime规范。这意味着它将运行来自特定“ OCI bundle”格式的容器。包含config.json文件和容器的根文件系统。你可以通过阅读GitHub上的<a href="https://github.com/opencontainers/runtime-spec" target="_blank" rel="noopener">OCI runtime spec</a>了解更多。您可以从 <a href="https://github.com/opencontainers/runc" target="_blank" rel="noopener">runc GitHub project</a>了解如何安装runc。</p>
+<p>首先创建root filesystem。这里我们将再次使用busybox。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ mkdir rootfs</span><br><span class="line">$ docker <span class="built_in">export</span> $(docker create busybox) | tar -xf - -C rootfs</span><br></pre></td></tr></table></figure>
+<p>接下来创建一个config.json文件。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ runc spec</span><br></pre></td></tr></table></figure>
+<p>此命令为我们的容器创建一个模板config.json：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">$ cat config.json</span><br><span class="line">&#123;</span><br><span class="line">        <span class="attr">"ociVersion"</span>: <span class="string">"1.0.0"</span>,</span><br><span class="line">        <span class="attr">"process"</span>: &#123;</span><br><span class="line">                <span class="attr">"terminal"</span>: <span class="literal">true</span>,</span><br><span class="line">                <span class="attr">"user"</span>: &#123;</span><br><span class="line">                        <span class="attr">"uid"</span>: <span class="number">0</span>,</span><br><span class="line">                        <span class="attr">"gid"</span>: <span class="number">0</span></span><br><span class="line">                &#125;,</span><br><span class="line">                <span class="attr">"args"</span>: [</span><br><span class="line">                        <span class="string">"sh"</span></span><br><span class="line">                ],</span><br><span class="line">                <span class="attr">"env"</span>: [</span><br><span class="line">                        <span class="string">"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"</span>,</span><br><span class="line">                        <span class="string">"TERM=xterm"</span></span><br><span class="line">                ],</span><br><span class="line">                <span class="attr">"cwd"</span>: <span class="string">"/"</span>,</span><br><span class="line">                <span class="attr">"capabilities"</span>: &#123;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>默认情况下，它在具有根文件系统./rootfs的容器中运行sh命令。我们尝试执行下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ sudo runc run mycontainerid</span><br><span class="line">/ <span class="comment"># echo "Hello from in a container"</span></span><br><span class="line">Hello from <span class="keyword">in</span> a container</span><br></pre></td></tr></table></figure>
+<h2 id="rkt"><a href="#rkt" class="headerlink" title="rkt"></a>rkt</h2><p>rkt是CoreOS开发的Docker/runc的一个流行替代方案。rkt很难归类，因为它提供了其他 low-level runtimes (如runc)所提供的所有特性，但也提供了 high-level runtimes的典型特性。在这里，我将描述rkt的low-level 特性，并将 high-level特性留到下一篇文章中讨论。</p>
+<p>rkt最初使用的是 <a href="https://coreos.com/rkt/docs/latest/app-container.html" target="_blank" rel="noopener">Application Container</a>(appc)标准，该标准是作为Docker容器格式的一个开源替代标准开发的。Appc从未以容器格式获得广泛采用，并且不再积极开发appc来实现其目标，以确保向社区提供开放标准。rkt将在未来使用OCI容器格式代替appc。</p>
+<p>Application Container Image (ACI)是Appc的镜像格式。镜像是一个tar.gz，它包含清单文件目录和根文件系统的rootfs目录。您可以在<a href="https://github.com/appc/spec/blob/master/spec/aci.md" target="_blank" rel="noopener">这里</a>阅读更多关于ACI的信息。</p>
+<p>您可以使用acbuild工具构建容器镜像。您可以在shell脚本中使用acbuild，这些脚本可以像执行Dockerfiles一样。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">acbuild begin</span><br><span class="line">acbuild <span class="built_in">set</span>-name example.com/hello</span><br><span class="line">acbuild dep add quay.io/coreos/alpine-sh</span><br><span class="line">acbuild copy hello /bin/hello</span><br><span class="line">acbuild <span class="built_in">set</span>-exec /bin/hello</span><br><span class="line">acbuild port add www tcp 5000</span><br><span class="line">acbuild label add version 0.0.1</span><br><span class="line">acbuild label add arch amd64</span><br><span class="line">acbuild label add os linux</span><br><span class="line">acbuild annotation add authors <span class="string">"Carly Container &lt;carly@example.com&gt;"</span></span><br><span class="line">acbuild write hello-0.0.1-linux-amd64.aci</span><br><span class="line">acbuild end</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/docker/" rel="tag"># docker</a>
+          
+            <a href="/tags/runtime/" rel="tag"># runtime</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/10/06/docker/runtimes/Container Runtimes Part 1/" rel="next" title="容器运行时 1 - 容器运行时简介">
+                <i class="fa fa-chevron-left"></i> 容器运行时 1 - 容器运行时简介
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/10/09/docker/runtimes/Container Runtimes Part 3/" rel="prev" title="容器运行时 3 - High-Level Runtimes剖析">
+                容器运行时 3 - High-Level Runtimes剖析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Building-a-Sample-Runtime"><span class="nav-number">1.</span> <span class="nav-text">Building a Sample Runtime</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Examples-of-Low-Level-Container-Runtimes"><span class="nav-number">2.</span> <span class="nav-text">Examples of Low-Level Container Runtimes</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#lmctfy"><span class="nav-number">2.1.</span> <span class="nav-text">lmctfy</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#runc"><span class="nav-number">2.2.</span> <span class="nav-text">runc</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rkt"><span class="nav-number">2.3.</span> <span class="nav-text">rkt</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

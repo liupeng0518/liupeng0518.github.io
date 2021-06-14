@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="network,k8s,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="network namespace我们在使用 openstack 的时候，会用到ip netns命令进到docker的network namespace中抓包排查问题，在k8s中我们也可以使用类似的方式，不过要使用 ip netns 稍微复杂点，得手动连接容器的 ns id到/var/run/netns下（没有自动）1234567pid=$(docker inspect -f &amp;apos;&amp;#12">
+<meta name="keywords" content="network,k8s">
+<meta property="og:type" content="article">
+<meta property="og:title" content="capture packets">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/10/30/k8s/Network/capture packets/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="network namespace我们在使用 openstack 的时候，会用到ip netns命令进到docker的network namespace中抓包排查问题，在k8s中我们也可以使用类似的方式，不过要使用 ip netns 稍微复杂点，得手动连接容器的 ns id到/var/run/netns下（没有自动）1234567pid=$(docker inspect -f &amp;apos;&amp;#12">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.984Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="capture packets">
+<meta name="twitter:description" content="network namespace我们在使用 openstack 的时候，会用到ip netns命令进到docker的network namespace中抓包排查问题，在k8s中我们也可以使用类似的方式，不过要使用 ip netns 稍微复杂点，得手动连接容器的 ns id到/var/run/netns下（没有自动）1234567pid=$(docker inspect -f &amp;apos;&amp;#12">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/10/30/k8s/Network/capture packets/">
+
+
+
+
+
+  <title>capture packets | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/10/30/k8s/Network/capture packets/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">capture packets</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-10-30T09:47:19+00:00">
+                2019-10-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="network-namespace"><a href="#network-namespace" class="headerlink" title="network namespace"></a>network namespace</h1><p>我们在使用 openstack 的时候，会用到<code>ip netns</code>命令进到docker的network namespace中抓包排查问题，在k8s中我们也可以使用类似的方式，不过要使用 <code>ip netns</code> 稍微复杂点，得手动连接容器的 ns id到/var/run/netns下（没有自动）<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">pid=$(docker inspect -f &apos;&#123;&#123;.State.Pid&#125;&#125;&apos; $&#123;container_id&#125;)</span><br><span class="line"></span><br><span class="line">mkdir -p /var/run/netns/</span><br><span class="line"></span><br><span class="line">ln -sfT /proc/$pid/ns/net /var/run/netns/$container_id</span><br><span class="line"></span><br><span class="line">ip netns exec &quot;$&#123;container_id&#125;&quot; ip -s link show eth0</span><br></pre></td></tr></table></figure></p>
+<p>不过我们可以使用nsenter命令，pod内抓包排查问题基本思路：</p>
+<ol>
+<li>pod副本数缩减为1</li>
+<li><p>查看pod id</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl -n &lt;namespace&gt; describe pod &lt;pod&gt; | grep -A10 &quot;^Containers:&quot; | grep -Eo &apos;docker://.*$&apos; | head -n 1 | sed &apos;s/docker:\/\/\(.*\)$/\1/&apos;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>获得容器进程的 pid</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker inspect -f &#123;&#123;.State.Pid&#125;&#125; &lt;container&gt;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>进入容器的network namespace</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nsenter -n --target &lt;PID&gt;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>使用tcpdump等工具抓包分析</p>
+</li>
+</ol>
+<h1 id="some-namespaces"><a href="#some-namespaces" class="headerlink" title="some namespaces"></a>some namespaces</h1><p>通常连接Docker容器并与其进行交互有四种方法。详情见：<a href="https://github.com/berresch/Docker-Enter-Demo" target="_blank" rel="noopener">Docker Enter Demo</a>，下面摘录nsenter连接的方式。</p>
+<p>查看是否安装nsenter<br>[root@localhost ~]# whereis nsenter<br>nsenter: /usr/bin/nsenter /usr/share/man/man1/nsenter.1.gz<br>　　如果没安装可创建install.sh，并执行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">#!/bin/bash</span><br><span class="line"></span><br><span class="line">curl https://www.kernel.org/pub/linux/utils/util-linux/v2.24/util-linux-2.24.tar.gz | tar -zxf-</span><br><span class="line">cd util-linux-2.24</span><br><span class="line">./configure --without-ncurses</span><br><span class="line">make nsenter</span><br><span class="line">sudo cp nsenter /usr/local/bin</span><br><span class="line">cd .. &amp;&amp; rm -rf util-linux-2.24</span><br></pre></td></tr></table></figure>
+<p>方式一：创建docker-enter并置于$PATH下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">#!/bin/sh</span><br><span class="line"></span><br><span class="line">if [ -e $(dirname &quot;$0&quot;)/nsenter ]; then</span><br><span class="line">  # with boot2docker, nsenter is not in the PATH but it is in the same folder</span><br><span class="line">  NSENTER=$(dirname &quot;$0&quot;)/nsenter</span><br><span class="line">else</span><br><span class="line">  NSENTER=nsenter</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">if [ -z &quot;$1&quot; ]; then</span><br><span class="line">  echo &quot;Usage: `basename &quot;$0&quot;` CONTAINER [COMMAND [ARG]...]&quot;</span><br><span class="line">  echo &quot;&quot;</span><br><span class="line">  echo &quot;Enters the Docker CONTAINER and executes the specified COMMAND.&quot;</span><br><span class="line">  echo &quot;If COMMAND is not specified, runs an interactive shell in CONTAINER.&quot;</span><br><span class="line">else</span><br><span class="line">  PID=$(docker inspect --format &quot;&#123;&#123;.State.Pid&#125;&#125;&quot; &quot;$1&quot;)</span><br><span class="line">  if [ -z &quot;$PID&quot; ]; then</span><br><span class="line">    exit 1</span><br><span class="line">  fi</span><br><span class="line">  shift</span><br><span class="line"></span><br><span class="line">  OPTS=&quot;--target $PID --mount --uts --ipc --net --pid --&quot;</span><br><span class="line"></span><br><span class="line">  if [ -z &quot;$1&quot; ]; then</span><br><span class="line">    # No command given.</span><br><span class="line">    # Use su to clear all host environment variables except for TERM,</span><br><span class="line">    # initialize the environment variables HOME, SHELL, USER, LOGNAME, PATH,</span><br><span class="line">    # and start a login shell.</span><br><span class="line">#&quot;$NSENTER&quot; $OPTS su - root</span><br><span class="line">&quot;$NSENTER&quot; $OPTS /bin/su - root</span><br><span class="line">  else</span><br><span class="line">    # Use env to clear all host environment variables.</span><br><span class="line">    &quot;$NSENTER&quot; $OPTS env --ignore-environment -- &quot;$@&quot;</span><br><span class="line">  fi</span><br><span class="line">fi</span><br></pre></td></tr></table></figure></p>
+<p>　　常见问题：nsenter: failed to execute su: No such file or directory</p>
+<p>　　这是由于容器中的PATH 路径问题，使用/bin/su 即可。</p>
+<p>方式二：也可以将其放在.bashrc中，就可以方便的使用了。（运行source ./bashrc不重启生效）<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">#docker</span><br><span class="line">#export DOCKER_HOST=tcp://localhost:4243</span><br><span class="line">alias docker-pid=&quot;sudo docker inspect --format &apos;&#123;&#123;.State.Pid&#125;&#125;&apos;&quot;</span><br><span class="line">alias docker-ip=&quot;sudo docker inspect --format &apos;&#123;&#123; .NetworkSettings.IPAddress &#125;&#125;&apos;&quot;</span><br><span class="line"></span><br><span class="line">#the implementation refs from https://github.com/jpetazzo/nsenter/blob/master/docker-enter</span><br><span class="line">function docker-enter() &#123;</span><br><span class="line">    if [ -e $(dirname &quot;$0&quot;)/nsenter ]; then</span><br><span class="line">                # with boot2docker, nsenter is not in the PATH but it is in the same folder</span><br><span class="line">        NSENTER=$(dirname &quot;$0&quot;)/nsenter</span><br><span class="line">    else</span><br><span class="line">        NSENTER=nsenter</span><br><span class="line">    fi</span><br><span class="line">    [ -z &quot;$NSENTER&quot; ] &amp;&amp; echo &quot;WARN Cannot find nsenter&quot; &amp;&amp; return</span><br><span class="line"></span><br><span class="line">    if [ -z &quot;$1&quot; ]; then</span><br><span class="line">        echo &quot;Usage: `basename &quot;$0&quot;` CONTAINER [COMMAND [ARG]...]&quot;</span><br><span class="line">        echo &quot;&quot;</span><br><span class="line">        echo &quot;Enters the Docker CONTAINER and executes the specified COMMAND.&quot;</span><br><span class="line">        echo &quot;If COMMAND is not specified, runs an interactive shell in CONTAINER.&quot;</span><br><span class="line">    else</span><br><span class="line">        PID=$(sudo docker inspect --format &quot;&#123;&#123;.State.Pid&#125;&#125;&quot; &quot;$1&quot;)</span><br><span class="line">        if [ -z &quot;$PID&quot; ]; then</span><br><span class="line">            echo &quot;WARN Cannot find the given container&quot;</span><br><span class="line">            return</span><br><span class="line">        fi</span><br><span class="line">        shift</span><br><span class="line">    </span><br><span class="line">        OPTS=&quot;--target $PID --mount --uts --ipc --net --pid&quot;</span><br><span class="line">    </span><br><span class="line">        if [ -z &quot;$1&quot; ]; then</span><br><span class="line">            # No command given.</span><br><span class="line">            # Use su to clear all host environment variables except for TERM,</span><br><span class="line">            # initialize the environment variables HOME, SHELL, USER, LOGNAME, PATH,</span><br><span class="line">            # and start a login shell.</span><br><span class="line">            #sudo $NSENTER &quot;$OPTS&quot; su - root</span><br><span class="line">            sudo $NSENTER --target $PID --mount --uts --ipc --net --pid su - root</span><br><span class="line">        else</span><br><span class="line">            # Use env to clear all host environment variables.</span><br><span class="line">            sudo $NSENTER --target $PID --mount --uts --ipc --net --pid env -i $@</span><br><span class="line">        fi</span><br><span class="line">    fi</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>　　执行：source ./bashrc，让修改生效。</p>
+<p>　　进入容器：</p>
+<p>docker-enter 容器ID</p>
+<p>参考：</p>
+<p><a href="https://stackoverflow.com/questions/31265993/docker-networking-namespace-not-visible-in-ip-netns-list" target="_blank" rel="noopener">https://stackoverflow.com/questions/31265993/docker-networking-namespace-not-visible-in-ip-netns-list</a></p>
+<p><a href="https://github.com/berresch/Docker-Enter-Demo" target="_blank" rel="noopener">https://github.com/berresch/Docker-Enter-Demo</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/network/" rel="tag"># network</a>
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/10/20/dev/k8s/crd/operator/" rel="next" title="operator">
+                <i class="fa fa-chevron-left"></i> operator
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/11/10/docker/build/how to build ppc docker/" rel="prev" title="构建ppc64le架构docker">
+                构建ppc64le架构docker <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#network-namespace"><span class="nav-number">1.</span> <span class="nav-text">network namespace</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#some-namespaces"><span class="nav-number">2.</span> <span class="nav-text">some namespaces</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="k8s,kubectl,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="原文：How does ‘kubectl exec’ work? 作者：Erkan Erol 上周五，一个同事问了我一个问题——如何使用 client-go 在 Pod 中执行命令。我答不出来，而且注意到我从来没想过 kubectl exec 的实现机制。我对这个问题有一点认识，但又不是很确定。我记下了这个题目，进行了一番探索，在阅读了大量博客、文档和代码之后，收获了很多知识。本文中我会分享这个过">
+<meta name="keywords" content="k8s,kubectl">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kubectl exec 是如何工作的">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/10/18/k8s/op/kubectl exec 如何工作的/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="原文：How does ‘kubectl exec’ work? 作者：Erkan Erol 上周五，一个同事问了我一个问题——如何使用 client-go 在 Pod 中执行命令。我答不出来，而且注意到我从来没想过 kubectl exec 的实现机制。我对这个问题有一点认识，但又不是很确定。我记下了这个题目，进行了一番探索，在阅读了大量博客、文档和代码之后，收获了很多知识。本文中我会分享这个过">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://blog.fleeto.us/post/how-kubectl-exec-works/images/components.png">
+<meta property="og:image" content="https://blog.fleeto.us/post/how-kubectl-exec-works/images/rest-request.png">
+<meta property="og:image" content="https://blog.fleeto.us/post/how-kubectl-exec-works/images/api-server-to-kubelet.png">
+<meta property="og:image" content="https://blog.fleeto.us/post/how-kubectl-exec-works/images/kubelet-to-container-runtime.png">
+<meta property="og:image" content="https://blog.fleeto.us/post/how-kubectl-exec-works/images/container-runtime-to-kernel.png">
+<meta property="og:image" content="https://blog.fleeto.us/post/how-kubectl-exec-works/images/kernel-puts.png">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kubectl exec 是如何工作的">
+<meta name="twitter:description" content="原文：How does ‘kubectl exec’ work? 作者：Erkan Erol 上周五，一个同事问了我一个问题——如何使用 client-go 在 Pod 中执行命令。我答不出来，而且注意到我从来没想过 kubectl exec 的实现机制。我对这个问题有一点认识，但又不是很确定。我记下了这个题目，进行了一番探索，在阅读了大量博客、文档和代码之后，收获了很多知识。本文中我会分享这个过">
+<meta name="twitter:image" content="https://blog.fleeto.us/post/how-kubectl-exec-works/images/components.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/10/18/k8s/op/kubectl exec 如何工作的/">
+
+
+
+
+
+  <title>kubectl exec 是如何工作的 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/10/18/k8s/op/kubectl exec 如何工作的/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">kubectl exec 是如何工作的</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-10-18T17:13:01+00:00">
+                2019-10-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>原文：<a href="https://erkanerol.github.io/post/how-kubectl-exec-works/" target="_blank" rel="noopener">How does ‘kubectl exec’ work?</a></p>
+<p>作者：<a href="https://twitter.com/erkan_erol_" target="_blank" rel="noopener">Erkan Erol</a></p>
+<p>上周五，一个同事问了我一个问题——如何使用 client-go 在 Pod 中执行命令。我答不出来，而且注意到我从来没想过 <code>kubectl exec</code> 的实现机制。我对这个问题有一点认识，但又不是很确定。我记下了这个题目，进行了一番探索，在阅读了大量博客、文档和代码之后，收获了很多知识。本文中我会分享这个过程中的理解和发现。</p>
+<h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>我使用 <a href="https://github.com/ecomm-integration-ballerina/kubernetes-cluster" target="_blank" rel="noopener">https://github.com/ecomm-integration-ballerina/kubernetes-cluster</a> 中的工具在我的 Macbook 上创建 Kubernetes 集群。缺省配置不允许运行 <code>kubectl exec</code>，我在 Kubelet 配置中修改了 IP 地址，具体原因参见博客：<a href="https://medium.com/@joatmon08/playing-with-kubeadm-in-vagrant-machines-part-2-bac431095706" target="_blank" rel="noopener">Playing with kubeadm in Vagrant Machines</a>。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Any machine = my MacBook</span><br><span class="line">IP of master node = 192.168.205.10</span><br><span class="line">IP of worker node = 192.168.205.11</span><br><span class="line">API server port = 6443</span><br></pre></td></tr></table></figure>
+<h3 id="组件"><a href="#组件" class="headerlink" title="组件"></a>组件</h3><p><img src="https://blog.fleeto.us/post/how-kubectl-exec-works/images/components.png" alt="components"></p>
+<ul>
+<li><code>kubectl exec</code> 进程：在我们运行 <code>kubectl exec</code> 时，会启动一个进程。可以在任何一台能够访问到 Kubernetes API Server 的机器上运行该命令。</li>
+<li><code>api-server</code>：运行在 Master 上，提供开放的 Kubernetes API，它是 Kubernetes 控制平面的前端。</li>
+<li><code>kubelet</code>：在集群所有节点上都会运行这个进程，它负责让容器以 Pod 的模式运行。</li>
+<li>容器运行时：负责运行容器，例如 Docker、cri-o、containerd…</li>
+<li>内核：工作节点上的操作系统内核，负责管理进程。</li>
+<li>目标容器：组成 Pod 的容器，在工作节点上运行。</li>
+</ul>
+<h2 id="探索"><a href="#探索" class="headerlink" title="探索"></a>探索</h2><h3 id="客户端的活动"><a href="#客户端的活动" class="headerlink" title="客户端的活动"></a>客户端的活动</h3><p>在缺省命名空间中创建一个 Pod：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># kubectl run exec-test-nginx --image=nginx</span><br></pre></td></tr></table></figure>
+<p>执行 <code>sleep 5000</code>，来进行观察：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># ps -ef |grep kubectl</span><br><span class="line">501  8507  8409   0  7:19PM ttys000    0:00.13 kubectl exec -it exec-test-nginx-6558988d5-fgxgg -- sh</span><br></pre></td></tr></table></figure>
+<p>检查该进程的网络活动，会看到连接到 API Server 的通信（192.168.205.10.6443）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ netstat -atnv |grep 8507</span><br><span class="line">tcp4       0      0  192.168.205.1.51673    192.168.205.10.6443    ESTABLISHED 131072 131768   8507      0 0x0102 0x00000020</span><br><span class="line">tcp4       0      0  192.168.205.1.51672    192.168.205.10.6443    ESTABLISHED 131072 131768   8507      0 0x0102 0x00000028</span><br></pre></td></tr></table></figure>
+<p>再看看代码。<code>kubectl</code> 发起了一个包含 <code>exec</code> 子资源的 POST 请求：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">req := restClient.Post().</span><br><span class="line">        Resource(<span class="string">"pods"</span>).</span><br><span class="line">        Name(pod.Name).</span><br><span class="line">        Namespace(pod.Namespace).</span><br><span class="line">        SubResource(<span class="string">"exec"</span>)</span><br><span class="line">req.VersionedParams(&amp;corev1.PodExecOptions&#123;</span><br><span class="line">        Container: containerName,</span><br><span class="line">        Command:   p.Command,</span><br><span class="line">        Stdin:     p.Stdin,</span><br><span class="line">        Stdout:    p.Out != <span class="literal">nil</span>,</span><br><span class="line">        Stderr:    p.ErrOut != <span class="literal">nil</span>,</span><br><span class="line">        TTY:       t.Raw,</span><br><span class="line">&#125;, scheme.ParameterCodec)</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> p.Executor.Execute(<span class="string">"POST"</span>, req.URL(), p.Config, p.In, p.Out, p.ErrOut, t.Raw, sizeQueue)</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog.fleeto.us/post/how-kubectl-exec-works/images/rest-request.png" alt="rest-request.png"></p>
+<h3 id="Master-上的活动"><a href="#Master-上的活动" class="headerlink" title="Master 上的活动"></a>Master 上的活动</h3><p>在 API Server 端当然也能观察到请求的情况：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">handler.go:143] kube-apiserver: POST &quot;/api/v1/namespaces/default/pods/exec-test-nginx-6558988d5-fgxgg/exec&quot; satisfied by gorestful with webservice /api/v1</span><br><span class="line">upgradeaware.go:261] Connecting to backend proxy (intercepting redirects) https://192.168.205.11:10250/exec/default/exec-test-nginx-6558988d5-fgxgg/exec-test-nginx?command=sh&amp;input=1&amp;output=1&amp;tty=1</span><br><span class="line">Headers: map[Connection:[Upgrade] Content-Length:[0] Upgrade:[SPDY/3.1] User-Agent:[kubectl/v1.12.10 (darwin/amd64) kubernetes/e3c1340] X-Forwarded-For:[192.168.205.1] X-Stream-Protocol-Version:[v4.channel.k8s.io v3.channel.k8s.io v2.channel.k8s.io channel.k8s.io]]</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>HTTP 请求中包含了协议升级的请求，SPDY 允许在单个 TCP 连接上复用独立的 stdin/stdout/stderr/spdy-error 流。</p>
+</blockquote>
+<p>API Server 收到请求，绑定到 <code>PodExecOptions</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// PodExecOptions is the query options to a Pod's remote exec call</span></span><br><span class="line"><span class="keyword">type</span> PodExecOptions <span class="keyword">struct</span> &#123;</span><br><span class="line">        metav1.TypeMeta</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Stdin if true indicates that stdin is to be redirected for the exec call</span></span><br><span class="line">        Stdin <span class="keyword">bool</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// Stdout if true indicates that stdout is to be redirected for the exec call</span></span><br><span class="line">        Stdout <span class="keyword">bool</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// Stderr if true indicates that stderr is to be redirected for the exec call</span></span><br><span class="line">        Stderr <span class="keyword">bool</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// TTY if true indicates that a tty will be allocated for the exec call</span></span><br><span class="line">        TTY <span class="keyword">bool</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// Container in which to execute the command.</span></span><br><span class="line">        Container <span class="keyword">string</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// Command is the remote command to execute; argv array; not executed within a shell.</span></span><br><span class="line">        Command []<span class="keyword">string</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>为了执行必要的动作，API Server 需要知道联系地址：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ExecLocation returns the exec URL for a pod container. If opts.Container is blank</span></span><br><span class="line"><span class="comment">// and only one container is present in the pod, that container is used.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">ExecLocation</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">        getter ResourceGetter,</span></span></span><br><span class="line"><span class="function"><span class="params">        connInfo client.ConnectionInfoGetter,</span></span></span><br><span class="line"><span class="function"><span class="params">        ctx context.Context,</span></span></span><br><span class="line"><span class="function"><span class="params">        name <span class="keyword">string</span>,</span></span></span><br><span class="line"><span class="function"><span class="params">        opts *api.PodExecOptions,</span></span></span><br><span class="line"><span class="function"><span class="params">)</span> <span class="params">(*url.URL, http.RoundTripper, error)</span></span> &#123;</span><br><span class="line">        <span class="keyword">return</span> streamLocation(getter, connInfo, ctx, name, opts, opts.Container, <span class="string">"exec"</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当然这个端点是来自 Node：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">nodeName := types.NodeName(pod.Spec.NodeName)</span><br><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(nodeName) == <span class="number">0</span> &#123;</span><br><span class="line">        <span class="comment">// If pod has not been assigned a host, return an empty location</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, <span class="literal">nil</span>, errors.NewBadRequest(fmt.Sprintf(<span class="string">"pod %s does not have a host assigned"</span>, name))</span><br><span class="line">&#125;</span><br><span class="line">nodeInfo, err := connInfo.GetConnectionInfo(ctx, nodeName)</span><br></pre></td></tr></table></figure>
+<p>Kubelet 提供了一个端口，API Server 可以进行连接：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// GetConnectionInfo retrieves connection info from the status of a Node API object.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(k *NodeConnectionInfoGetter)</span> <span class="title">GetConnectionInfo</span><span class="params">(ctx context.Context, nodeName types.NodeName)</span> <span class="params">(*ConnectionInfo, error)</span></span> &#123;</span><br><span class="line">        node, err := k.nodes.Get(ctx, <span class="keyword">string</span>(nodeName), metav1.GetOptions&#123;&#125;)</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Find a kubelet-reported address, using preferred address type</span></span><br><span class="line">        host, err := nodeutil.GetPreferredNodeAddress(node, k.preferredAddressTypes)</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Use the kubelet-reported port, if present</span></span><br><span class="line">        port := <span class="keyword">int</span>(node.Status.DaemonEndpoints.KubeletEndpoint.Port)</span><br><span class="line">        <span class="keyword">if</span> port &lt;= <span class="number">0</span> &#123;</span><br><span class="line">                port = k.defaultPort</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> &amp;ConnectionInfo&#123;</span><br><span class="line">                Scheme:    k.scheme,</span><br><span class="line">                Hostname:  host,</span><br><span class="line">                Port:      strconv.Itoa(port),</span><br><span class="line">                Transport: k.transport,</span><br><span class="line">        &#125;, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><a href="https://kubernetes.io/docs/concepts/architecture/master-node-communication/#apiserver-to-kubelet" target="_blank" rel="noopener">API Server to Kubelet</a> Kubelet 开放的是一个 HTTPS 端点。缺省情况下 API Server 是不会验证 Kubelet 的服务证书的，这样这个连接就存在遭到中间人攻击的隐患，在不受信任的或者公开的网络上运行是不安全的。</p>
+</blockquote>
+<p>现在，API Server 得到了端点地址，打开连接：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Connect returns a handler for the pod exec proxy</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(r *ExecREST)</span> <span class="title">Connect</span><span class="params">(ctx context.Context, name <span class="keyword">string</span>, opts runtime.Object, responder rest.Responder)</span> <span class="params">(http.Handler, error)</span></span> &#123;</span><br><span class="line">        execOpts, ok := opts.(*api.PodExecOptions)</span><br><span class="line">        <span class="keyword">if</span> !ok &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">nil</span>, fmt.Errorf(<span class="string">"invalid options object: %#v"</span>, opts)</span><br><span class="line">        &#125;</span><br><span class="line">        location, transport, err := pod.ExecLocation(r.Store, r.KubeletConn, ctx, name, execOpts)</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> newThrottledUpgradeAwareProxyHandler(location, transport, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">true</span>, responder), <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>看看 Master 上发生了什么。</p>
+<p>首先确定一下工作节点的 IP，这里是 <code>192.168.205.11</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl get nodes k8s-node-1 -o wide</span><br><span class="line">NAME         STATUS   ROLES    AGE   VERSION   INTERNAL-IP      EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME</span><br><span class="line">k8s-node-1   Ready    &lt;none&gt;   9h    v1.15.3   192.168.205.11   &lt;none&gt;        Ubuntu 16.04.6 LTS   4.4.0-159-generic   docker://17.3.3</span><br></pre></td></tr></table></figure>
+<p>然后查找 Kubelet 的端口号：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl get nodes k8s-node-1 -o jsonpath=&apos;&#123;.status.daemonEndpoints.kubeletEndpoint&#125;&apos;</span><br><span class="line">map[Port:10250]</span><br></pre></td></tr></table></figure>
+<p>接下来看看是不是存在到工作节点的连接？看到连接之后，如果杀掉 <code>exec</code> 进程，这个连接就会消失。这说明这个连接是 API Server 响应 <code>exec</code> 请求而生成的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ netstat -atn |grep 192.168.205.11</span><br><span class="line">tcp        0      0 192.168.205.10:37870    192.168.205.11:10250    ESTABLISHED</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog.fleeto.us/post/how-kubectl-exec-works/images/api-server-to-kubelet.png" alt="api-server-to-kubelet.png"></p>
+<p>目前为止，kubectl 和 API Server 之间的连接还存在，并且 API Server 和 Kubelet 之间也建立了连接。</p>
+<h3 id="工作节点上的活动"><a href="#工作节点上的活动" class="headerlink" title="工作节点上的活动"></a>工作节点上的活动</h3><p>接下来我们连接到工作节点上，看看这里发生了什么。</p>
+<p>首先我们同样能看到连接，第二行显示了 Master 的地址：<code>192.168.205.10</code>。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">// worker node</span><br><span class="line">$ netstat -atn |grep 10250</span><br><span class="line">tcp6       0      0 :::10250                :::*                    LISTEN</span><br><span class="line">tcp6       0      0 192.168.205.11:10250    192.168.205.10:37870    ESTABLISHED</span><br></pre></td></tr></table></figure>
+<p>我们的 sleep 命令呢？也可以看到：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">// worker node</span><br><span class="line">$ ps -afx</span><br><span class="line">...</span><br><span class="line">31463 ?        Sl     0:00      \_ docker-containerd-shim 7d974065bbb3107074ce31c51f5ef40aea8dcd535ae11a7b8f2dd180b8ed583a /var/run/docker/libcontainerd/7d974065bbb3107074ce31c51</span><br><span class="line">31478 pts/0    Ss     0:00          \_ sh</span><br><span class="line">31485 pts/0    S+     0:00              \_ sleep 5000</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>Kubelet 是如何做到的？</p>
+<p>Kubelet 提供了一个服务端口，用来响应 API Server 的请求：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Server is the library interface to serve the stream requests.</span></span><br><span class="line"><span class="keyword">type</span> Server <span class="keyword">interface</span> &#123;</span><br><span class="line">        http.Handler</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Get the serving URL for the requests.</span></span><br><span class="line">        <span class="comment">// Requests must not be nil. Responses may be nil iff an error is returned.</span></span><br><span class="line">        GetExec(*runtimeapi.ExecRequest) (*runtimeapi.ExecResponse, error)</span><br><span class="line">        GetAttach(req *runtimeapi.AttachRequest) (*runtimeapi.AttachResponse, error)</span><br><span class="line">        GetPortForward(*runtimeapi.PortForwardRequest) (*runtimeapi.PortForwardResponse, error)</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Start the server.</span></span><br><span class="line">        <span class="comment">// addr is the address to serve on (address:port) stayUp indicates whether the server should</span></span><br><span class="line">        <span class="comment">// listen until Stop() is called, or automatically stop after all expected connections are</span></span><br><span class="line">        <span class="comment">// closed. Calling Get&#123;Exec,Attach,PortForward&#125; increments the expected connection count.</span></span><br><span class="line">        <span class="comment">// Function does not return until the server is stopped.</span></span><br><span class="line">        Start(stayUp <span class="keyword">bool</span>) error</span><br><span class="line">        <span class="comment">// Stop the server, and terminate any open connections.</span></span><br><span class="line">        Stop() error</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Kubelet 为 exec 请求生成一个响应端点：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *server)</span> <span class="title">GetExec</span><span class="params">(req *runtimeapi.ExecRequest)</span> <span class="params">(*runtimeapi.ExecResponse, error)</span></span> &#123;</span><br><span class="line">        <span class="keyword">if</span> err := validateExecRequest(req); err != <span class="literal">nil</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">        &#125;</span><br><span class="line">        token, err := s.cache.Insert(req)</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> &amp;runtimeapi.ExecResponse&#123;</span><br><span class="line">                Url: s.buildURL(<span class="string">"exec"</span>, token),</span><br><span class="line">        &#125;, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>它返回的不是命令结果，而是一个用于通信的端点：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> ExecResponse <span class="keyword">struct</span> &#123;</span><br><span class="line">        <span class="comment">// Fully qualified URL of the exec streaming server.</span></span><br><span class="line">        Url                  <span class="keyword">string</span>   <span class="string">`protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`</span></span><br><span class="line">        XXX_NoUnkeyedLiteral <span class="keyword">struct</span>&#123;&#125; <span class="string">`json:"-"`</span></span><br><span class="line">        XXX_sizecache        <span class="keyword">int32</span>    <span class="string">`json:"-"`</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Kubelet 实现了一个 CRI 规范中的 <code>RuntimeServiceClient</code> 接口：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.</span></span><br><span class="line"><span class="keyword">type</span> RuntimeServiceClient <span class="keyword">interface</span> &#123;</span><br><span class="line">        <span class="comment">// Version returns the runtime name, runtime version, and runtime API version.</span></span><br><span class="line">        Version(ctx context.Context, in *VersionRequest, opts ...grpc.CallOption) (*VersionResponse, error)</span><br><span class="line">        <span class="comment">// RunPodSandbox creates and starts a pod-level sandbox. Runtimes must ensure</span></span><br><span class="line">        <span class="comment">// the sandbox is in the ready state on success.</span></span><br><span class="line">        RunPodSandbox(ctx context.Context, in *RunPodSandboxRequest, opts ...grpc.CallOption) (*RunPodSandboxResponse, error)</span><br><span class="line">        <span class="comment">// StopPodSandbox stops any running process that is part of the sandbox and</span></span><br><span class="line">        <span class="comment">// reclaims network resources (e.g., IP addresses) allocated to the sandbox.</span></span><br><span class="line">        <span class="comment">// If there are any running containers in the sandbox, they must be forcibly</span></span><br><span class="line">        <span class="comment">// terminated.</span></span><br><span class="line">        <span class="comment">// This call is idempotent, and must not return an error if all relevant</span></span><br><span class="line">        <span class="comment">// resources have already been reclaimed. kubelet will call StopPodSandbox</span></span><br><span class="line">        <span class="comment">// at least once before calling RemovePodSandbox. It will also attempt to</span></span><br><span class="line">        <span class="comment">// reclaim resources eagerly, as soon as a sandbox is not needed. Hence,</span></span><br><span class="line">        <span class="comment">// multiple StopPodSandbox calls are expected.</span></span><br><span class="line">        StopPodSandbox(ctx context.Context, in *StopPodSandboxRequest, opts ...grpc.CallOption) (*StopPodSandboxResponse, error)</span><br><span class="line">        <span class="comment">// RemovePodSandbox removes the sandbox. If there are any running containers</span></span><br><span class="line">        <span class="comment">// in the sandbox, they must be forcibly terminated and removed.</span></span><br><span class="line">        <span class="comment">// This call is idempotent, and must not return an error if the sandbox has</span></span><br><span class="line">        <span class="comment">// already been removed.</span></span><br><span class="line">        RemovePodSandbox(ctx context.Context, in *RemovePodSandboxRequest, opts ...grpc.CallOption) (*RemovePodSandboxResponse, error)</span><br><span class="line">        <span class="comment">// PodSandboxStatus returns the status of the PodSandbox. If the PodSandbox is not</span></span><br><span class="line">        <span class="comment">// present, returns an error.</span></span><br><span class="line">        PodSandboxStatus(ctx context.Context, in *PodSandboxStatusRequest, opts ...grpc.CallOption) (*PodSandboxStatusResponse, error)</span><br><span class="line">        <span class="comment">// ListPodSandbox returns a list of PodSandboxes.</span></span><br><span class="line">        ListPodSandbox(ctx context.Context, in *ListPodSandboxRequest, opts ...grpc.CallOption) (*ListPodSandboxResponse, error)</span><br><span class="line">        <span class="comment">// CreateContainer creates a new container in specified PodSandbox</span></span><br><span class="line">        CreateContainer(ctx context.Context, in *CreateContainerRequest, opts ...grpc.CallOption) (*CreateContainerResponse, error)</span><br><span class="line">        <span class="comment">// StartContainer starts the container.</span></span><br><span class="line">        StartContainer(ctx context.Context, in *StartContainerRequest, opts ...grpc.CallOption) (*StartContainerResponse, error)</span><br><span class="line">        <span class="comment">// StopContainer stops a running container with a grace period (i.e., timeout).</span></span><br><span class="line">        <span class="comment">// This call is idempotent, and must not return an error if the container has</span></span><br><span class="line">        <span class="comment">// already been stopped.</span></span><br><span class="line">        <span class="comment">// <span class="doctag">TODO:</span> what must the runtime do after the grace period is reached?</span></span><br><span class="line">        StopContainer(ctx context.Context, in *StopContainerRequest, opts ...grpc.CallOption) (*StopContainerResponse, error)</span><br><span class="line">        <span class="comment">// RemoveContainer removes the container. If the container is running, the</span></span><br><span class="line">        <span class="comment">// container must be forcibly removed.</span></span><br><span class="line">        <span class="comment">// This call is idempotent, and must not return an error if the container has</span></span><br><span class="line">        <span class="comment">// already been removed.</span></span><br><span class="line">        RemoveContainer(ctx context.Context, in *RemoveContainerRequest, opts ...grpc.CallOption) (*RemoveContainerResponse, error)</span><br><span class="line">        <span class="comment">// ListContainers lists all containers by filters.</span></span><br><span class="line">        ListContainers(ctx context.Context, in *ListContainersRequest, opts ...grpc.CallOption) (*ListContainersResponse, error)</span><br><span class="line">        <span class="comment">// ContainerStatus returns status of the container. If the container is not</span></span><br><span class="line">        <span class="comment">// present, returns an error.</span></span><br><span class="line">        ContainerStatus(ctx context.Context, in *ContainerStatusRequest, opts ...grpc.CallOption) (*ContainerStatusResponse, error)</span><br><span class="line">        <span class="comment">// UpdateContainerResources updates ContainerConfig of the container.</span></span><br><span class="line">        UpdateContainerResources(ctx context.Context, in *UpdateContainerResourcesRequest, opts ...grpc.CallOption) (*UpdateContainerResourcesResponse, error)</span><br><span class="line">        <span class="comment">// ReopenContainerLog asks runtime to reopen the stdout/stderr log file</span></span><br><span class="line">        <span class="comment">// for the container. This is often called after the log file has been</span></span><br><span class="line">        <span class="comment">// rotated. If the container is not running, container runtime can choose</span></span><br><span class="line">        <span class="comment">// to either create a new log file and return nil, or return an error.</span></span><br><span class="line">        <span class="comment">// Once it returns error, new container log file MUST NOT be created.</span></span><br><span class="line">        ReopenContainerLog(ctx context.Context, in *ReopenContainerLogRequest, opts ...grpc.CallOption) (*ReopenContainerLogResponse, error)</span><br><span class="line">        <span class="comment">// ExecSync runs a command in a container synchronously.</span></span><br><span class="line">        ExecSync(ctx context.Context, in *ExecSyncRequest, opts ...grpc.CallOption) (*ExecSyncResponse, error)</span><br><span class="line">        <span class="comment">// Exec prepares a streaming endpoint to execute a command in the container.</span></span><br><span class="line">        Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (*ExecResponse, error)</span><br><span class="line">        <span class="comment">// Attach prepares a streaming endpoint to attach to a running container.</span></span><br><span class="line">        Attach(ctx context.Context, in *AttachRequest, opts ...grpc.CallOption) (*AttachResponse, error)</span><br><span class="line">        <span class="comment">// PortForward prepares a streaming endpoint to forward ports from a PodSandbox.</span></span><br><span class="line">        PortForward(ctx context.Context, in *PortForwardRequest, opts ...grpc.CallOption) (*PortForwardResponse, error)</span><br><span class="line">        <span class="comment">// ContainerStats returns stats of the container. If the container does not</span></span><br><span class="line">        <span class="comment">// exist, the call returns an error.</span></span><br><span class="line">        ContainerStats(ctx context.Context, in *ContainerStatsRequest, opts ...grpc.CallOption) (*ContainerStatsResponse, error)</span><br><span class="line">        <span class="comment">// ListContainerStats returns stats of all running containers.</span></span><br><span class="line">        ListContainerStats(ctx context.Context, in *ListContainerStatsRequest, opts ...grpc.CallOption) (*ListContainerStatsResponse, error)</span><br><span class="line">        <span class="comment">// UpdateRuntimeConfig updates the runtime configuration based on the given request.</span></span><br><span class="line">        UpdateRuntimeConfig(ctx context.Context, in *UpdateRuntimeConfigRequest, opts ...grpc.CallOption) (*UpdateRuntimeConfigResponse, error)</span><br><span class="line">        <span class="comment">// Status returns the status of the runtime.</span></span><br><span class="line">        Status(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*StatusResponse, error)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用 gRPC 通过 CRI 调用方法：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> runtimeServiceClient <span class="keyword">struct</span> &#123;</span><br><span class="line">        cc *grpc.ClientConn</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *runtimeServiceClient)</span> <span class="title">Exec</span><span class="params">(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption)</span> <span class="params">(*ExecResponse, error)</span></span> &#123;</span><br><span class="line">        out := <span class="built_in">new</span>(ExecResponse)</span><br><span class="line">        err := c.cc.Invoke(ctx, <span class="string">"/runtime.v1alpha2.RuntimeService/Exec"</span>, in, out, opts...)</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> out, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>容器运行时负责实现 <code>RuntimeServiceServer</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// RuntimeServiceServer is the server API for RuntimeService service.</span></span><br><span class="line"><span class="keyword">type</span> RuntimeServiceServer <span class="keyword">interface</span> &#123;</span><br><span class="line">        <span class="comment">// Version returns the runtime name, runtime version, and runtime API version.</span></span><br><span class="line">        Version(context.Context, *VersionRequest) (*VersionResponse, error)</span><br><span class="line">        <span class="comment">// RunPodSandbox creates and starts a pod-level sandbox. Runtimes must ensure</span></span><br><span class="line">        <span class="comment">// the sandbox is in the ready state on success.</span></span><br><span class="line">        RunPodSandbox(context.Context, *RunPodSandboxRequest) (*RunPodSandboxResponse, error)</span><br><span class="line">        <span class="comment">// StopPodSandbox stops any running process that is part of the sandbox and</span></span><br><span class="line">        <span class="comment">// reclaims network resources (e.g., IP addresses) allocated to the sandbox.</span></span><br><span class="line">        <span class="comment">// If there are any running containers in the sandbox, they must be forcibly</span></span><br><span class="line">        <span class="comment">// terminated.</span></span><br><span class="line">        <span class="comment">// This call is idempotent, and must not return an error if all relevant</span></span><br><span class="line">        <span class="comment">// resources have already been reclaimed. kubelet will call StopPodSandbox</span></span><br><span class="line">        <span class="comment">// at least once before calling RemovePodSandbox. It will also attempt to</span></span><br><span class="line">        <span class="comment">// reclaim resources eagerly, as soon as a sandbox is not needed. Hence,</span></span><br><span class="line">        <span class="comment">// multiple StopPodSandbox calls are expected.</span></span><br><span class="line">        StopPodSandbox(context.Context, *StopPodSandboxRequest) (*StopPodSandboxResponse, error)</span><br><span class="line">        <span class="comment">// RemovePodSandbox removes the sandbox. If there are any running containers</span></span><br><span class="line">        <span class="comment">// in the sandbox, they must be forcibly terminated and removed.</span></span><br><span class="line">        <span class="comment">// This call is idempotent, and must not return an error if the sandbox has</span></span><br><span class="line">        <span class="comment">// already been removed.</span></span><br><span class="line">        RemovePodSandbox(context.Context, *RemovePodSandboxRequest) (*RemovePodSandboxResponse, error)</span><br><span class="line">        <span class="comment">// PodSandboxStatus returns the status of the PodSandbox. If the PodSandbox is not</span></span><br><span class="line">        <span class="comment">// present, returns an error.</span></span><br><span class="line">        PodSandboxStatus(context.Context, *PodSandboxStatusRequest) (*PodSandboxStatusResponse, error)</span><br><span class="line">        <span class="comment">// ListPodSandbox returns a list of PodSandboxes.</span></span><br><span class="line">        ListPodSandbox(context.Context, *ListPodSandboxRequest) (*ListPodSandboxResponse, error)</span><br><span class="line">        <span class="comment">// CreateContainer creates a new container in specified PodSandbox</span></span><br><span class="line">        CreateContainer(context.Context, *CreateContainerRequest) (*CreateContainerResponse, error)</span><br><span class="line">        <span class="comment">// StartContainer starts the container.</span></span><br><span class="line">        StartContainer(context.Context, *StartContainerRequest) (*StartContainerResponse, error)</span><br><span class="line">        <span class="comment">// StopContainer stops a running container with a grace period (i.e., timeout).</span></span><br><span class="line">        <span class="comment">// This call is idempotent, and must not return an error if the container has</span></span><br><span class="line">        <span class="comment">// already been stopped.</span></span><br><span class="line">        <span class="comment">// <span class="doctag">TODO:</span> what must the runtime do after the grace period is reached?</span></span><br><span class="line">        StopContainer(context.Context, *StopContainerRequest) (*StopContainerResponse, error)</span><br><span class="line">        <span class="comment">// RemoveContainer removes the container. If the container is running, the</span></span><br><span class="line">        <span class="comment">// container must be forcibly removed.</span></span><br><span class="line">        <span class="comment">// This call is idempotent, and must not return an error if the container has</span></span><br><span class="line">        <span class="comment">// already been removed.</span></span><br><span class="line">        RemoveContainer(context.Context, *RemoveContainerRequest) (*RemoveContainerResponse, error)</span><br><span class="line">        <span class="comment">// ListContainers lists all containers by filters.</span></span><br><span class="line">        ListContainers(context.Context, *ListContainersRequest) (*ListContainersResponse, error)</span><br><span class="line">        <span class="comment">// ContainerStatus returns status of the container. If the container is not</span></span><br><span class="line">        <span class="comment">// present, returns an error.</span></span><br><span class="line">        ContainerStatus(context.Context, *ContainerStatusRequest) (*ContainerStatusResponse, error)</span><br><span class="line">        <span class="comment">// UpdateContainerResources updates ContainerConfig of the container.</span></span><br><span class="line">        UpdateContainerResources(context.Context, *UpdateContainerResourcesRequest) (*UpdateContainerResourcesResponse, error)</span><br><span class="line">        <span class="comment">// ReopenContainerLog asks runtime to reopen the stdout/stderr log file</span></span><br><span class="line">        <span class="comment">// for the container. This is often called after the log file has been</span></span><br><span class="line">        <span class="comment">// rotated. If the container is not running, container runtime can choose</span></span><br><span class="line">        <span class="comment">// to either create a new log file and return nil, or return an error.</span></span><br><span class="line">        <span class="comment">// Once it returns error, new container log file MUST NOT be created.</span></span><br><span class="line">        ReopenContainerLog(context.Context, *ReopenContainerLogRequest) (*ReopenContainerLogResponse, error)</span><br><span class="line">        <span class="comment">// ExecSync runs a command in a container synchronously.</span></span><br><span class="line">        ExecSync(context.Context, *ExecSyncRequest) (*ExecSyncResponse, error)</span><br><span class="line">        <span class="comment">// Exec prepares a streaming endpoint to execute a command in the container.</span></span><br><span class="line">        Exec(context.Context, *ExecRequest) (*ExecResponse, error)</span><br><span class="line">        <span class="comment">// Attach prepares a streaming endpoint to attach to a running container.</span></span><br><span class="line">        Attach(context.Context, *AttachRequest) (*AttachResponse, error)</span><br><span class="line">        <span class="comment">// PortForward prepares a streaming endpoint to forward ports from a PodSandbox.</span></span><br><span class="line">        PortForward(context.Context, *PortForwardRequest) (*PortForwardResponse, error)</span><br><span class="line">        <span class="comment">// ContainerStats returns stats of the container. If the container does not</span></span><br><span class="line">        <span class="comment">// exist, the call returns an error.</span></span><br><span class="line">        ContainerStats(context.Context, *ContainerStatsRequest) (*ContainerStatsResponse, error)</span><br><span class="line">        <span class="comment">// ListContainerStats returns stats of all running containers.</span></span><br><span class="line">        ListContainerStats(context.Context, *ListContainerStatsRequest) (*ListContainerStatsResponse, error)</span><br><span class="line">        <span class="comment">// UpdateRuntimeConfig updates the runtime configuration based on the given request.</span></span><br><span class="line">        UpdateRuntimeConfig(context.Context, *UpdateRuntimeConfigRequest) (*UpdateRuntimeConfigResponse, error)</span><br><span class="line">        <span class="comment">// Status returns the status of the runtime.</span></span><br><span class="line">        Status(context.Context, *StatusRequest) (*StatusResponse, error)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog.fleeto.us/post/how-kubectl-exec-works/images/kubelet-to-container-runtime.png" alt="kubelet-to-container-runtime.png"></p>
+<p>既然如此，我们就该看看 Kubelet 和容器运行时之间的连接。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">// worker node</span><br><span class="line">$ ss -a -p |grep kubelet</span><br><span class="line">...</span><br><span class="line">u_str  ESTAB      0      0       * 157937                * 157387                users:((&quot;kubelet&quot;,pid=5714,fd=33))</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>在 Kubelet（PID=5714）和 Docker 之间有一个新的 Unix Socket 连接：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">// worker node</span><br><span class="line">$ ss -a -p |grep 157387</span><br><span class="line">...</span><br><span class="line">u_str  ESTAB      0      0       * 157937                * 157387                users:((&quot;kubelet&quot;,pid=5714,fd=33))</span><br><span class="line">u_str  ESTAB      0      0      /var/run/docker.sock 157387                * 157937                users:((&quot;dockerd&quot;,pid=1186,fd=14))</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>是 Docker 守护进程（PID 1186）执行了我们的命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">// worker node.</span><br><span class="line">$ ps -afx</span><br><span class="line">...</span><br><span class="line"> 1186 ?        Ssl    0:55 /usr/bin/dockerd -H fd://</span><br><span class="line">17784 ?        Sl     0:00      \_ docker-containerd-shim 53a0a08547b2f95986402d7f3b3e78702516244df049ba6c5aa012e81264aa3c /var/run/docker/libcontainerd/53a0a08547b2f95986402d7f3</span><br><span class="line">17801 pts/2    Ss     0:00          \_ sh</span><br><span class="line">17827 pts/2    S+     0:00              \_ sleep 5000</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<h3 id="容器运行时的活动"><a href="#容器运行时的活动" class="headerlink" title="容器运行时的活动"></a>容器运行时的活动</h3><p>看看 cri-o 的源码，了解一下相关内容。运行逻辑和 Docker 类似。</p>
+<p>它提供了一个服务，实现了 <code>RuntimeServiceServer</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Server implements the RuntimeService and ImageService</span></span><br><span class="line"><span class="keyword">type</span> Server <span class="keyword">struct</span> &#123;</span><br><span class="line">        config          libconfig.Config</span><br><span class="line">        seccompProfile  *seccomp.Seccomp</span><br><span class="line">        stream          StreamService</span><br><span class="line">        netPlugin       ocicni.CNIPlugin</span><br><span class="line">        hostportManager hostport.HostPortManager</span><br><span class="line"></span><br><span class="line">        appArmorProfile <span class="keyword">string</span></span><br><span class="line">        hostIP          <span class="keyword">string</span></span><br><span class="line">        bindAddress     <span class="keyword">string</span></span><br><span class="line"></span><br><span class="line">        *lib.ContainerServer</span><br><span class="line">        monitorsChan      <span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;</span><br><span class="line">        defaultIDMappings *idtools.IDMappings</span><br><span class="line">        systemContext     *types.SystemContext <span class="comment">// Never nil</span></span><br><span class="line"></span><br><span class="line">        updateLock sync.RWMutex</span><br><span class="line"></span><br><span class="line">        seccompEnabled  <span class="keyword">bool</span></span><br><span class="line">        appArmorEnabled <span class="keyword">bool</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// Exec prepares a streaming endpoint to execute a command in the container.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Server)</span> <span class="title">Exec</span><span class="params">(ctx context.Context, req *pb.ExecRequest)</span> <span class="params">(resp *pb.ExecResponse, err error)</span></span> &#123;</span><br><span class="line">        <span class="keyword">const</span> operation = <span class="string">"exec"</span></span><br><span class="line">        <span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">                recordOperation(operation, time.Now())</span><br><span class="line">                recordError(operation, err)</span><br><span class="line">        &#125;()</span><br><span class="line"></span><br><span class="line">        resp, err = s.getExec(req)</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">nil</span>, fmt.Errorf(<span class="string">"unable to prepare exec endpoint: %v"</span>, err)</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> resp, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>链条的最后一环，容器运行时在工作节点上执行命令：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ExecContainer prepares a streaming endpoint to execute a command in the container.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(r *runtimeOCI)</span> <span class="title">ExecContainer</span><span class="params">(c *Container, cmd []<span class="keyword">string</span>, stdin io.Reader, stdout, stderr io.WriteCloser, tty <span class="keyword">bool</span>, resize &lt;-<span class="keyword">chan</span> remotecommand.TerminalSize)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">        processFile, err := prepareProcessExec(c, cmd, tty)</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> err</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">defer</span> os.RemoveAll(processFile.Name())</span><br><span class="line"></span><br><span class="line">        args := []<span class="keyword">string</span>&#123;rootFlag, r.root, <span class="string">"exec"</span>&#125;</span><br><span class="line">        args = <span class="built_in">append</span>(args, <span class="string">"--process"</span>, processFile.Name(), c.ID())</span><br><span class="line">        execCmd := exec.Command(r.path, args...)</span><br><span class="line">        <span class="keyword">if</span> v, found := os.LookupEnv(<span class="string">"XDG_RUNTIME_DIR"</span>); found &#123;</span><br><span class="line">                execCmd.Env = <span class="built_in">append</span>(execCmd.Env, fmt.Sprintf(<span class="string">"XDG_RUNTIME_DIR=%s"</span>, v))</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">var</span> cmdErr, copyError error</span><br><span class="line">        <span class="keyword">if</span> tty &#123;</span><br><span class="line">                cmdErr = ttyCmd(execCmd, stdin, stdout, resize)</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> stdin != <span class="literal">nil</span> &#123;</span><br><span class="line">                        <span class="comment">// Use an os.Pipe here as it returns true *os.File objects.</span></span><br><span class="line">                        <span class="comment">// This way, if you run 'kubectl exec &lt;pod&gt; -i bash' (no tty) and type 'exit',</span></span><br><span class="line">                        <span class="comment">// the call below to execCmd.Run() can unblock because its Stdin is the read half</span></span><br><span class="line">                        <span class="comment">// of the pipe.</span></span><br><span class="line">                        r, w, err := os.Pipe()</span><br><span class="line">                        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">                                <span class="keyword">return</span> err</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123; _, copyError = pools.Copy(w, stdin) &#125;()</span><br><span class="line"></span><br><span class="line">                        execCmd.Stdin = r</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> stdout != <span class="literal">nil</span> &#123;</span><br><span class="line">                        execCmd.Stdout = stdout</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> stderr != <span class="literal">nil</span> &#123;</span><br><span class="line">                        execCmd.Stderr = stderr</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                cmdErr = execCmd.Run()</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> copyError != <span class="literal">nil</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> copyError</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> exitErr, ok := cmdErr.(*exec.ExitError); ok &#123;</span><br><span class="line">                <span class="keyword">return</span> &amp;utilexec.ExitErrorWrapper&#123;ExitError: exitErr&#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> cmdErr</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog.fleeto.us/post/how-kubectl-exec-works/images/container-runtime-to-kernel.png" alt="container-runtime-to-kernel"></p>
+<p>最后，内核执行了任务：</p>
+<p><img src="https://blog.fleeto.us/post/how-kubectl-exec-works/images/kernel-puts.png" alt="kernel-puts.png"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>API Server 会向 Kubelet 发起连接。</li>
+<li>在 exec 结束之前，连接持续存在。<ul>
+<li>Kubectl 和 API Server 之间</li>
+<li>API Server 和 Kubelet 之间</li>
+<li>Kubelet 和容器运行时之间</li>
+</ul>
+</li>
+<li>Kubectl 或者 API Server 无法在工作节点上运行任何东西。Kubelet 可以通过和容器运行时的互动来完成任务。</li>
+</ul>
+<p><a href="https://blog.fleeto.us/tags/kubernetes/" target="_blank" rel="noopener">kubernetes</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/kubectl/" rel="tag"># kubectl</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/10/11/k8s/Network/how to inspect kubernetes networking/" rel="next" title="how to inspect kubernetes networking">
+                <i class="fa fa-chevron-left"></i> how to inspect kubernetes networking
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/10/20/dev/k8s/crd/operator/" rel="prev" title="operator">
+                operator <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#环境"><span class="nav-number">1.</span> <span class="nav-text">环境</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#组件"><span class="nav-number">1.1.</span> <span class="nav-text">组件</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#探索"><span class="nav-number">2.</span> <span class="nav-text">探索</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#客户端的活动"><span class="nav-number">2.1.</span> <span class="nav-text">客户端的活动</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Master-上的活动"><span class="nav-number">2.2.</span> <span class="nav-text">Master 上的活动</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#工作节点上的活动"><span class="nav-number">2.3.</span> <span class="nav-text">工作节点上的活动</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#容器运行时的活动"><span class="nav-number">2.4.</span> <span class="nav-text">容器运行时的活动</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

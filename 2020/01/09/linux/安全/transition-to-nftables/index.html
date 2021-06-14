@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="linux,nftables,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="开源世界中的每个主要发行版都在演进，逐渐将 nftables 作为了默认防火墙。换言之，古老的 iptables 现在已经消亡。本文是有关如何构建 nftables 的教程。  当前，有一个与 nftables 兼容的 iptables-nft 后端，但是很快，即使是它也不再提供了。另外，正如 Red Hat 开发人员所指出的那样，有时它可能会错误地转换规则。我们需要知道如何构建自己的 nfta">
+<meta name="keywords" content="linux,nftables">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[转]过渡到nftables">
+<meta property="og:url" content="http://liupeng0518.github.io/2020/01/09/linux/安全/transition-to-nftables/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="开源世界中的每个主要发行版都在演进，逐渐将 nftables 作为了默认防火墙。换言之，古老的 iptables 现在已经消亡。本文是有关如何构建 nftables 的教程。  当前，有一个与 nftables 兼容的 iptables-nft 后端，但是很快，即使是它也不再提供了。另外，正如 Red Hat 开发人员所指出的那样，有时它可能会错误地转换规则。我们需要知道如何构建自己的 nfta">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.996Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="[转]过渡到nftables">
+<meta name="twitter:description" content="开源世界中的每个主要发行版都在演进，逐渐将 nftables 作为了默认防火墙。换言之，古老的 iptables 现在已经消亡。本文是有关如何构建 nftables 的教程。  当前，有一个与 nftables 兼容的 iptables-nft 后端，但是很快，即使是它也不再提供了。另外，正如 Red Hat 开发人员所指出的那样，有时它可能会错误地转换规则。我们需要知道如何构建自己的 nfta">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2020/01/09/linux/安全/transition-to-nftables/">
+
+
+
+
+
+  <title>[转]过渡到nftables | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2020/01/09/linux/安全/transition-to-nftables/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">[转]过渡到nftables</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-01-09T09:47:19+00:00">
+                2020-01-09
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/linux/" itemprop="url" rel="index">
+                    <span itemprop="name">linux</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>开源世界中的每个主要发行版都在演进，逐渐将 nftables 作为了默认防火墙。换言之，古老的 iptables 现在已经消亡。本文是有关如何构建 nftables 的教程。</p>
+</blockquote>
+<p>当前，有一个与 nftables 兼容的 iptables-nft 后端，但是很快，即使是它也不再提供了。另外，正如 Red Hat 开发人员所指出的那样，有时它可能会错误地转换规则。我们需要知道如何构建自己的 nftables，而不是依赖于 iptables 到 nftables 的转换器。</p>
+<p>在 nftables 中，所有地址族都遵循一个规则。与 iptables 不同，nftables 在用户空间中运行，iptables 中的每个模块都运行在内核（空间）中。它很少需要更新内核，并带有一些新功能，例如映射、地址族和字典。</p>
+<h3 id="地址族"><a href="#地址族" class="headerlink" title="地址族"></a>地址族</h3><p>地址族确定要处理的数据包的类型。在 nftables 中有六个地址族，它们是：</p>
+<ul>
+<li>ip</li>
+<li>ipv6</li>
+<li>inet</li>
+<li>arp</li>
+<li>bridge</li>
+<li>netdev</li>
+</ul>
+<p>在 nftables 中，ipv4 和 ipv6 协议可以被合并为一个称为 inet 的单一地址族。因此，我们不需要指定两个规则：一个用于 ipv4，另一个用于 ipv6。如果未指定地址族，它将默认为 ip 协议，即 ipv4。我们感兴趣的领域是 inet 地址族，因为大多数家庭用户将使用 ipv4 或 ipv6 协议。</p>
+<h3 id="nftables"><a href="#nftables" class="headerlink" title="nftables"></a>nftables</h3><p>典型的 nftables 规则包含三个部分：表、链和规则。</p>
+<p>表是链和规则的容器。它们由其地址族和名称来标识。链包含 inet/arp/bridge/netdev 等协议所需的规则，并具有三种类型：过滤器、NAT 和路由。nftables 规则可以从脚本加载，也可以在终端键入，然后另存为规则集。</p>
+<p>对于家庭用户，默认链为过滤器。inet 系列包含以下钩子：</p>
+<ul>
+<li>Input</li>
+<li>Output</li>
+<li>Forward</li>
+<li>Pre-routing</li>
+<li>Post-routing</li>
+</ul>
+<h3 id="使用脚本还是不用？"><a href="#使用脚本还是不用？" class="headerlink" title="使用脚本还是不用？"></a>使用脚本还是不用？</h3><p>最大的问题之一是我们是否可以使用防火墙脚本。答案是：这是你自己的选择。这里有一些建议：如果防火墙中有数百条规则，那么最好使用脚本，但是如果你是典型的家庭用户，则可以在终端中键入命令，然后（保存并在重启时）加载规则集。每种选择都有其自身的优缺点。在本文中，我们将在终端中键入它们以构建防火墙。</p>
+<p>nftables 使用一个名为 <code>nft</code> 的程序来添加、创建、列出、删除和加载规则。确保使用以下命令将 nftables 与 conntrackd 和 netfilter-persistent 软件包一起安装，并删除 iptables：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">apt-get install nftables conntrackd netfilter-persistent</span><br><span class="line">apt-get purge iptables</span><br></pre></td></tr></table></figure>
+<p><code>nft</code> 需要以 root 身份运行或使用 <code>sudo</code> 运行。使用以下命令分别列出、刷新、删除规则集和加载脚本。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">nft list ruleset</span><br><span class="line">nft flush ruleset</span><br><span class="line">nft delete table inet filter</span><br><span class="line">/usr/sbin/nft -f /etc/nftables.conf</span><br></pre></td></tr></table></figure>
+<h3 id="输入策略"><a href="#输入策略" class="headerlink" title="输入策略"></a>输入策略</h3><p>就像 iptables 一样，防火墙将包含三部分：输入（<code>input</code>）、转发（<code>forward</code>）和输出（<code>output</code>）。在终端中，为输入（<code>input</code>）策略键入以下命令。在开始之前，请确保已刷新规则集。我们的默认策略将会删除所有内容。我们将在防火墙中使用 inet 地址族。将以下规则以 root 身份添加或使用 <code>sudo</code> 运行：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">nft add table inet filter</span><br><span class="line">nft add chain inet filter input &#123; type filter hook input priority 0 \; counter \; policy drop \; &#125;</span><br></pre></td></tr></table></figure>
+<p>你会注意到有一个名为 <code>priority 0</code> 的东西。这意味着赋予该规则更高的优先级。挂钩通常赋予负整数，这意味着更高的优先级。每个挂钩都有自己的优先级，过滤器链的优先级为 0。你可以检查 nftables Wiki 页面以查看每个挂钩的优先级。</p>
+<p>要了解你计算机中的网络接口，请运行以下命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ip link show</span><br></pre></td></tr></table></figure>
+<p>它将显示已安装的网络接口，一个是本地主机、另一个是以太网端口或无线端口。以太网端口的名称如下所示：<code>enpXsY</code>，其中 <code>X</code> 和 <code>Y</code> 是数字，无线端口也是如此。我们必须允许本地主机的流量，并且仅允许从互联网建立的传入连接。</p>
+<p>nftables 具有一项称为裁决语句的功能，用于解析规则。裁决语句为 <code>accept</code>、<code>drop</code>、<code>queue</code>、<code>jump</code>、<code>goto</code>、<code>continue</code> 和 <code>return</code>。由于这是一个很简单的防火墙，因此我们将使用 <code>accept</code> 或 <code>drop</code> 处理数据包。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">nft add rule inet filter input iifname lo accept</span><br><span class="line">nft add rule inet filter input iifname enpXsY ct state new, established, related accept</span><br></pre></td></tr></table></figure>
+<p>接下来，我们必须添加规则以保护我们免受隐秘扫描。并非所有的隐秘扫描都是恶意的，但大多数都是。我们必须保护网络免受此类扫描。第一组规则列出了要测试的 TCP 标志。在这些标志中，第二组列出了要与第一组匹配的标志。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">nft add rule inet filter input iifname enpXsY tcp flags \&amp; \(syn\|fin\) == \(syn\|fin\) drop</span><br><span class="line">nft add rule inet filter input iifname enpXsY tcp flags \&amp; \(syn\|rst\) == \(syn\|rst\) drop</span><br><span class="line">nft add rule inet filter input iifname enpXsY tcp flags \&amp; \(fin\|rst\) == \(fin\|rst\) drop</span><br><span class="line">nft add rule inet filter input iifname enpXsY tcp flags \&amp; \(ack\|fin\) == fin drop</span><br><span class="line">nft add rule inet filter input iifname enpXsY tcp flags \&amp; \(ack\|psh\) == psh drop</span><br><span class="line">nft add rule inet filter input iifname enpXsY tcp flags \&amp; \(ack\|urg\) == urg drop</span><br></pre></td></tr></table></figure>
+<p>记住，我们在终端中键入这些命令。因此，我们必须在一些特殊字符之前添加一个反斜杠，以确保终端能够正确解释该斜杠。如果你使用的是脚本，则不需要这样做。</p>
+<h3 id="关于-ICMP-的警告"><a href="#关于-ICMP-的警告" class="headerlink" title="关于 ICMP 的警告"></a>关于 ICMP 的警告</h3><p>互联网控制消息协议（ICMP）是一种诊断工具，因此不应完全丢弃该流量。完全阻止 ICMP 的任何尝试都是不明智的，因为它还会导致停止向我们提供错误消息。仅启用最重要的控制消息，例如回声请求、回声应答、目的地不可达和超时等消息，并拒绝其余消息。回声请求和回声应答是 <code>ping</code> 的一部分。在输入策略中，我们仅允许回声应答、而在输出策略中，我们仅允许回声请求。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">nft add rule inet filter input iifname enpXsY icmp type &#123; echo-reply, destination-unreachable, time-exceeded &#125; limit rate 1/second accept</span><br><span class="line">nft add rule inet filter input iifname enpXsY ip protocol icmp drop</span><br></pre></td></tr></table></figure>
+<p>最后，我们记录并丢弃所有无效数据包。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">nft add rule inet filter input iifname enpXsY ct state invalid log flags all level info prefix \”Invalid-Input: \”</span><br><span class="line">nft add rule inet filter input iifname enpXsY ct state invalid drop</span><br></pre></td></tr></table></figure>
+<h3 id="转发和输出策略"><a href="#转发和输出策略" class="headerlink" title="转发和输出策略"></a>转发和输出策略</h3><p>在转发和输出策略中，默认情况下我们将丢弃数据包，仅接受已建立连接的数据包。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">nft add chain inet filter forward &#123; type filter hook forward priority 0 \; counter \; policy drop \; &#125;</span><br><span class="line">nft add rule inet filter forward ct state established, related accept</span><br><span class="line">nft add rule inet filter forward ct state invalid drop</span><br><span class="line">nft add chain inet filter output &#123; type filter hook output priority 0 \; counter \; policy drop \; &#125;</span><br></pre></td></tr></table></figure>
+<p>典型的桌面用户只需要端口 80 和 443 即可访问互联网。最后，允许可接受的 ICMP 协议并在记录无效数据包时丢弃它们。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">nft add rule inet filter output oifname enpXsY tcp dport &#123; 80, 443 &#125; ct state established accept</span><br><span class="line">nft add rule inet filter output oifname enpXsY icmp type &#123; echo-request, destination-unreachable, time-exceeded &#125; limit rate 1/second accept</span><br><span class="line">nft add rule inet filter output oifname enpXsY ip protocol icmp drop</span><br><span class="line">nft add rule inet filter output oifname enpXsY ct state invalid log flags all level info prefix \”Invalid-Output: \”</span><br><span class="line">nft add rule inet filter output oifname enpXsY ct state invalid drop</span><br></pre></td></tr></table></figure>
+<p>现在我们必须保存我们的规则集，否则重新启动时它将丢失。为此，请运行以下命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo nft list ruleset. &gt; /etc/nftables.conf</span><br></pre></td></tr></table></figure>
+<p>我们须在引导时加载 nftables，以下将在 systemd 中启用 nftables 服务：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo systemctl enable nftables</span><br></pre></td></tr></table></figure>
+<p>接下来，编辑 nftables 单元文件以删除 <code>Execstop</code> 选项，以避免在每次引导时刷新规则集。该文件通常位于 <code>/etc/systemd/system/sysinit.target.wants/nftables.service</code>。现在重新启动nftables：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo systemctl restart nftables</span><br></pre></td></tr></table></figure>
+<h3 id="在-rsyslog-中记录日志"><a href="#在-rsyslog-中记录日志" class="headerlink" title="在 rsyslog 中记录日志"></a>在 rsyslog 中记录日志</h3><p>当你记录丢弃的数据包时，它们直接进入 syslog，这使得读取该日志文件非常困难。最好将防火墙日志重定向到单独的文件。在 <code>/var/log</code> 目录中创建一个名为 <code>nftables</code> 的目录，并在其中创建两个名为 <code>input.log</code> 和 <code>output.log</code> 的文件，分别存储输入和输出日志。确保系统中已安装 rsyslog。现在转到 <code>/etc/rsyslog.d</code> 并创建一个名为 <code>nftables.conf</code> 的文件，其内容如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">:msg,regex,”Invalid-Input: “ -/var/log/nftables/Input.log</span><br><span class="line">:msg,regex,”Invalid-Output: “ -/var/log/nftables/Output.log &amp; stop</span><br></pre></td></tr></table></figure>
+<p>现在，我们必须确保日志是可管理的。为此，使用以下代码在 <code>/etc/logrotate.d</code> 中创建另一个名为 <code>nftables</code> 的文件：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/var/log/nftables/* &#123; rotate 5 daily maxsize 50M missingok notifempty delaycompress compress postrotate invoke-rc.d rsyslog rotate &gt; /dev/null endscript &#125;</span><br></pre></td></tr></table></figure>
+<p>重新启动 nftables。现在，你可以检查你的规则集。如果你觉得在终端中键入每个命令很麻烦，则可以使用脚本来加载 nftables 防火墙。我希望本文对保护你的系统有用。</p>
+<hr>
+<p>via: <a href="https://opensourceforu.com/2019/10/transition-to-nftables/" target="_blank" rel="noopener">https://opensourceforu.com/2019/10/transition-to-nftables/</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+            <a href="/tags/nftables/" rel="tag"># nftables</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/01/09/linux/安全/Netfilter/" rel="next" title="Netfilter">
+                <i class="fa fa-chevron-left"></i> Netfilter
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/02/10/network/bgp/" rel="prev" title="bgp">
+                bgp <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#地址族"><span class="nav-number">1.</span> <span class="nav-text">地址族</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#nftables"><span class="nav-number">2.</span> <span class="nav-text">nftables</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用脚本还是不用？"><span class="nav-number">3.</span> <span class="nav-text">使用脚本还是不用？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#输入策略"><span class="nav-number">4.</span> <span class="nav-text">输入策略</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#关于-ICMP-的警告"><span class="nav-number">5.</span> <span class="nav-text">关于 ICMP 的警告</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#转发和输出策略"><span class="nav-number">6.</span> <span class="nav-text">转发和输出策略</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#在-rsyslog-中记录日志"><span class="nav-number">7.</span> <span class="nav-text">在 rsyslog 中记录日志</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

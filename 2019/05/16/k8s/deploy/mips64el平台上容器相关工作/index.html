@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="mips64el,k8s,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="源码编译k8s源码编译1.14.1 目前已经将编译的二进制和镜像上传到docker hub。1234567liupeng0518/kube-controller-manager-mips64el:v1.14.1liupeng0518/kube-scheduler-mips64el:v1.14.1liupeng0518/kube-apiserver-mips64el:v1.14.1liupeng05">
+<meta name="keywords" content="mips64el,k8s">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mips64el平台上容器相关工作">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/05/16/k8s/deploy/mips64el平台上容器相关工作/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="源码编译k8s源码编译1.14.1 目前已经将编译的二进制和镜像上传到docker hub。1234567liupeng0518/kube-controller-manager-mips64el:v1.14.1liupeng0518/kube-scheduler-mips64el:v1.14.1liupeng0518/kube-apiserver-mips64el:v1.14.1liupeng05">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.984Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="mips64el平台上容器相关工作">
+<meta name="twitter:description" content="源码编译k8s源码编译1.14.1 目前已经将编译的二进制和镜像上传到docker hub。1234567liupeng0518/kube-controller-manager-mips64el:v1.14.1liupeng0518/kube-scheduler-mips64el:v1.14.1liupeng0518/kube-apiserver-mips64el:v1.14.1liupeng05">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/05/16/k8s/deploy/mips64el平台上容器相关工作/">
+
+
+
+
+
+  <title>mips64el平台上容器相关工作 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/05/16/k8s/deploy/mips64el平台上容器相关工作/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">mips64el平台上容器相关工作</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-05-16T10:47:19+00:00">
+                2019-05-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="源码编译k8s"><a href="#源码编译k8s" class="headerlink" title="源码编译k8s"></a>源码编译k8s</h1><p><a href="http://liupeng0518.github.io/2019/05/15/k8s/%E9%83%A8%E7%BD%B2/%E6%BA%90%E7%A0%81%E7%BC%96%E8%AF%91/">源码编译1.14.1</a></p>
+<p>目前已经将编译的二进制和镜像上传到docker hub。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">liupeng0518/kube-controller-manager-mips64el:v1.14.1</span><br><span class="line">liupeng0518/kube-scheduler-mips64el:v1.14.1</span><br><span class="line">liupeng0518/kube-apiserver-mips64el:v1.14.1</span><br><span class="line">liupeng0518/kube-proxy-mips64el:v1.14.1</span><br><span class="line"></span><br><span class="line">liupeng0518/debian-iptables-mips64el:v11.0.2</span><br><span class="line">liupeng0518/debian-base-mips64el:v1.0.0</span><br></pre></td></tr></table></figure></p>
+<h1 id="debian镜像"><a href="#debian镜像" class="headerlink" title="debian镜像"></a>debian镜像</h1><p>这里multiarch/debian-debootstrap 并没有提供misp64el架构的镜像，所以，我在travis-ci 上构建了debian mips64el架构的基础镜像，这里我精简了下只保留了x86\amd64\ppc64el并添加了mips64el架构，<br>并push到docker hub上，liupeng0518/debian-debootstrap</p>
+<p>关于异构镜像 run，可以参考github：<a href="https://github.com/liupeng0518/debian-debootstrap" target="_blank" rel="noopener">https://github.com/liupeng0518/debian-debootstrap</a><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">[root@web ~]# uname  -a</span><br><span class="line">Linux web 3.10.0-514.el7.x86_64 #1 SMP Tue Nov 22 16:42:41 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux</span><br><span class="line">[root@web ~]# </span><br><span class="line"></span><br><span class="line">[root@web ~]# docker run --rm --privileged multiarch/qemu-user-static:register --reset</span><br><span class="line">Setting /usr/bin/qemu-alpha-static as binfmt interpreter for alpha</span><br><span class="line">Setting /usr/bin/qemu-arm-static as binfmt interpreter for arm</span><br><span class="line">Setting /usr/bin/qemu-armeb-static as binfmt interpreter for armeb</span><br><span class="line">Setting /usr/bin/qemu-sparc32plus-static as binfmt interpreter for sparc32plus</span><br><span class="line">Setting /usr/bin/qemu-ppc-static as binfmt interpreter for ppc</span><br><span class="line">Setting /usr/bin/qemu-ppc64-static as binfmt interpreter for ppc64</span><br><span class="line">Setting /usr/bin/qemu-ppc64le-static as binfmt interpreter for ppc64le</span><br><span class="line">Setting /usr/bin/qemu-m68k-static as binfmt interpreter for m68k</span><br><span class="line">Setting /usr/bin/qemu-mips-static as binfmt interpreter for mips</span><br><span class="line">Setting /usr/bin/qemu-mipsel-static as binfmt interpreter for mipsel</span><br><span class="line">Setting /usr/bin/qemu-mipsn32-static as binfmt interpreter for mipsn32</span><br><span class="line">Setting /usr/bin/qemu-mipsn32el-static as binfmt interpreter for mipsn32el</span><br><span class="line">Setting /usr/bin/qemu-mips64-static as binfmt interpreter for mips64</span><br><span class="line">Setting /usr/bin/qemu-mips64el-static as binfmt interpreter for mips64el</span><br><span class="line">Setting /usr/bin/qemu-sh4-static as binfmt interpreter for sh4</span><br><span class="line">Setting /usr/bin/qemu-sh4eb-static as binfmt interpreter for sh4eb</span><br><span class="line">Setting /usr/bin/qemu-s390x-static as binfmt interpreter for s390x</span><br><span class="line">Setting /usr/bin/qemu-aarch64-static as binfmt interpreter for aarch64</span><br><span class="line">Setting /usr/bin/qemu-aarch64_be-static as binfmt interpreter for aarch64_be</span><br><span class="line">Setting /usr/bin/qemu-hppa-static as binfmt interpreter for hppa</span><br><span class="line">Setting /usr/bin/qemu-riscv32-static as binfmt interpreter for riscv32</span><br><span class="line">Setting /usr/bin/qemu-riscv64-static as binfmt interpreter for riscv64</span><br><span class="line">Setting /usr/bin/qemu-xtensa-static as binfmt interpreter for xtensa</span><br><span class="line">Setting /usr/bin/qemu-xtensaeb-static as binfmt interpreter for xtensaeb</span><br><span class="line">Setting /usr/bin/qemu-microblaze-static as binfmt interpreter for microblaze</span><br><span class="line">Setting /usr/bin/qemu-microblazeel-static as binfmt interpreter for microblazeel</span><br><span class="line">Setting /usr/bin/qemu-or1k-static as binfmt interpreter for or1k</span><br><span class="line">[root@web ~]# docker run -it --rm multiarch/debian-debootstrap:armhf-jessie</span><br><span class="line">Unable to find image &apos;multiarch/debian-debootstrap:armhf-jessie&apos; locally</span><br><span class="line">armhf-jessie: Pulling from multiarch/debian-debootstrap</span><br><span class="line">d066fd376381: Pull complete </span><br><span class="line">4e1f255293e9: Pull complete </span><br><span class="line">Digest: sha256:3ffe7ede85eb364487ca4a116c8bf85a5e448516e813d3884f8cac0b9a313d0e</span><br><span class="line">Status: Downloaded newer image for multiarch/debian-debootstrap:armhf-jessie</span><br><span class="line">root@877209eb617a:/# uname -a</span><br><span class="line">Linux 877209eb617a 3.10.0-514.el7.x86_64 #1 SMP Tue Nov 22 16:42:41 UTC 2016 armv7l GNU/Linux</span><br><span class="line">root@877209eb617a:/# exit</span><br><span class="line">[root@web ~]# docker run -it --rm liupeng0518/debian-debootstrap:mips64el-stretch</span><br><span class="line">Unable to find image &apos;liupeng0518/debian-debootstrap:mips64el-stretch&apos; locally</span><br><span class="line">mips64el-stretch: Pulling from liupeng0518/debian-debootstrap</span><br><span class="line">9d0ac663ae4a: Pull complete </span><br><span class="line">e594f39c845d: Pull complete </span><br><span class="line">Digest: sha256:34ff53cbd78828c69a01efa01498d5419e3e37ec8d9145d342f64d999f6c9a9e</span><br><span class="line">Status: Downloaded newer image for liupeng0518/debian-debootstrap:mips64el-stretch</span><br><span class="line">root@d965f169ec9a:/# uname -a</span><br><span class="line">Linux d965f169ec9a 3.10.0-514.el7.x86_64 #1 SMP Tue Nov 22 16:42:41 UTC 2016 mips64 GNU/Linux</span><br></pre></td></tr></table></figure></p>
+<p>这里关于异构构建image列表查看：</p>
+<p><a href="https://www.archlinux.org/packages/extra/x86_64/qemu-arch-extra/files/" target="_blank" rel="noopener">qemu arch列表查看</a></p>
+<h1 id="构建misp64el-k8s核心组件镜像"><a href="#构建misp64el-k8s核心组件镜像" class="headerlink" title="构建misp64el k8s核心组件镜像"></a>构建misp64el k8s核心组件镜像</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">liupeng0518/kube-controller-manager-mips64el:v1.14.1</span><br><span class="line">liupeng0518/kube-scheduler-mips64el:v1.14.1</span><br><span class="line">liupeng0518/kube-apiserver-mips64el:v1.14.1</span><br><span class="line">liupeng0518/kube-proxy-mips64el:v1.14.1</span><br><span class="line"></span><br><span class="line">liupeng0518/debian-iptables-mips64el:v11.0.2</span><br><span class="line">liupeng0518/debian-base-mips64el:v1.0.0</span><br></pre></td></tr></table></figure>
+<h1 id="mips64el-gosu"><a href="#mips64el-gosu" class="headerlink" title="mips64el gosu"></a>mips64el gosu</h1><p><a href="https://github.com/liupeng0518/gosu/releases/tag/1.11" target="_blank" rel="noopener">https://github.com/liupeng0518/gosu/releases/tag/1.11</a></p>
+<h1 id="中间件"><a href="#中间件" class="headerlink" title="中间件"></a>中间件</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">liupeng0518/java-centos-openjdk8-jre</span><br><span class="line">liupeng0518/centos7-mips-base</span><br><span class="line">liupeng0518/redis-mips64el:4.0.11-stretch</span><br><span class="line">liupeng0518/redis-mips64el:4.0.14-stretch</span><br><span class="line">liupeng0518/zookeeper-mips64el:3.4.14</span><br><span class="line"></span><br><span class="line">docker.io/liupeng0518/debian-debootstrap:mips64el-stretch</span><br><span class="line">docker.io/liupeng0518/debian-debootstrap:mips64el-sid</span><br></pre></td></tr></table></figure>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mips64el/" rel="tag"># mips64el</a>
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/05/15/k8s/deploy/源码编译/" rel="next" title="k8s源码编译方式">
+                <i class="fa fa-chevron-left"></i> k8s源码编译方式
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/05/20/k8s/registry/harbor/harbor-api/" rel="prev" title="harbor api使用">
+                harbor api使用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#源码编译k8s"><span class="nav-number">1.</span> <span class="nav-text">源码编译k8s</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#debian镜像"><span class="nav-number">2.</span> <span class="nav-text">debian镜像</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#构建misp64el-k8s核心组件镜像"><span class="nav-number">3.</span> <span class="nav-text">构建misp64el k8s核心组件镜像</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#mips64el-gosu"><span class="nav-number">4.</span> <span class="nav-text">mips64el gosu</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#中间件"><span class="nav-number">5.</span> <span class="nav-text">中间件</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

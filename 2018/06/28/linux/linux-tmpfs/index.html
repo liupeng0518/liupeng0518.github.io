@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="linux,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="什么是tmpfstpmfs相关内容 我们用df命令看到的 /run/user/1000 的tmpfs是什么？12tmpfs                             49M     0   49M   0% /run/user/0tmpfs                             49M     0   49M   0% /run/user/1000 我们来看红帽的解">
+<meta name="keywords" content="linux">
+<meta property="og:type" content="article">
+<meta property="og:title" content="tmpfs">
+<meta property="og:url" content="http://liupeng0518.github.io/2018/06/28/linux/linux-tmpfs/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="什么是tmpfstpmfs相关内容 我们用df命令看到的 /run/user/1000 的tmpfs是什么？12tmpfs                             49M     0   49M   0% /run/user/0tmpfs                             49M     0   49M   0% /run/user/1000 我们来看红帽的解">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.996Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="tmpfs">
+<meta name="twitter:description" content="什么是tmpfstpmfs相关内容 我们用df命令看到的 /run/user/1000 的tmpfs是什么？12tmpfs                             49M     0   49M   0% /run/user/0tmpfs                             49M     0   49M   0% /run/user/1000 我们来看红帽的解">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2018/06/28/linux/linux-tmpfs/">
+
+
+
+
+
+  <title>tmpfs | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2018/06/28/linux/linux-tmpfs/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">tmpfs</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-28T10:10:39+00:00">
+                2018-06-28
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/linux/" itemprop="url" rel="index">
+                    <span itemprop="name">linux</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="什么是tmpfs"><a href="#什么是tmpfs" class="headerlink" title="什么是tmpfs"></a>什么是tmpfs</h1><p>tpmfs相关内容</p>
+<h2 id="我们用df命令看到的-run-user-1000-的tmpfs是什么？"><a href="#我们用df命令看到的-run-user-1000-的tmpfs是什么？" class="headerlink" title="我们用df命令看到的 /run/user/1000 的tmpfs是什么？"></a>我们用df命令看到的 /run/user/1000 的tmpfs是什么？</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tmpfs                             49M     0   49M   0% /run/user/0</span><br><span class="line">tmpfs                             49M     0   49M   0% /run/user/1000</span><br></pre></td></tr></table></figure>
+<p>我们来看红帽的解释：</p>
+<p><a href="https://access.redhat.com/solutions/2060373" target="_blank" rel="noopener">What is the purpose of the /run/user/1000, tmpfs filesystem that appears in df?</a></p>
+<h3 id="问题："><a href="#问题：" class="headerlink" title="问题："></a>问题：</h3><p>We could see /run/user/1000 filesystem , is this a symptom of any issue?<br>Why do I see multiple of tmpfs filesystems / partitions in the output of df?<br>Why do I see a /run/user/$UID directory when the user is not logged in (i.e. does not appear in the output of w or who)?</p>
+<h3 id="决议："><a href="#决议：" class="headerlink" title="决议："></a>决议：</h3><p>The directory <code>/run/user/$UID</code> is used by <code>pam_systemd</code> to store files that previously where put in <code>/tmp</code>.<br>This is normal and should not cause any issues.<br><strong>NOTE</strong>: since <code>systemd-219.19</code>, /run/user/$UID is mounted as tmpfs.</p>
+<p>The manual page of <code>pam_systemd(8)</code> gives more indications on this.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># man pam_systemd</span></span><br></pre></td></tr></table></figure>
+<h3 id="根源："><a href="#根源：" class="headerlink" title="根源："></a>根源：</h3><p>From the pam_systemd(8) manual page:</p>
+<p>pam_systemd registers user sessions with the systemd login manager systemd-logind.service(8), and hence the systemd control group hierarchy.</p>
+<p>On login, this module ensures the following:</p>
+<ol>
+<li><p>If it does not exist yet, the user runtime directory /run/user/\$USER is created and its ownership changed to the user that is logging in. Then, /run/user/$USER is mounted as tmpfs.</p>
+</li>
+<li><p>The $XDG_SESSION_ID environment variable is initialized. If auditing is available and pam_loginuid.so was run before this module (which is highly recommended), the variable is<br>initialized from the auditing session id (/proc/self/sessionid). Otherwise, an independent session counter is used.</p>
+</li>
+<li><p>A new systemd scope unit is created for the session. If this is the first concurrent session of the user, an implicit slice below user.slice is automatically created and the<br>scope placed into it.</p>
+</li>
+</ol>
+<p>On logout, this module ensures the following:</p>
+<ol>
+<li><p>If enabled in logind.conf(5), all processes of the session are terminated. If the last concurrent session of a user ends, the user’s slice unit will be terminated too.</p>
+</li>
+<li><p>If the last concurrent session of a user ends, the \$XDG_RUNTIME_DIR directory and all its contents are removed, too. Then, /run/user/$USER is unmounted.</p>
+</li>
+</ol>
+<p>If the system was not booted up with systemd as init system, this module does nothing and immediately returns PAM_SUCCESS.</p>
+<h3 id="诊断步骤："><a href="#诊断步骤：" class="headerlink" title="诊断步骤："></a>诊断步骤：</h3><p>The logged in users (a.k.a. users with active logind sessions) can be see with the <code>loginctl</code> command.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">[root@node2 ~]<span class="comment"># loginctl </span></span><br><span class="line">   SESSION        UID USER             SEAT            </span><br><span class="line">         6       1000 george                           </span><br><span class="line">         7          0 root                             </span><br><span class="line"></span><br><span class="line">2 sessions listed.</span><br><span class="line"></span><br><span class="line">[root@node2 ~]<span class="comment"># mount | grep user</span></span><br><span class="line">tmpfs on /run/user/1000 <span class="built_in">type</span> tmpfs (rw,nosuid,nodev,relatime,size=1190072k,mode=700,uid=1000,gid=1000)</span><br><span class="line">gvfsd-fuse on /run/user/1000/gvfs <span class="built_in">type</span> fuse.gvfsd-fuse (rw,nosuid,nodev,relatime,user_id=1000,group_id=1000)</span><br><span class="line">tmpfs on /run/user/0 <span class="built_in">type</span> tmpfs (rw,nosuid,nodev,relatime,size=1190072k,mode=700)</span><br><span class="line"></span><br><span class="line">[root@node2 ~]<span class="comment"># df | grep user</span></span><br><span class="line">tmpfs                   1190072        52   1190020   1% /run/user/1000</span><br><span class="line">tmpfs                   1190072         0   1190072   0% /run/user/0</span><br></pre></td></tr></table></figure>
+<p>Again with the <code>loginctl</code> command we can see some more details about any user with an active session. This can help identify <em>why</em> the user has an active session (i.e. what processes is the user running).</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">[root@node2 ~]<span class="comment"># loginctl user-status 1000</span></span><br><span class="line">george (1000)</span><br><span class="line">           Since: Wed 2016-04-20 09:39:38 CEST; 1min 45s ago</span><br><span class="line">           State: active</span><br><span class="line">        Sessions: *6</span><br><span class="line">            Unit: user-1000.slice</span><br><span class="line">                  └─session-6.scope</span><br><span class="line">                    ├─6868 sshd: george [priv] </span><br><span class="line">                    ├─6874 sshd: george@pts/0  </span><br><span class="line">                    └─6875 -bash</span><br><span class="line"></span><br><span class="line">Apr 20 09:39:38 node2 systemd[1]: Starting user-1000.slice.</span><br><span class="line">Apr 20 09:39:38 node2 sshd[6868]: pam_unix(sshd:session): session opened <span class="keyword">for</span> user george by (uid=0)</span><br><span class="line"></span><br><span class="line">[root@node2 ~]<span class="comment"># loginctl show-user george</span></span><br><span class="line">UID=1000</span><br><span class="line">GID=1000</span><br><span class="line">Name=george</span><br><span class="line">Timestamp=Wed 2016-04-20 09:39:38 CEST</span><br><span class="line">TimestampMonotonic=925489438</span><br><span class="line">RuntimePath=/run/user/1000</span><br><span class="line">Slice=user-1000.slice</span><br><span class="line">Display=6</span><br><span class="line">State=active</span><br><span class="line">Sessions=6</span><br><span class="line">IdleHint=no</span><br><span class="line">IdleSinceHint=0</span><br><span class="line">IdleSinceHintMonotonic=0</span><br><span class="line">Linger=no</span><br></pre></td></tr></table></figure>
+<p>Traditionally the <code>w</code> and <code>who</code> commands have been used to check which users are logged in. However, in RHEL7, <code>loginctl</code> has more reliable data. For example, if a user is connected through <code>sftp</code>, they do not have an terminal connection (no <code>tty</code> or <code>pty/pts</code>). Because of this, the user does not appear in <code>w</code> or <code>who</code>, but they do appear in <code>loginctl</code> and they have a <code>/run/user/$UID</code> directory and an active session. Again, this can be checked with the <code>loginctl</code> commands shown above.</p>
+<p>[systemd-208-20/src/login-user.c]</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">static int user_mkdir_runtime_path(User *u) &#123;                                                            </span><br><span class="line">        char *p;                                                                                         </span><br><span class="line">        int r;                                                                                           </span><br><span class="line"></span><br><span class="line">        assert(u);                                                                                       </span><br><span class="line"></span><br><span class="line">        r = mkdir_safe_label(&quot;/run/user&quot;, 0755, 0, 0);                                                   </span><br><span class="line">        if (r &lt; 0) &#123;</span><br><span class="line">                log_error(&quot;Failed to create /run/user: %s&quot;, strerror(-r));                               </span><br><span class="line">                return r;                                                                                </span><br><span class="line">        &#125;                                                                                                </span><br><span class="line"></span><br><span class="line">        if (!u-&gt;runtime_path) &#123;</span><br><span class="line">                if (asprintf(&amp;p, &quot;/run/user/%lu&quot;, (unsigned long) u-&gt;uid) &lt; 0)                           </span><br><span class="line">                        return log_oom();                                                                </span><br><span class="line">        &#125; else  </span><br><span class="line">                p = u-&gt;runtime_path;                                                                     </span><br><span class="line"></span><br><span class="line">        r = mkdir_safe_label(p, 0700, u-&gt;uid, u-&gt;gid);                                                   </span><br><span class="line">        if (r &lt; 0) &#123;</span><br><span class="line">                log_error(&quot;Failed to create runtime directory %s: %s&quot;, p, strerror(-r));                 </span><br><span class="line">                free(p);</span><br><span class="line">                u-&gt;runtime_path = NULL;                                                                  </span><br><span class="line">                return r;                                                                                </span><br><span class="line">        &#125;                                                                                                </span><br><span class="line"></span><br><span class="line">        u-&gt;runtime_path = p;                                                                             </span><br><span class="line">        return 0;                                                                                        </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>[systemd-219.19/src/login-user.c]</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">static int user_mkdir_runtime_path(User *u) &#123;</span><br><span class="line">        char *p;</span><br><span class="line">        int r;</span><br><span class="line"></span><br><span class="line">        assert(u);</span><br><span class="line"></span><br><span class="line">        r = mkdir_safe_label(&quot;/run/user&quot;, 0755, 0, 0);</span><br><span class="line">        if (r &lt; 0)</span><br><span class="line">                return log_error_errno(r, &quot;Failed to create /run/user: %m&quot;);</span><br><span class="line"></span><br><span class="line">        if (!u-&gt;runtime_path) &#123;</span><br><span class="line">                if (asprintf(&amp;p, &quot;/run/user/&quot; UID_FMT, u-&gt;uid) &lt; 0)</span><br><span class="line">                        return log_oom();</span><br><span class="line">        &#125; else</span><br><span class="line">                p = u-&gt;runtime_path;</span><br><span class="line"></span><br><span class="line">        if (path_is_mount_point(p, false) &lt;= 0) &#123;</span><br><span class="line">                _cleanup_free_ char *t = NULL;</span><br><span class="line"></span><br><span class="line">                (void) mkdir(p, 0700);</span><br><span class="line"></span><br><span class="line">                if (mac_smack_use())</span><br><span class="line">                        r = asprintf(&amp;t, &quot;mode=0700,smackfsroot=*,uid=&quot; UID_FMT &quot;,gid=&quot; GID_FMT &quot;,size=%zu&quot;, u-&gt;uid, u-&gt;gid, u-&gt;manager-&gt;runtime_dir_size);</span><br><span class="line">                else</span><br><span class="line">                        r = asprintf(&amp;t, &quot;mode=0700,uid=&quot; UID_FMT &quot;,gid=&quot; GID_FMT &quot;,size=%zu&quot;, u-&gt;uid, u-&gt;gid, u-&gt;manager-&gt;runtime_dir_size);</span><br><span class="line">                if (r &lt; 0) &#123;</span><br><span class="line">                        r = log_oom();</span><br><span class="line">                        goto fail;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                r = mount(&quot;tmpfs&quot;, p, &quot;tmpfs&quot;, MS_NODEV|MS_NOSUID, t);</span><br><span class="line">                if (r &lt; 0) &#123;</span><br><span class="line">                        if (errno != EPERM) &#123;</span><br><span class="line">                                r = log_error_errno(errno, &quot;Failed to mount per-user tmpfs directory %s: %m&quot;, p);</span><br><span class="line">                                goto fail;</span><br><span class="line">                        &#125;</span><br><span class="line"></span><br><span class="line">                        /* Lacking permissions, maybe</span><br><span class="line">                         * CAP_SYS_ADMIN-less container? In this case,</span><br><span class="line">                         * just use a normal directory. */</span><br><span class="line"></span><br><span class="line">                        r = chmod_and_chown(p, 0700, u-&gt;uid, u-&gt;gid);</span><br><span class="line">                        if (r &lt; 0) &#123;</span><br><span class="line">                                log_error_errno(r, &quot;Failed to change runtime directory ownership and mode: %m&quot;);</span><br><span class="line">                                goto fail;</span><br><span class="line">                        &#125;</span><br><span class="line">                &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        u-&gt;runtime_path = p;</span><br><span class="line">        return 0;</span><br><span class="line"></span><br><span class="line">fail:</span><br><span class="line">        if (p) &#123;</span><br><span class="line">                /* Try to clean up, but ignore errors */</span><br><span class="line">                (void) rmdir(p);</span><br><span class="line">                free(p);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        u-&gt;runtime_path = NULL;</span><br><span class="line">        return r;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="devtmpfs"><a href="#devtmpfs" class="headerlink" title="devtmpfs"></a>devtmpfs</h1><h1 id="shm"><a href="#shm" class="headerlink" title="shm"></a>shm</h1><h2 id="参考连接"><a href="#参考连接" class="headerlink" title="参考连接"></a>参考连接</h2><p><a href="https://unix.stackexchange.com/questions/162900/what-is-this-folder-run-user-1000" target="_blank" rel="noopener">https://unix.stackexchange.com/questions/162900/what-is-this-folder-run-user-1000</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/06/28/linux/常用命令/tcpdump/" rel="next" title="tmpfs">
+                <i class="fa fa-chevron-left"></i> tmpfs
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/07/07/openstack/openstack中vm使用vip/" rel="prev" title="openstack中vm使用vip">
+                openstack中vm使用vip <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#什么是tmpfs"><span class="nav-number">1.</span> <span class="nav-text">什么是tmpfs</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#我们用df命令看到的-run-user-1000-的tmpfs是什么？"><span class="nav-number">1.1.</span> <span class="nav-text">我们用df命令看到的 /run/user/1000 的tmpfs是什么？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#问题："><span class="nav-number">1.1.1.</span> <span class="nav-text">问题：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#决议："><span class="nav-number">1.1.2.</span> <span class="nav-text">决议：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#根源："><span class="nav-number">1.1.3.</span> <span class="nav-text">根源：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#诊断步骤："><span class="nav-number">1.1.4.</span> <span class="nav-text">诊断步骤：</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#devtmpfs"><span class="nav-number">2.</span> <span class="nav-text">devtmpfs</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#shm"><span class="nav-number">3.</span> <span class="nav-text">shm</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#参考连接"><span class="nav-number">3.1.</span> <span class="nav-text">参考连接</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

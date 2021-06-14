@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="cicd,maven,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="mvn构建构建命令:  mvn clean package依次执行了clean、resources、compile、testResources、testCompile、test、jar(打包)等7个阶段 mvn clean install依次执行了clean、resources、compile、testResources、testCompile、test、jar(打包)、install等8个阶段">
+<meta name="keywords" content="cicd,maven">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mvn">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/03/05/cicd/mvn/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="mvn构建构建命令:  mvn clean package依次执行了clean、resources、compile、testResources、testCompile、test、jar(打包)等7个阶段 mvn clean install依次执行了clean、resources、compile、testResources、testCompile、test、jar(打包)、install等8个阶段">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.944Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="mvn">
+<meta name="twitter:description" content="mvn构建构建命令:  mvn clean package依次执行了clean、resources、compile、testResources、testCompile、test、jar(打包)等7个阶段 mvn clean install依次执行了clean、resources、compile、testResources、testCompile、test、jar(打包)、install等8个阶段">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/03/05/cicd/mvn/">
+
+
+
+
+
+  <title>mvn | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/03/05/cicd/mvn/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">mvn</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-05T09:47:19+00:00">
+                2019-03-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/cicd/" itemprop="url" rel="index">
+                    <span itemprop="name">cicd</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="mvn构建"><a href="#mvn构建" class="headerlink" title="mvn构建"></a>mvn构建</h1><p>构建命令:</p>
+<ol>
+<li>mvn clean package依次执行了clean、resources、compile、testResources、testCompile、test、jar(打包)等7个阶段</li>
+<li>mvn clean install依次执行了clean、resources、compile、testResources、testCompile、test、jar(打包)、install等8个阶段</li>
+<li>mvn clean deploy依次执行了clean、resources、compile、testResources、testCompile、test、jar(打包)、install、deploy等9个阶段</li>
+</ol>
+<p>区别：</p>
+<ol>
+<li>package命令完成了项目编译、单元测试、打包功能，但没有把打好的可执行jar包（war包或其它形式的包）布署到本地maven仓库和远程maven私服仓库</li>
+<li>install命令完成了项目编译、单元测试、打包功能，同时把打好的可执行jar包（war包或其它形式的包）布署到本地maven仓库，但没有布署到远程maven私服仓库</li>
+<li>deploy命令完成了项目编译、单元测试、打包功能，同时把打好的可执行jar包（war包或其它形式的包）布署到本地maven仓库和远程maven私服仓库　</li>
+</ol>
+<h1 id="插件"><a href="#插件" class="headerlink" title="插件"></a>插件</h1><table>
+<thead>
+<tr>
+<th>插件名称</th>
+<th>官方地址</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>docker-maven-plugin</td>
+<td><a href="https://github.com/spotify/docker-maven-plugin" target="_blank" rel="noopener">https://github.com/spotify/docker-maven-plugin</a></td>
+<td>bug-fix only</td>
+</tr>
+<tr>
+<td>dockerfile-maven</td>
+<td><a href="https://github.com/spotify/dockerfile-maven" target="_blank" rel="noopener">https://github.com/spotify/dockerfile-maven</a></td>
+<td></td>
+</tr>
+<tr>
+<td>docker-maven-plugin</td>
+<td><a href="https://github.com/fabric8io/docker-maven-plugin" target="_blank" rel="noopener">https://github.com/fabric8io/docker-maven-plugin</a></td>
+<td></td>
+</tr>
+<tr>
+<td>docker-maven-plugin</td>
+<td><a href="https://github.com/bibryam/docker-maven-plugin" target="_blank" rel="noopener">https://github.com/bibryam/docker-maven-plugin</a></td>
+</tr>
+</tbody>
+</table>
+<p>对于第一款插件，使用方式参考:</p>
+<p><a href="http://book.itmuch.com/3%20%E4%BD%BF%E7%94%A8Docker%E6%9E%84%E5%BB%BA%E5%BE%AE%E6%9C%8D%E5%8A%A1/3.7%20%E4%BD%BF%E7%94%A8Maven%E6%8F%92%E4%BB%B6%E6%9E%84%E5%BB%BADocker%E9%95%9C%E5%83%8F.html" target="_blank" rel="noopener">使用Maven插件构建Docker镜像</a></p>
+<h1 id="国内镜像"><a href="#国内镜像" class="headerlink" title="国内镜像"></a>国内镜像</h1><p>修改~/.m2/settings.xml。在maven 库的<a href="http://maven.apache.org/settings.html" target="_blank" rel="noopener">官网</a>。可以找到建议</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">&lt;settings xmlns=&quot;http://maven.apache.org/SETTINGS/1.0.0&quot;</span><br><span class="line">  xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span><br><span class="line">  xsi:schemaLocation=&quot;http://maven.apache.org/SETTINGS/1.0.0</span><br><span class="line">                      http://maven.apache.org/xsd/settings-1.0.0.xsd&quot;&gt;</span><br><span class="line">  &lt;localRepository/&gt;</span><br><span class="line">  &lt;interactiveMode/&gt;</span><br><span class="line">  &lt;usePluginRegistry/&gt;</span><br><span class="line">  &lt;offline/&gt;</span><br><span class="line">  &lt;pluginGroups/&gt;</span><br><span class="line">  &lt;servers/&gt;</span><br><span class="line">  &lt;mirrors&gt;</span><br><span class="line">    &lt;mirror&gt;</span><br><span class="line">     &lt;id&gt;aliyunmaven&lt;/id&gt;</span><br><span class="line">     &lt;mirrorOf&gt;*&lt;/mirrorOf&gt;</span><br><span class="line">     &lt;name&gt;阿里云公共仓库&lt;/name&gt;</span><br><span class="line">     &lt;url&gt;https://maven.aliyun.com/repository/public&lt;/url&gt;</span><br><span class="line">    &lt;/mirror&gt;</span><br><span class="line">     &lt;mirror&gt;</span><br><span class="line">     &lt;id&gt;aliyunmaven&lt;/id&gt;</span><br><span class="line">     &lt;mirrorOf&gt;*&lt;/mirrorOf&gt;</span><br><span class="line">     &lt;name&gt;阿里云谷歌仓库&lt;/name&gt;</span><br><span class="line">     &lt;url&gt;https://maven.aliyun.com/repository/google&lt;/url&gt;</span><br><span class="line">    &lt;/mirror&gt;</span><br><span class="line">    &lt;mirror&gt;</span><br><span class="line">     &lt;id&gt;aliyunmaven&lt;/id&gt;</span><br><span class="line">     &lt;mirrorOf&gt;*&lt;/mirrorOf&gt;</span><br><span class="line">     &lt;name&gt;阿里云阿帕奇仓库&lt;/name&gt;</span><br><span class="line">     &lt;url&gt;https://maven.aliyun.com/repository/apache-snapshots&lt;/url&gt;</span><br><span class="line">    &lt;/mirror&gt;</span><br><span class="line">    &lt;mirror&gt;</span><br><span class="line">     &lt;id&gt;aliyunmaven&lt;/id&gt;</span><br><span class="line">     &lt;mirrorOf&gt;*&lt;/mirrorOf&gt;</span><br><span class="line">     &lt;name&gt;阿里云spring仓库&lt;/name&gt;</span><br><span class="line">     &lt;url&gt;https://maven.aliyun.com/repository/spring&lt;/url&gt;</span><br><span class="line">    &lt;/mirror&gt;</span><br><span class="line">    &lt;mirror&gt;</span><br><span class="line">     &lt;id&gt;aliyunmaven&lt;/id&gt;</span><br><span class="line">     &lt;mirrorOf&gt;*&lt;/mirrorOf&gt;</span><br><span class="line">     &lt;name&gt;阿里云spring插件仓库&lt;/name&gt;</span><br><span class="line">     &lt;url&gt;https://maven.aliyun.com/repository/spring-plugin&lt;/url&gt;</span><br><span class="line">    &lt;/mirror&gt;</span><br><span class="line">  &lt;/mirrors&gt;</span><br><span class="line">  &lt;proxies/&gt;</span><br><span class="line">  &lt;profiles/&gt;</span><br><span class="line">  &lt;activeProfiles/&gt;</span><br><span class="line">&lt;/settings&gt;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/cicd/" rel="tag"># cicd</a>
+          
+            <a href="/tags/maven/" rel="tag"># maven</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/05/k8s/持久化存储/ceph/Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法/" rel="next" title="Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法">
+                <i class="fa fa-chevron-left"></i> Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/03/05/k8s/持久化存储/ceph/kubernetes挂载ceph rbd时被占用/" rel="prev" title="kubernetes挂载ceph rbd时被占用">
+                kubernetes挂载ceph rbd时被占用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#mvn构建"><span class="nav-number">1.</span> <span class="nav-text">mvn构建</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#插件"><span class="nav-number">2.</span> <span class="nav-text">插件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#国内镜像"><span class="nav-number">3.</span> <span class="nav-text">国内镜像</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

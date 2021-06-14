@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="linux,iptables,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="If you are debugging IPTables, it is handy to be able to trace the packets while it traverses the various chains. I was trying to find out why port forwarding from the external NIC to a virtual machin">
+<meta name="keywords" content="linux,iptables">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[转]How to trace IPTables">
+<meta property="og:url" content="http://liupeng0518.github.io/2018/12/24/linux/安全/How to trace IPTables/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="If you are debugging IPTables, it is handy to be able to trace the packets while it traverses the various chains. I was trying to find out why port forwarding from the external NIC to a virtual machin">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.996Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="[转]How to trace IPTables">
+<meta name="twitter:description" content="If you are debugging IPTables, it is handy to be able to trace the packets while it traverses the various chains. I was trying to find out why port forwarding from the external NIC to a virtual machin">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2018/12/24/linux/安全/How to trace IPTables/">
+
+
+
+
+
+  <title>[转]How to trace IPTables | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2018/12/24/linux/安全/How to trace IPTables/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">[转]How to trace IPTables</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-24T09:47:19+00:00">
+                2018-12-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/linux/" itemprop="url" rel="index">
+                    <span itemprop="name">linux</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>If you are debugging IPTables, it is handy to be able to trace the packets while it traverses the various chains. I was trying to find out why port forwarding from the external NIC to a virtual machine attached to a virtual bridge device was not working.</p>
+<p>You need to perform the following preparations:</p>
+<ul>
+<li>Load the (IPv4) netfilter log kernel module:<br><code># modprobe nf_log_ipv4</code></li>
+<li>Enable logging for the IPv4 (AF Family 2):<br><code># sysctl net.netfilter.nf_log.2=nf_log_ipv4</code></li>
+<li>reconfigure rsyslogd to log kernel messages (kern.*) to /var/log/messages:</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># cat /etc/rsyslog.conf | grep -e &quot;^kern&quot;</span><br><span class="line">kern.*;*.info;mail.none;authpriv.none;cron.none                /var/log/messages</span><br></pre></td></tr></table></figure>
+<ul>
+<li>restart rsyslogd:<br><code># systemctl restart rsyslog</code></li>
+</ul>
+<p>Now check the raw tables – you’ll see that there are already entries coming from firewalld:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"># iptables -t raw -L</span><br><span class="line">Chain PREROUTING (policy ACCEPT)</span><br><span class="line">target prot opt source destination</span><br><span class="line">PREROUTING_direct all -- anywhere anywhere</span><br><span class="line"></span><br><span class="line">Chain OUTPUT (policy ACCEPT)</span><br><span class="line">target prot opt source destination</span><br><span class="line">OUTPUT_direct all -- anywhere anywhere</span><br><span class="line"></span><br><span class="line">Chain OUTPUT_direct (1 references)</span><br><span class="line">target prot opt source destination</span><br><span class="line"></span><br><span class="line">Chain PREROUTING_direct (1 references)</span><br><span class="line">target prot opt source destination</span><br></pre></td></tr></table></figure>
+<p>We’ll want to add our tracing rules before the existing rules. In this example we’ll trace everything related to HTTP (port 80)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># iptables -t raw -j TRACE -p tcp --dport 80 -I PREROUTING 1</span><br><span class="line"># iptables -t raw -j TRACE -p tcp --dport 80 -I OUTPUT 1</span><br></pre></td></tr></table></figure>
+<p>The rules now look as follows:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"># iptables -t raw -L</span><br><span class="line">Chain PREROUTING (policy ACCEPT)</span><br><span class="line">target prot opt source destination</span><br><span class="line">TRACE tcp -- anywhere anywhere tcp dpt:http</span><br><span class="line">PREROUTING_direct all -- anywhere anywhere</span><br><span class="line"></span><br><span class="line">Chain OUTPUT (policy ACCEPT)</span><br><span class="line">target prot opt source destination</span><br><span class="line">TRACE tcp -- anywhere anywhere tcp dpt:http</span><br><span class="line">OUTPUT_direct all -- anywhere anywhere</span><br><span class="line"></span><br><span class="line">Chain OUTPUT_direct (1 references)</span><br><span class="line">target prot opt source destination</span><br><span class="line"></span><br><span class="line">Chain PREROUTING_direct (1 references)</span><br><span class="line">target prot opt source destination</span><br><span class="line">Now access to that specific machine’s TCP port 80 are logged to /var/log/messages:</span><br><span class="line"># tail /var/log/messages</span><br><span class="line">May 27 19:57:54 storm3 kernel: TRACE: mangle:PRE_public:rule:3 IN=em1 OUT= MAC=ec:f4:bb:f1:4e:f0:00:25:46:70:2e:41:08:00 SRC=10.36.7.11 DST=10.32.105.30 LEN=64 TOS=0x00 PREC=0x00 TTL=59 ID=10953 DF PROTO=TCP SPT=54451 DPT=80 SEQ=1779626624 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020404D8010303050101080A124E9DB70000000004020000)</span><br><span class="line">May 27 19:57:54 storm3 kernel: TRACE: mangle:PRE_public_allow:return:1 IN=em1 OUT= MAC=ec:f4:bb:f1:4e:f0:00:25:46:70:2e:41:08:00 SRC=10.36.7.11 DST=10.32.105.30 LEN=64 TOS=0x00 PREC=0x00 TTL=59 ID=10953 DF PROTO=TCP SPT=54451 DPT=80 SEQ=1779626624 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020404D8010303050101080A124E9DB70000000004020000)</span><br><span class="line">May 27 19:57:54 storm3 kernel: TRACE: mangle:PRE_public:return:4 IN=em1 OUT= MAC=ec:f4:bb:f1:4e:f0:00:25:46:70:2e:41:08:00 SRC=10.36.7.11 DST=10.32.105.30 LEN=64 TOS=0x00 PREC=0x00 TTL=59 ID=10953 DF PROTO=TCP SPT=54451 DPT=80 SEQ=1779626624 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020404D8010303050101080A124E9DB70000000004020000)</span><br><span class="line">May 27 19:57:54 storm3 kernel: TRACE: mangle:PREROUTING:policy:4 IN=em1 OUT= MAC=ec:f4:bb:f1:4e:f0:00:25:46:70:2e:41:08:00 SRC=10.36.7.11 DST=10.32.105.30 LEN=64 TOS=0x00 PREC=0x00 TTL=59 ID=10953 DF PROTO=TCP SPT=54451 DPT=80 SEQ=1779626624 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020404D8010303050101080A124E9DB70000000004020000)</span><br><span class="line">May 27 19:57:54 storm3 kernel: TRACE: nat:PREROUTING:rule:1 IN=em1 OUT= MAC=ec:f4:bb:f1:4e:f0:00:25:46:70:2e:41:08:00 SRC=10.36.7.11 DST=10.32.105.30 LEN=64 TOS=0x00 PREC=0x00 TTL=59 ID=10953 DF PROTO=TCP SPT=54451 DPT=80 SEQ=1779626624 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020404D8010303050101080A124E9DB70000000004020000)</span><br><span class="line">May 27 19:57:54 storm3 kernel: TRACE: nat:PREROUTING_direct:rule:1 IN=em1 OUT= MAC=ec:f4:bb:f1:4e:f0:00:25:46:70:2e:41:08:00 SRC=10.36.7.11 DST=10.32.105.30 LEN=64 TOS=0x00 PREC=0x00 TTL=59 ID=10953 DF PROTO=TCP SPT=54451 DPT=80 SEQ=1779626624 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020404D8010303050101080A124E9DB70000000004020000)</span><br><span class="line">May 27 19:57:54 storm3 kernel: TRACE: mangle:FORWARD:rule:1 IN=em1 OUT=virbr1 MAC=ec:f4:bb:f1:4e:f0:00:25:46:70:2e:41:08:00 SRC=10.36.7.11 DST=192.168.101.10 LEN=64 TOS=0x00 PREC=0x00 TTL=58 ID=10953 DF PROTO=TCP SPT=54451 DPT=80 SEQ=1779626624 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020404D8010303050101080A124E9DB70000000004020000)</span><br><span class="line">May 27 19:57:54 storm3 kernel: TRACE: mangle:FORWARD_direct:return:1 IN=em1 OUT=virbr1 MAC=ec:f4:bb:f1:4e:f0:00:25:46:70:2e:41:08:00 SRC=10.36.7.11 DST=192.168.101.10 LEN=64 TOS=0x00 PREC=0x00 TTL=58 ID=10953 DF PROTO=TCP SPT=54451 DPT=80 SEQ=1779626624 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020404D8010303050101080A124E9DB70000000004020000)</span><br><span class="line">May 27 19:57:54 storm3 kernel: TRACE: mangle:FORWARD:policy:2 IN=em1 OUT=virbr1 MAC=ec:f4:bb:f1:4e:f0:00:25:46:70:2e:41:08:00 SRC=10.36.7.11 DST=192.168.101.10 LEN=64 TOS=0x00 PREC=0x00 TTL=58 ID=10953 DF PROTO=TCP SPT=54451 DPT=80 SEQ=1779626624 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020404D8010303050101080A124E9DB70000000004020000)</span><br><span class="line">May 27 19:57:54 storm3 kernel: TRACE: filter:FORWARD:rule:7 IN=em1 OUT=virbr1 MAC=ec:f4:bb:f1:4e:f0:00:25:46:70:2e:41:08:00 SRC=10.36.7.11 DST=192.168.101.10 LEN=64 TOS=0x00 PREC=0x00 TTL=58 ID=10953 DF PROTO=TCP SPT=54451 DPT=80 SEQ=1779626624 ACK=0 WINDOW=65535 RES=0x00 SYN URGP=0 OPT (020404D8010303050101080A124E9DB70000000004020000)</span><br></pre></td></tr></table></figure>
+<p>See also:<br><a href="http:// http//backreference.org/2010/06/11/iptables-debugging/" target="_blank" rel="noopener">http://backreference.org/2010/06/11/iptables-debugging/</a><br><a href="http://https//home.regit.org/2014/02/nftables-and-netfilter-logging-framework/" target="_blank" rel="noopener">https://home.regit.org/2014/02/nftables-and-netfilter-logging-framework/</a></p>
+<p>原文：<a href="http://www.opensourcerers.org/how-to-trace-iptables-in-rhel7-centos7/" target="_blank" rel="noopener">http://www.opensourcerers.org/how-to-trace-iptables-in-rhel7-centos7/</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+            <a href="/tags/iptables/" rel="tag"># iptables</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/24/k8s/deploy/二进制部署Kubernetes/" rel="next" title="二进制部署Kubernetes">
+                <i class="fa fa-chevron-left"></i> 二进制部署Kubernetes
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/24/k8s/资源管理/pod 探针/" rel="prev" title="Pod的liveness和readiness探针">
+                Pod的liveness和readiness探针 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview sidebar-panel sidebar-panel-active">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

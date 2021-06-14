@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="k8s,PersistentVolume,local volume,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="local volumeLocal Persistent Volume是用来做什么? 可以实现pod在本地的持久化存储, 而不需要依赖远程存储服务来提供持久化 , 即使这个pod再次被调度的时候 , 也能被再次调度到local pv所在的node。 kubernetes从1.10版本开始支持local volume（本地卷），workload（不仅是statefulsets类型）可以充分利用本地快">
+<meta name="keywords" content="k8s,PersistentVolume,local volume">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kubernetes支持local volume">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/03/05/k8s/持久化存储/kubernetes支持local volume/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="local volumeLocal Persistent Volume是用来做什么? 可以实现pod在本地的持久化存储, 而不需要依赖远程存储服务来提供持久化 , 即使这个pod再次被调度的时候 , 也能被再次调度到local pv所在的node。 kubernetes从1.10版本开始支持local volume（本地卷），workload（不仅是statefulsets类型）可以充分利用本地快">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kubernetes支持local volume">
+<meta name="twitter:description" content="local volumeLocal Persistent Volume是用来做什么? 可以实现pod在本地的持久化存储, 而不需要依赖远程存储服务来提供持久化 , 即使这个pod再次被调度的时候 , 也能被再次调度到local pv所在的node。 kubernetes从1.10版本开始支持local volume（本地卷），workload（不仅是statefulsets类型）可以充分利用本地快">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/03/05/k8s/持久化存储/kubernetes支持local volume/">
+
+
+
+
+
+  <title>kubernetes支持local volume | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/03/05/k8s/持久化存储/kubernetes支持local volume/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">kubernetes支持local volume</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-05T09:47:19+00:00">
+                2019-03-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="local-volume"><a href="#local-volume" class="headerlink" title="local volume"></a>local volume</h1><p>Local Persistent Volume是用来做什么?</p>
+<p>可以实现pod在本地的持久化存储, 而不需要依赖远程存储服务来提供持久化 , 即使这个pod再次被调度的时候 , 也能被再次调度到local pv所在的node。</p>
+<p>kubernetes从1.10版本开始支持local volume（本地卷），workload（不仅是statefulsets类型）可以充分利用本地快速SSD，从而获取比remote volume（如cephfs、RBD）更好的性能。</p>
+<p>在local volume出现之前，statefulsets也可以利用本地SSD，方法是配置hostPath，并通过nodeSelector或者nodeAffinity绑定到具体node上。但hostPath的问题是，管理员需要手动管理集群各个node的目录，不太方便。</p>
+<p>下面两种类型应用适合使用local volume。</p>
+<p>数据缓存，应用可以就近访问数据，快速处理。<br>分布式存储系统，如分布式数据库Cassandra ，分布式文件系统ceph/gluster<br>下面会先以手动方式创建PV、PVC、Pod的方式，介绍如何使用local volume，然后再介绍external storage提供的半自动方式，最后介绍社区的一些发展。</p>
+<h1 id="Local-Persistent-Volume需要注意的地方是什么"><a href="#Local-Persistent-Volume需要注意的地方是什么" class="headerlink" title="Local Persistent Volume需要注意的地方是什么?"></a>Local Persistent Volume需要注意的地方是什么?</h1><ul>
+<li><p>一旦节点宕机 , 在上面的数据就会丢失 , 这需要使用Local Persistent Volume的应用要有数据恢复和备份能力</p>
+</li>
+<li><p>Local Persistent Volume对应的存储介质, 一定是一块额外挂载在 宿主机的磁盘或者块设备(意思是它不应用是宿主机根目录所使用的主硬盘 , ) 一定要一个PV一个盘 , 而且要提前准备好</p>
+</li>
+</ul>
+<h1 id="创建一个storage-class"><a href="#创建一个storage-class" class="headerlink" title="创建一个storage class"></a>创建一个storage class</h1><p>首先需要有一个名为local-volume的sc。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">kind: StorageClass</span><br><span class="line">apiVersion: storage.k8s.io/v1</span><br><span class="line">metadata:</span><br><span class="line">  name: local-volume</span><br><span class="line">provisioner: kubernetes.io/no-provisioner</span><br><span class="line">volumeBindingMode: WaitForFirstConsumer</span><br></pre></td></tr></table></figure></p>
+<p>provisioner是kubernetes.io/no-provisioner</p>
+<p>WaitForFirstConsumer表示PV不要立即绑定PVC，而是直到有Pod需要用PVC的时候才绑定。调度器会在调度时综合考虑选择合适的local PV，这样就不会导致跟Pod资源设置，selectors，affinity and anti-affinity策略等产生冲突。很明显：如果PVC先跟local PV绑定了，由于local PV是跟node绑定的，这样selectors，affinity等等就基本没用了，所以更好的做法是先根据调度策略选择node，然后再绑定local PV。<br>其实WaitForFirstConsumer又2种: 一种是WaitForFirstConsumer , 一直是Immediate , 这里必须用延迟绑定模式</p>
+<h1 id="静态创建PV"><a href="#静态创建PV" class="headerlink" title="静态创建PV"></a>静态创建PV</h1><p>通过kubectl命令，静态创建一个5GiB的PV；该PV使用node ubuntu-1的 /data/local/vol1 目录；该PV的sc为local-volume。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: PersistentVolume</span><br><span class="line">metadata:</span><br><span class="line">  name: example-pv</span><br><span class="line">spec:</span><br><span class="line">  capacity:</span><br><span class="line">    storage: 5Gi</span><br><span class="line">  volumeMode: Filesystem</span><br><span class="line">  accessModes:</span><br><span class="line">  - ReadWriteOnce</span><br><span class="line">  persistentVolumeReclaimPolicy: Retain</span><br><span class="line">  storageClassName: local-storage</span><br><span class="line">  local:</span><br><span class="line">    path: /mnt/disks/vol1 </span><br><span class="line">  nodeAffinity:</span><br><span class="line">    required:</span><br><span class="line">      nodeSelectorTerms:</span><br><span class="line">      - matchExpressions:</span><br><span class="line">        - key: kubernetes.io/hostname</span><br><span class="line">          operator: In</span><br><span class="line">          values:</span><br><span class="line">          - 192.168.122.234</span><br></pre></td></tr></table></figure></p>
+<p>Retain（保留）是指，PV跟PVC释放后，管理员需要手工清理，重新设置该卷。</p>
+<p>local.path写对应的磁盘路径</p>
+<p>必须指定对应的node , 用.spec.nodeAffinity 来对应的node</p>
+<p>.spec.volumeMode可以是FileSystem（Default）和Block</p>
+<h1 id="使用local-volume-PV"><a href="#使用local-volume-PV" class="headerlink" title="使用local volume PV"></a>使用local volume PV</h1><p>接下来创建一个关联 sc:local-volume的PVC，然后将该PVC挂到nginx容器里。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">kind: PersistentVolumeClaim</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  name: example-local-claim</span><br><span class="line">spec:</span><br><span class="line">  accessModes:</span><br><span class="line">  - ReadWriteOnce</span><br><span class="line">  resources:</span><br><span class="line">    requests:</span><br><span class="line">      storage: 5Gi</span><br><span class="line">  storageClassName: local-storage</span><br></pre></td></tr></table></figure></p>
+<p>创建对应的pod</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">kind: Pod</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  name: example-pv-pod</span><br><span class="line">spec:</span><br><span class="line">  volumes:</span><br><span class="line">    - name: example-pv-storage</span><br><span class="line">      persistentVolumeClaim:</span><br><span class="line">       claimName: example-local-claim</span><br><span class="line">  containers:</span><br><span class="line">    - name: example-pv-container</span><br><span class="line">      image: nginx</span><br><span class="line">      ports:</span><br><span class="line">        - containerPort: 80</span><br><span class="line">          name: &quot;http-server&quot;</span><br><span class="line">      volumeMounts:</span><br><span class="line">        - mountPath: &quot;/usr/share/nginx/html&quot;</span><br><span class="line">          name: example-pv-storage</span><br></pre></td></tr></table></figure>
+<p>在宿主机/mnt/disks/vol1 或容器里挂载路径/usr/share/nginx/html目录下创建一个index.html文件：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo &quot;hello world&quot; &gt; /mnt/disks/vol1/index.html</span><br></pre></td></tr></table></figure></p>
+<p>然后再去curl容器的IP地址，就可以得到刚写入的字符串了。</p>
+<p>删除Pod/PVC，之后PV状态改为Released，该PV不会再被绑定PVC了。</p>
+<h1 id="动态创建PV"><a href="#动态创建PV" class="headerlink" title="动态创建PV"></a>动态创建PV</h1><p>手工管理local PV显然是很费劲的，社区提供了<a href="https://github.com/kubernetes-incubator/external-storage/blob" target="_blank" rel="noopener">external storage</a>可以动态的创建PV（实际仍然不够自动化）。</p>
+<p><a href="https://github.com/kubernetes-incubator/external-storage/blob/master/local-volume/provisioner/deployment/kubernetes/example/default_example_provisioner_generated.yaml" target="_blank" rel="noopener">local volume provisioner</a></p>
+<p>目前已经迁移到：<a href="https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner" target="_blank" rel="noopener">https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner</a></p>
+<p>按照社区来看：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1.14: GA</span><br><span class="line">No new features added</span><br><span class="line">1.12: Beta</span><br><span class="line">Added support for automatically formatting a filesystem on the given block device in localVolumeSource.path</span><br></pre></td></tr></table></figure>
+<p>1.14已经GA，1.12已经支持自动格式化文件系统</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line"># Source: provisioner/templates/provisioner.yaml</span><br><span class="line"></span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: ConfigMap</span><br><span class="line">metadata:</span><br><span class="line">  name: local-provisioner-config</span><br><span class="line">  namespace: default</span><br><span class="line">data:</span><br><span class="line">  storageClassMap: |</span><br><span class="line">    fast-disks:</span><br><span class="line">       hostDir: /mnt/fast-disks</span><br><span class="line">       mountDir:  /mnt/fast-disks</span><br><span class="line">       blockCleanerCommand:</span><br><span class="line">         - &quot;/scripts/shred.sh&quot;</span><br><span class="line">         - &quot;2&quot;</span><br><span class="line">       volumeMode: Filesystem</span><br><span class="line">       fsType: ext4</span><br><span class="line">---</span><br><span class="line">apiVersion: extensions/v1beta1</span><br><span class="line">kind: DaemonSet</span><br><span class="line">metadata:</span><br><span class="line">  name: local-volume-provisioner</span><br><span class="line">  namespace: default</span><br><span class="line">  labels:</span><br><span class="line">    app: local-volume-provisioner</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: local-volume-provisioner</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: local-volume-provisioner</span><br><span class="line">    spec:</span><br><span class="line">      serviceAccountName: local-storage-admin</span><br><span class="line">      containers:</span><br><span class="line">        - image: &quot;quay.io/external_storage/local-volume-provisioner:v2.1.0&quot;</span><br><span class="line">          imagePullPolicy: &quot;Always&quot;</span><br><span class="line">          name: provisioner</span><br><span class="line">          securityContext:</span><br><span class="line">            privileged: true</span><br><span class="line">          env:</span><br><span class="line">          - name: MY_NODE_NAME</span><br><span class="line">            valueFrom:</span><br><span class="line">              fieldRef:</span><br><span class="line">                fieldPath: spec.nodeName</span><br><span class="line">          volumeMounts:</span><br><span class="line">            - mountPath: /etc/provisioner/config</span><br><span class="line">              name: provisioner-config</span><br><span class="line">              readOnly: true</span><br><span class="line">            - mountPath:  /mnt/fast-disks</span><br><span class="line">              name: fast-disks</span><br><span class="line">              mountPropagation: &quot;HostToContainer&quot;</span><br><span class="line">      volumes:</span><br><span class="line">        - name: provisioner-config</span><br><span class="line">          configMap:</span><br><span class="line">            name: local-provisioner-config</span><br><span class="line">        - name: fast-disks</span><br><span class="line">          hostPath:</span><br><span class="line">            path: /mnt/fast-disks</span><br><span class="line"></span><br><span class="line">---</span><br><span class="line"># Source: provisioner/templates/provisioner-service-account.yaml</span><br><span class="line"></span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: ServiceAccount</span><br><span class="line">metadata:</span><br><span class="line">  name: local-storage-admin</span><br><span class="line">  namespace: default</span><br><span class="line"></span><br><span class="line">---</span><br><span class="line"># Source: provisioner/templates/provisioner-cluster-role-binding.yaml</span><br><span class="line"></span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">kind: ClusterRoleBinding</span><br><span class="line">metadata:</span><br><span class="line">  name: local-storage-provisioner-pv-binding</span><br><span class="line">  namespace: default</span><br><span class="line">subjects:</span><br><span class="line">- kind: ServiceAccount</span><br><span class="line">  name: local-storage-admin</span><br><span class="line">  namespace: default</span><br><span class="line">roleRef:</span><br><span class="line">  kind: ClusterRole</span><br><span class="line">  name: system:persistent-volume-provisioner</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line">---</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">kind: ClusterRole</span><br><span class="line">metadata:</span><br><span class="line">  name: local-storage-provisioner-node-clusterrole</span><br><span class="line">  namespace: default</span><br><span class="line">rules:</span><br><span class="line">- apiGroups: [&quot;&quot;]</span><br><span class="line">  resources: [&quot;nodes&quot;]</span><br><span class="line">  verbs: [&quot;get&quot;]</span><br><span class="line">---</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">kind: ClusterRoleBinding</span><br><span class="line">metadata:</span><br><span class="line">  name: local-storage-provisioner-node-binding</span><br><span class="line">  namespace: default</span><br><span class="line">subjects:</span><br><span class="line">- kind: ServiceAccount</span><br><span class="line">  name: local-storage-admin</span><br><span class="line">  namespace: default</span><br><span class="line">roleRef:</span><br><span class="line">  kind: ClusterRole</span><br><span class="line">  name: local-storage-provisioner-node-clusterrole</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br></pre></td></tr></table></figure>
+<p>kubectl创建后，由于是daemonset类型，每个节点上都会启动一个provisioner。该provisioner会监视 “discovery directory”，即上面配置的/data/local。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl get pods -o wide|grep local-volume</span><br><span class="line">local-volume-provisioner-rrsjp            1/1     Running   0          5m    10.244.1.141   ubuntu-2   &lt;none&gt;</span><br><span class="line">local-volume-provisioner-v87b7            1/1     Running   0          5m    10.244.2.69    ubuntu-3   &lt;none&gt;</span><br><span class="line">local-volume-provisioner-x65k9            1/1     Running   0          5m    10.244.0.174   ubuntu-1   &lt;none&gt;</span><br></pre></td></tr></table></figure></p>
+<p>前面mypod/myclaim已经删除了，我们重新创建一个，此时pvc myclaim是Pending状态，provisoner并没有自动供给存储。为什么呢？</p>
+<p>原来external-storage的逻辑是这样的：其Provisioner本身其并不提供local volume，但它在各个节点上的provisioner会去动态的“发现”挂载点（discovery directory），当某node的provisioner在/data/local/目录下发现有挂载点时，会创建PV，该PV的local.path就是挂载点，并设置nodeAffinity为该node。</p>
+<p>那么如何获得挂载点呢？</p>
+<p>直接去创建目录是行不通的，因为provsioner希望PV是隔离的，例如capacity，io等。试着在ubuntu-2上的/data/local/下创建一个xxx目录，会得到这样的告警。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">discovery.go:201] Path &quot;/data/local/xxx&quot; is not an actual mountpoint</span><br></pre></td></tr></table></figure></p>
+<p>目录不是挂载点，不能用。</p>
+<p>该目录必须是真材实料的mount才行。一个办法是加硬盘、格式化、mount，比较麻烦，实际可以通过本地文件格式化(loopfs)后挂载来“欺骗”provisioner，让它以为是一个mount的盘，从而自动创建PV，并与PVC绑定。</p>
+<p>如下。</p>
+<p>将下面的代码保存为文件 loopmount，加执行权限并拷贝到/bin目录下，就可以使用该命令来创建挂载点了。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">#!/bin/bash</span><br><span class="line">  </span><br><span class="line"># Usage: sudo loopmount file size mount-point</span><br><span class="line"></span><br><span class="line">touch $1</span><br><span class="line">truncate -s $2 $1</span><br><span class="line">mke2fs -t ext4 -F $1 1&gt; /dev/null 2&gt; /dev/null</span><br><span class="line">if [[ ! -d $3 ]]; then</span><br><span class="line">        echo $3 &quot; not exist, creating...&quot;</span><br><span class="line">        mkdir $3</span><br><span class="line">fi</span><br><span class="line">mount $1 $3</span><br><span class="line">df -h |grep $3</span><br></pre></td></tr></table></figure></p>
+<p>使用脚本创建一个6G的文件，并挂载到/data/local下。之所以要6G，是因为前面PVC需要的是5GB，而格式化后剩余空间会小一点，所以设置文件更大一些，后面才好绑定PVC。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># loopmount xxx 6G /data/local/xxx</span><br><span class="line">/data/local/xxx  not exist, creating...</span><br><span class="line">/dev/loop0     5.9G   24M  5.6G   1% /data/local/x1</span><br></pre></td></tr></table></figure></p>
+<p>查看PV，可见Provisioner自动创建了PV，而kubernetes会将该PV供给给前面的PVC myclam，mypod也run起来了。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># kubectl get pv</span><br><span class="line">NAME              CAPACITY  ACCESS MODES   RECLAIM POLICY   STATUS  CLAIM            STORAGECLASS          REASON   AGE</span><br><span class="line">local-pv-600377f7 5983Mi    RWO            Delete           Bound   default/myclaim  local-volume                   1s</span><br></pre></td></tr></table></figure></p>
+<p>可见，目前版本的local volume还无法做到像cephfs/RBD一样的全自动化，仍然需要管理员干涉，显然这不是一个好的实现。</p>
+<p>社区有人提交了基于LVM做local volume动态供给的Proposal，不过进展很缓慢。作者是huawei的员工，应该huawei已经实现了。</p>
+<p>除了基于LVM，也可以基于 ext4 project quota 来实现LV的动态供给。</p>
+<p>除了使用磁盘，还可以考虑使用内存文件系统，从而获取更高的io性能，只是容量就没那么理想了。一些特殊的应用可以考虑。</p>
+<p>mount -t tmpfs -o size=1G,nr_inodes=10k,mode=700 tmpfs /data/local/tmpfs<br>总的来说，local volume本地卷目前不支持动态供给，还无法真正推广使用，但可以用来解决一些特定问题。</p>
+<p>Ref:</p>
+<p><a href="https://kubernetes.io/blog/2018/04/13/local-persistent-volumes-beta/" target="_blank" rel="noopener">https://kubernetes.io/blog/2018/04/13/local-persistent-volumes-beta/</a></p>
+<p><a href="https://invent.life/nesity/create-a-loopback-device-with-ext4/" target="_blank" rel="noopener">https://invent.life/nesity/create-a-loopback-device-with-ext4/</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/PersistentVolume/" rel="tag"># PersistentVolume</a>
+          
+            <a href="/tags/local-volume/" rel="tag"># local volume</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/05/k8s/持久化存储/ceph/kubespary中对接ceph rbd/" rel="next" title="kubespray中对接ceph rbd">
+                <i class="fa fa-chevron-left"></i> kubespray中对接ceph rbd
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/03/05/k8s/持久化存储/ceph/Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法/" rel="prev" title="Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法">
+                Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#local-volume"><span class="nav-number">1.</span> <span class="nav-text">local volume</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Local-Persistent-Volume需要注意的地方是什么"><span class="nav-number">2.</span> <span class="nav-text">Local Persistent Volume需要注意的地方是什么?</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#创建一个storage-class"><span class="nav-number">3.</span> <span class="nav-text">创建一个storage class</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#静态创建PV"><span class="nav-number">4.</span> <span class="nav-text">静态创建PV</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用local-volume-PV"><span class="nav-number">5.</span> <span class="nav-text">使用local volume PV</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#动态创建PV"><span class="nav-number">6.</span> <span class="nav-text">动态创建PV</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="terraform,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="原文：https://int32bit.me/2019/10/09/%E6%B7%B7%E5%90%88%E4%BA%91%E7%BC%96%E6%8E%92%E5%B7%A5%E5%85%B7Terrafrom%E7%AE%80%E4%BB%8B/ 1 Terraform背景1.1 混合云编排目前各大公有云以及云管理平台均提供了非常友好的交互界面，用户可以像超市买东西一样自助采购云资源。然而，当">
+<meta name="keywords" content="terraform">
+<meta property="og:type" content="article">
+<meta property="og:title" content="混合云编排工具terraform">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/10/05/k8s/编排/混合云编排工具terrafrom/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="原文：https://int32bit.me/2019/10/09/%E6%B7%B7%E5%90%88%E4%BA%91%E7%BC%96%E6%8E%92%E5%B7%A5%E5%85%B7Terrafrom%E7%AE%80%E4%BB%8B/ 1 Terraform背景1.1 混合云编排目前各大公有云以及云管理平台均提供了非常友好的交互界面，用户可以像超市买东西一样自助采购云资源。然而，当">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://int32bit.me/img/posts/%E6%B7%B7%E5%90%88%E4%BA%91%E7%BC%96%E6%8E%92%E5%B7%A5%E5%85%B7Terrafrom%E7%AE%80%E4%BB%8B/hashicorp_products.png">
+<meta property="og:image" content="https://int32bit.me/img/posts/%E6%B7%B7%E5%90%88%E4%BA%91%E7%BC%96%E6%8E%92%E5%B7%A5%E5%85%B7Terrafrom%E7%AE%80%E4%BB%8B/terraform_providers.png">
+<meta property="og:image" content="https://int32bit.me/img/posts/%E6%B7%B7%E5%90%88%E4%BA%91%E7%BC%96%E6%8E%92%E5%B7%A5%E5%85%B7Terrafrom%E7%AE%80%E4%BB%8B/terraform_init.png">
+<meta property="og:image" content="https://int32bit.me/img/posts/%E6%B7%B7%E5%90%88%E4%BA%91%E7%BC%96%E6%8E%92%E5%B7%A5%E5%85%B7Terrafrom%E7%AE%80%E4%BB%8B/EC2_instance.png">
+<meta property="og:image" content="https://int32bit.me/img/posts/%E6%B7%B7%E5%90%88%E4%BA%91%E7%BC%96%E6%8E%92%E5%B7%A5%E5%85%B7Terrafrom%E7%AE%80%E4%BB%8B/EC2_instance2.png">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="混合云编排工具terraform">
+<meta name="twitter:description" content="原文：https://int32bit.me/2019/10/09/%E6%B7%B7%E5%90%88%E4%BA%91%E7%BC%96%E6%8E%92%E5%B7%A5%E5%85%B7Terrafrom%E7%AE%80%E4%BB%8B/ 1 Terraform背景1.1 混合云编排目前各大公有云以及云管理平台均提供了非常友好的交互界面，用户可以像超市买东西一样自助采购云资源。然而，当">
+<meta name="twitter:image" content="https://int32bit.me/img/posts/%E6%B7%B7%E5%90%88%E4%BA%91%E7%BC%96%E6%8E%92%E5%B7%A5%E5%85%B7Terrafrom%E7%AE%80%E4%BB%8B/hashicorp_products.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/10/05/k8s/编排/混合云编排工具terrafrom/">
+
+
+
+
+
+  <title>混合云编排工具terraform | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/10/05/k8s/编排/混合云编排工具terrafrom/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">混合云编排工具terraform</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-10-05T09:47:19+00:00">
+                2019-10-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/terraform/" itemprop="url" rel="index">
+                    <span itemprop="name">terraform</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>原文：<a href="https://int32bit.me/2019/10/09/%E6%B7%B7%E5%90%88%E4%BA%91%E7%BC%96%E6%8E%92%E5%B7%A5%E5%85%B7Terrafrom%E7%AE%80%E4%BB%8B/" target="_blank" rel="noopener">https://int32bit.me/2019/10/09/%E6%B7%B7%E5%90%88%E4%BA%91%E7%BC%96%E6%8E%92%E5%B7%A5%E5%85%B7Terrafrom%E7%AE%80%E4%BB%8B/</a></p>
+<h2 id="1-Terraform背景"><a href="#1-Terraform背景" class="headerlink" title="1 Terraform背景"></a>1 Terraform背景</h2><h3 id="1-1-混合云编排"><a href="#1-1-混合云编排" class="headerlink" title="1.1 混合云编排"></a>1.1 混合云编排</h3><p>目前各大公有云以及云管理平台均提供了非常友好的交互界面，用户可以像超市买东西一样自助采购云资源。然而，当用户需要批量快速打包采购大量不同类型的云资源时，云管页面过多的交互反而降低了资源采购效率。</p>
+<p>据统计，一个熟悉AWS页面操作的工程师，在AWS上初始化一个VPC包括创建VPC、子网、internet网关、NAT网关、路由等工作至少需要花费20分钟的时间，如果涉及跨多个云平台，则花费的时间势必会更长。这就像我们逛超市，不同的商品在不同的区域，甚至不同的售卖方式，有些东西还可能需要逛多个超市去买，很多重复的体力活，一件一件地买不仅工作量繁重还非常浪费时间。</p>
+<p>如果我们只需要写一份完整货单然后直接下单效率就会提高很多，而且货单可以随时修改和复用。在云计算中这被称作资源编排（Orchestration），其实在很多云平台中都已经提供了资源编排的功能，比如AWS的CloudFormation、OpenStack的Heat等。</p>
+<p>但是如上工具通常仅限用于自家的单一云平台上，而在混合云场景下，往往需要跨多个云平台，不仅有IaaS资源，还有PaaS资源，如果杂糅非常多的云编排工具，则不仅导致学习成本高、代码复用率低，还导致管理混乱，不利于多云的协同工作。解决如上问题的方法是引入一个统一的编排工具，能够通过相同的语法同时编排AWS、GCP、Kubernetes、Vmware、OpenStack、阿里云等云资源。</p>
+<p>而这个混合云统一编排工具目前已经有很好的开源项目支持了，它就是下面将要介绍的Terraform项目。</p>
+<h3 id="1-2-Terraform简介"><a href="#1-2-Terraform简介" class="headerlink" title="1.2 Terraform简介"></a>1.2 Terraform简介</h3><p>Terraform的设计目标为Infrastructure as Code，这里的Infrastructure是一个非常抽象的东西，可以认为是数据中心的一切抽象，如二层网络、交换机(子网）、路由器、虚拟机、负载均衡、防火墙、数据库等等。</p>
+<p>Terraform是由Hashicorp公司推出的一个开源项目，这是一家牛逼的公司，除了Terraform项目，开源的项目还有我们熟知的Consul、Vault、Nomad等，涵盖了应用的Provision（资源供给）、Secure（密钥安全）、Connect(分布式通信）、Run（运行）4个阶段。</p>
+<p><img src="https://int32bit.me/img/posts/%E6%B7%B7%E5%90%88%E4%BA%91%E7%BC%96%E6%8E%92%E5%B7%A5%E5%85%B7Terrafrom%E7%AE%80%E4%BB%8B/hashicorp_products.png" alt="hashicorp products"></p>
+<p>Terraform和前面提到的CloudFormation、Heat相比除了支持混合云统一编排以外，还有个不同之处在于，Terraform在真正执行之前中间会有个plan计划阶段，这个阶段能够预览哪些资源会新创建、哪些资源会被删除以及更新，这有点像git在commit之前先执行diff人工review下代码，让开发者能够提前检查语法是否有错误以及资源是否为期望结果。</p>
+<p>可能有人会说目前不是已经有一些配置管理工具（Configuration Management）如Puppet、Ansible、Chef等同样也可以创建云资源，比如Ansible就提供了模块支持创建AWS资源<a href="https://www.ansible.com/integrations/cloud/amazon-web-services" target="_blank" rel="noopener">Ansible: Amazon Web Services</a>，甚至可以通过<code>--dry-run</code>参数实现类似Terraform的plan功能。</p>
+<p>但二者其实是有差别的，首先Orchestration如Terraform主要解决底层基础设施资源管理问题，而配置管理工具如Ansible主要面向操作系统的配置。其次Orchestration通常是声明式的(Declarative)，声明式只关心最终的全局结果是否符合期望，如果和声明的不一致，则创建或者修改资源使其匹配最终状态。而配置管理工具通常是面向过程的（Procedural），需要告诉它哪个有，哪个没有，哪一步怎么做，执行时关心的是每个指令而不是最终的全局结果。</p>
+<p>打个比方使用Ansible和Terraform都可以实现在AWS上同时创建5个虚拟机，并且都是通过<code>count = 5</code>变量指定实例数量。</p>
+<p>Ansible:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">- ec2: count: 5 image: ami-1 instance_type: t2.micro</span><br></pre></td></tr></table></figure>
+<p>Terraform:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">resource &quot;aws_instance&quot; &quot;example&quot; &#123; </span><br><span class="line">  count = 5</span><br><span class="line">  ami = &quot;ami-1&quot; </span><br><span class="line">  instance_type = &quot;t2.micro&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>现在如果需要增加1个虚拟机，Terraform只需要把<code>count</code>值修改为6即可，因为<code>count</code>表示为全局的最终结果。但Ansible如果把<code>count</code>修改为6，则会再创建6个虚拟机，一共11个虚拟机，因此要实现创建6台虚拟机，只能再拷贝一份代码并指定<code>count</code>为1，非常不灵活。</p>
+<p>如果修改AMI镜像，Terraform只需要修改ami参数为新镜像ID即可，Ansible则必须重写模块，并且需要手动删除没用的旧虚拟机。</p>
+<h2 id="2-Terraform入门"><a href="#2-Terraform入门" class="headerlink" title="2 Terraform入门"></a>2 Terraform入门</h2><p>Terrafrom的安装可参考<a href="https://learn.hashicorp.com/terraform/getting-started/install.html" target="_blank" rel="noopener">官方的文档Installing Terraform</a>，安装完后建议先配置子命令自动补全功能：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">terraform -install-autocomplete</span><br></pre></td></tr></table></figure>
+<h3 id="2-1-Provider"><a href="#2-1-Provider" class="headerlink" title="2.1 Provider"></a>2.1 Provider</h3><p>Terraform其中一个最重要的概念为Provider，Provider为后端驱动，类似于Ansible的模块或者驱动，Provider为云平台的插件，换句话说，只需要实现Provider，就可以对接任一云平台。目前大多数云平台的Provider插件均已经实现了，AWS对应的Provider为<code>aws</code>，阿里云对应的Provider为<code>alicloud</code>。由于资源必然属于某个云平台，因此显然Terraform中所有的资源必须隶属于某个Provider。</p>
+<p>Terraform目前支持超过160多种的providers，可以说只要人听过的云都能支持，主流的如AWS、GCP、OpenStack等，国内的阿里云、腾讯云、Ucloud以及OpenStack系的华为云、京东云等。</p>
+<p>除了公有云，私有云如Oracle、Vmware的支持也都完全没有问题。同时也支持目前主流的PaaS平台，如Kubernetes、Helm、Rancher2等，基本不需要再造轮子直接用就完了。</p>
+<p><img src="https://int32bit.me/img/posts/%E6%B7%B7%E5%90%88%E4%BA%91%E7%BC%96%E6%8E%92%E5%B7%A5%E5%85%B7Terrafrom%E7%AE%80%E4%BB%8B/terraform_providers.png" alt="terraform providers"></p>
+<p>Provider在Terraform中以插件的形式加载，在init阶段Terraform会自动下载所需要的所有Provider插件。</p>
+<p>定义Provider实例的语法如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">provider &quot;aws&quot; &#123; profile = &quot;default&quot; region = &quot;cn-northwest-1&quot; &#125;</span><br></pre></td></tr></table></figure>
+<p>语法和Puppet、Ansible非常类似。</p>
+<p>其中<code>aws</code>为需要加载的Provider插件名称，大括号里面的内容为该Provider的配置，<code>profile</code>为<code>default</code>表示AWS的认证信息为<code>~/.aws/credentials</code>的<code>default</code>配置信息。当然也可以直接把AKSK（access key、secret key)直接硬编码放到provider，不过这存在AKSK泄露的隐患，不建议这么做。</p>
+<p>如上运行<code>teraform init</code>时会自动下载Provider aws插件。</p>
+<h3 id="2-2-Resource"><a href="#2-2-Resource" class="headerlink" title="2.2 Resource"></a>2.2 Resource</h3><h4 id="2-2-1-Resource声明与创建"><a href="#2-2-1-Resource声明与创建" class="headerlink" title="2.2.1 Resource声明与创建"></a>2.2.1 Resource声明与创建</h4><p>Resource是Terraform的主角，开发者大多数工作都是和Resource打交道，云平台中所有的资源都可以抽象为Terraform中的一个Resource实例。</p>
+<p>定义一个Resource的语法非常简单，以官方的demo为例:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># cat example.tf /* 省略了Provider的定义 */ resource &quot;aws_instance&quot; &quot;example&quot; &#123; ami = &quot;ami-0829e595217a759b9&quot; instance_type = &quot;t2.micro&quot; tags = &#123; &quot;Owner&quot; = &quot;int32bit&quot; &quot;Name&quot; = &quot;int32bit-test-ft&quot; &#125; &#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>其中<code>aws_instance</code>为<strong>资源类型（Resource Type)</strong>，定义这个资源的类型，告诉Terraform这个Resource是AWS的虚拟机还是阿里云的VPC。</li>
+<li><code>example</code>为<strong>资源名称(Resource Name)</strong>，资源名称在同一个模块中必须唯一，主要用于供其他资源引用该资源。</li>
+<li>大括号里面的block块为<strong>配置参数(Configuration Arguments)</strong>，定义资源的属性，比如虚拟机的规格、镜像、标签等。</li>
+</ul>
+<p>显然这个Terraform脚本的功能为在AWS上创建一个EC2实例，镜像ID为<code>ami-0829e595217a759b9</code>，规格为<code>t2.micro</code>，自定义了<code>Owner</code>和<code>Name</code>两个标签。</p>
+<p>运行<code>terraform init</code>将根据脚本内容自动下载Provider插件：</p>
+<p><img src="https://int32bit.me/img/posts/%E6%B7%B7%E5%90%88%E4%BA%91%E7%BC%96%E6%8E%92%E5%B7%A5%E5%85%B7Terrafrom%E7%AE%80%E4%BB%8B/terraform_init.png" alt="terraform init"></p>
+<p>我们可以随时通过<code>terraform plan</code>预览查看这个脚本将要执行的任务:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"># terraform plan</span><br><span class="line">An execution plan has been generated and is shown below.</span><br><span class="line">Resource actions are indicated with the following symbols:</span><br><span class="line">  + create</span><br><span class="line"></span><br><span class="line">Terraform will perform the following actions:</span><br><span class="line"></span><br><span class="line">  # aws_instance.example will be created</span><br><span class="line">  + resource &quot;aws_instance&quot; &quot;example&quot; &#123;</span><br><span class="line">      + ami                          = &quot;ami-0829e595217a759b9&quot;</span><br><span class="line">      + arn                          = (known after apply)</span><br><span class="line">           + tags                         = &#123;</span><br><span class="line">          + &quot;Name&quot;  = &quot;int32bit-test-ft&quot;</span><br><span class="line">          + &quot;Owner&quot; = &quot;int32bit&quot;</span><br><span class="line">        &#125;</span><br><span class="line">      + vpc_security_group_ids       = (known after apply)</span><br><span class="line">      + ...</span><br><span class="line">      </span><br><span class="line">Plan: 1 to add, 0 to change, 0 to destroy.</span><br></pre></td></tr></table></figure>
+<p>如上输出可知，Terraform脚本将创建一个资源<code>aws_instance.example</code>，其中某些属性如ARN为<code>known after apply</code>，说明需要apply之后才能知道。</p>
+<p>最后执行<code>terrafrom apply</code>执行:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># terraform apply</span><br><span class="line">Plan: 1 to add, 0 to change, 0 to destroy.</span><br><span class="line"></span><br><span class="line">Do you want to perform these actions?</span><br><span class="line">  Terraform will perform the actions described above.</span><br><span class="line">  Only &apos;yes&apos; will be accepted to approve.</span><br><span class="line"></span><br><span class="line">  Enter a value: yes</span><br><span class="line"></span><br><span class="line">aws_instance.example: Creating...</span><br><span class="line">aws_instance.example: Still creating... [10s elapsed]</span><br><span class="line">aws_instance.example: Still creating... [20s elapsed]</span><br><span class="line">aws_instance.example: Creation complete after 20s [id=i-0bb96d24b6e6d37eb]</span><br><span class="line"></span><br><span class="line">Apply complete! Resources: 1 added, 0 changed, 0 destroyed.</span><br></pre></td></tr></table></figure>
+<p><code>apply</code>会自动调用<code>plan</code>预览将要改变的资源，输入<code>yes</code>确认无误后真正执行，由输出可知创建的EC2 ID为<code>i-0bb96d24b6e6d37eb</code>。</p>
+<p>AWS查看虚拟机信息如下:</p>
+<p><img src="https://int32bit.me/img/posts/%E6%B7%B7%E5%90%88%E4%BA%91%E7%BC%96%E6%8E%92%E5%B7%A5%E5%85%B7Terrafrom%E7%AE%80%E4%BB%8B/EC2_instance.png" alt="EC2 instance"></p>
+<h4 id="2-2-2-Resource-state文件"><a href="#2-2-2-Resource-state文件" class="headerlink" title="2.2.2 Resource state文件"></a>2.2.2 Resource state文件</h4><p>通过<code>terraform show</code>可查看创建的资源列表。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># terraform show # aws_instance.example: resource &quot;aws_instance&quot; &quot;example&quot; &#123; ami = &quot;ami-0829e595217a759b9&quot; arn = &quot;arn:aws-cn:ec2:cn-northwest-1:769527305874:instance/i-0bb96d24b6e6d37eb&quot; availability_zone = &quot;cn-northwest-1b&quot; id = &quot;i-0bb96d24b6e6d37eb&quot; instance_state = &quot;running&quot; instance_type = &quot;t2.micro&quot; private_ip = &quot;172.31.29.5&quot; tags = &#123; &quot;Name&quot; = &quot;int32bit-test-ft&quot; &quot;Owner&quot; = &quot;int32bit&quot; &#125; root_block_device &#123; delete_on_termination = true encrypted = false iops = 100 volume_id = &quot;vol-033ff2804c08b927a&quot; volume_size = 8 volume_type = &quot;gp2&quot; &#125; &#125;</span><br></pre></td></tr></table></figure>
+<p>注意<code>terrafrom show</code>读取的是Terraform自己的数据库而不是调用云平台API，所有Terraform的资源都会保存到自己的数据库上，默认会放在本地目录，文件名为<code>terraform.tfstate</code>，这个<code>state</code>文件非常重要，如果该文件损坏将导致已创建的资源被破坏或者重建，因此可以认为Terraform是一个有状态服务，涉及多人协作时不仅需要拷贝代码，还需要拷贝<code>state</code>文件，这会导致维护起来特别麻烦，可幸的是Terraform支持把<code>state</code>文件放到S3上或者consul，参考<a href="https://www.terraform.io/docs/backends/index.html" target="_blank" rel="noopener">官方文档Remote State</a>，建议把state文件从代码中分离放到S3上。</p>
+<h4 id="2-2-3-Resource更新"><a href="#2-2-3-Resource更新" class="headerlink" title="2.2.3 Resource更新"></a>2.2.3 Resource更新</h4><p>由Terraform的Infrastructure as Code的设计目标，资源是可以随时修改的，如下EC2增加一个标签<code>Newkey</code>:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">resource &quot;aws_instance&quot; &quot;example&quot; &#123; ami = &quot;ami-0829e595217a759b9&quot; instance_type = &quot;t2.micro&quot; tags = &#123; &quot;Owner&quot; = &quot;int32bit&quot; &quot;Name&quot; = &quot;int32bit-test-ft&quot; &quot;Newkey&quot; = &quot;test_new_key&quot; &#125; &#125;</span><br></pre></td></tr></table></figure>
+<p>这里省略plan步骤直接apply:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># terraform apply aws_instance.example: Refreshing state... [id=i-0bb96d24b6e6d37eb] An execution plan has been generated and is shown below. Resource actions are indicated with the following symbols: ~ update in-place Terraform will perform the following actions: # aws_instance.example will be updated in-place ~ resource &quot;aws_instance&quot; &quot;example&quot; &#123; /* ... */ ~ tags = &#123; &quot;Name&quot; = &quot;int32bit-test-ft&quot; + &quot;Newkey&quot; = &quot;test_new_key&quot; &quot;Owner&quot; = &quot;int32bit&quot; &#125; &#125; Plan: 0 to add, 1 to change, 0 to destroy. aws_instance.example: Modifying... [id=i-0bb96d24b6e6d37eb] aws_instance.example: Modifications complete after 1s [id=i-0bb96d24b6e6d37eb] Apply complete! Resources: 0 added, 1 changed, 0 destroyed.</span><br></pre></td></tr></table></figure>
+<p>如上<code>update in-place</code>表示不需要重建资源直接修改资源属性，由于本次修改只是添加一个标签，不需要重新创建虚拟机，因此可以通过<code>update in-place</code>实现</p>
+<p>资源预览中<code>+</code>表示添加的内容，<code>~</code>表示更新的内容，<code>-</code>表示即将删除的内容。</p>
+<p>如果修改<code>AMI</code>如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">resource &quot;aws_instance&quot; &quot;example&quot; &#123; ami = &quot;ami-08af324f69cf03287&quot; instance_type = &quot;t2.micro&quot; tags = &#123; &quot;Owner&quot; = &quot;int32bit&quot; &quot;Name&quot; = &quot;int32bit-test-ft&quot; &quot;Newkey&quot; = &quot;test_new_key&quot; &#125; &#125;</span><br></pre></td></tr></table></figure>
+<p>执行<code>apply</code>结果如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># terraform apply aws_instance.example: Refreshing state... [id=i-0bb96d24b6e6d37eb] Resource actions are indicated with the following symbols: -/+ destroy and then create replacement Terraform will perform the following actions: # aws_instance.example must be replaced -/+ resource &quot;aws_instance&quot; &quot;example&quot; &#123; ~ ami = &quot;ami-0829e595217a759b9&quot; -&gt; &quot;ami-08af324f69cf03287&quot; ~ id = &quot;i-0bb96d24b6e6d37eb&quot; -&gt; (known after apply) ~ instance_state = &quot;running&quot; -&gt; (known after apply) ~ private_ip = &quot;172.31.29.5&quot; -&gt; (known after apply) tags = &#123; &quot;Name&quot; = &quot;int32bit-test-ft&quot; &quot;Newkey&quot; = &quot;test_new_key&quot; &quot;Owner&quot; = &quot;int32bit&quot; &#125; ~ root_block_device &#123; ~ delete_on_termination = true -&gt; (known after apply) ~ encrypted = false -&gt; (known after apply) ~ iops = 100 -&gt; (known after apply) + kms_key_id = (known after apply) ~ volume_id = &quot;vol-033ff2804c08b927a&quot; -&gt; (known after apply) ~ volume_size = 8 -&gt; (known after apply) ~ volume_type = &quot;gp2&quot; -&gt; (known after apply) &#125; &#125; Plan: 1 to add, 0 to change, 1 to destroy. aws_instance.example: Destroying... [id=i-0bb96d24b6e6d37eb] aws_instance.example: Destruction complete after 30s aws_instance.example: Creating... aws_instance.example: Creation complete after 41s [id=i-0f87444adc1c2b7b4] Apply complete! Resources: 1 added, 0 changed, 1 destroyed.</span><br></pre></td></tr></table></figure>
+<p>此时由于AWS EC2实例不支持直接修改AMI，因此Terraform为了与我们的声明最终期望一致，先把之前的资源删除，然后创建一个新的EC2实例。</p>
+<p>从AWS console上也可以看到原来的虚拟机<code>terminate</code>了,重新创建了一个新的虚拟机：</p>
+<p><img src="https://int32bit.me/img/posts/%E6%B7%B7%E5%90%88%E4%BA%91%E7%BC%96%E6%8E%92%E5%B7%A5%E5%85%B7Terrafrom%E7%AE%80%E4%BB%8B/EC2_instance2.png" alt="ec2 instance"></p>
+<p>删除的资源不可回退，因此建议在<code>apply</code>之前在plan中仔细查看哪些资源是原地修改的，哪些需要重建，哪些资源会被删除，避免资源被意外删除。</p>
+<h4 id="2-2-4-Resource之间的依赖"><a href="#2-2-4-Resource之间的依赖" class="headerlink" title="2.2.4 Resource之间的依赖"></a>2.2.4 Resource之间的依赖</h4><p>和Ansible、Puppet一样资源之间可能会有依赖，Terraform支持隐式依赖和显式依赖，隐式依赖由Terraform自动根据资源的引用关系分析资源的依赖关系，比如A引用了B，则A依赖于B，A资源创建之前必须先创建B。</p>
+<p>如下我们为EC2实例绑定个弹性IP:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">resource &quot;aws_instance&quot; &quot;example&quot; &#123; ami = &quot;ami-08af324f69cf03287&quot; instance_type = &quot;t2.micro&quot; tags = &#123; &quot;Owner&quot; = &quot;int32bit&quot; &quot;Name&quot; = &quot;int32bit-test-ft&quot; &quot;Newkey&quot; = &quot;test_new_key&quot; &#125; &#125; resource &quot;aws_eip&quot; &quot;example_public_ip&quot; &#123; vpc = true instance = aws_instance.example.id &#125;</span><br></pre></td></tr></table></figure>
+<p>此时由于<code>example_public_ip</code>引用了<code>example</code>的<code>id</code>，因此<code>example_public_ip</code>依赖于EC2实例<code>example</code>，Terraform会先创建EC2实例，然后绑定弹性IP。</p>
+<p>隐式依赖基本能解决90%的问题，大多数情况下我们不需要显式告诉Terraform哪些资源存在依赖。当然仍可能存在需要显式依赖的情况，Terraform通过<code>depends_on</code>指明资源所依赖的资源列表，比如EC2实例需要通过role访问S3，此时需要在虚拟机中关联角色，角色中的policy必须先就绪，这种情况下资源之间没有引用关系，Terraform无法推导资源的依赖关系，因此必须通过<code>depends_on</code>显示声明所依赖的资源。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">depends_on = [ aws_iam_role_policy.example, ]</span><br></pre></td></tr></table></figure>
+<p>通过Terraform的<code>graph</code>可以导出资源的依赖图:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">terraform graph | dot -Tsvg &gt; graph.svg</span><br></pre></td></tr></table></figure>
+<h2 id="3-Terraform其他功能"><a href="#3-Terraform其他功能" class="headerlink" title="3 Terraform其他功能"></a>3 Terraform其他功能</h2><h3 id="3-1-Input-Variables"><a href="#3-1-Input-Variables" class="headerlink" title="3.1 Input Variables"></a>3.1 Input Variables</h3><p>如上实例把AMI和instance type硬编码到脚本中非常不灵活，Terraform支持输入变量功能，建议把变量单独抽取出来，创建<code>variables.tf</code>文件，变量通过<code>variable</code>关键字声明:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">variable &quot;image_id&quot; &#123; type = string default = &quot;ami-08af324f69cf03287&quot; description = &quot;The id of the machine image (AMI) to use for the server.&quot; &#125; variable &quot;instance_type&quot; &#123; default = &quot;t2.micro&quot; &#125;</span><br></pre></td></tr></table></figure>
+<p>变量包括变量名称以及数据类型，数据类型默认为<code>string</code>，另外可以提供default默认值以及description。</p>
+<p>此时可以在同一模块中的任意Resource通过<code>var.变量名</code>引用变量:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">resource &quot;aws_instance&quot; &quot;example&quot; &#123; ami = var.image_id instance_type = var.instance_type tags = &#123; &quot;Owner&quot; = &quot;int32bit&quot; &quot;Name&quot; = &quot;int32bit-test-ft&quot; &quot;Newkey&quot; = &quot;test_new_key&quot; &#125; &#125;</span><br></pre></td></tr></table></figure>
+<p>此时<code>plan</code>以及<code>apply</code>均可以通过形如<code>-var a=b</code>的形式指定变量值:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">terraform apply \</span><br><span class="line">  -var instance_type=t2.small \</span><br><span class="line">  -var image_id=ami-0fcb508ec48b146df</span><br></pre></td></tr></table></figure>
+<p>也可以通过后缀名为<code>.tfvars</code>的文件指定变量值:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># cat example.tfvars</span><br><span class="line">image_id      = &quot;ami-0fcb508ec48b146df&quot;</span><br><span class="line">instance_type = &quot;t2.small&quot;</span><br><span class="line"># terraform apply -var-file=example.tfvars</span><br></pre></td></tr></table></figure>
+<p>如果tfvars文件名为<code>terraform.tfvars</code>或者<code>*.auto.tfvars</code>，则Terraform会自动加载不需要通过<code>-var-file</code>指定。</p>
+<p>另外还可以通过环境变量的形式指定变量值，环境变量名为<code>TF_VAR_name</code>，如<code>TF_VAR_image_id</code>。</p>
+<p>如果变量没有指定并且没有默认值，则在apply时会通过交互方式请求用户手动输入变量值。</p>
+<h3 id="3-2-Output-Values"><a href="#3-2-Output-Values" class="headerlink" title="3.2 Output Values"></a>3.2 Output Values</h3><p>Output values用于Terraform执行完后输出结果，在多模块中子模块的output还可以被父模块引用。</p>
+<p>如下输出EC2实例的ID以及私网IP:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">output &quot;instance_id&quot; &#123;</span><br><span class="line">  value = aws_instance.example.id</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">output &quot;private_ip&quot; &#123;</span><br><span class="line">  value = aws_instance.example.private_ip</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>再次执行<code>apply</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># terraform apply aws_instance.example: Refreshing state... [id=i-0f87444adc1c2b7b4]</span><br><span class="line">aws_eip.ip: Refreshing state... [id=eipalloc-0e2cec51cbf18b5d3]</span><br><span class="line"></span><br><span class="line">Apply complete! Resources: 0 added, 0 changed, 0 destroyed.</span><br><span class="line"></span><br><span class="line">Outputs:</span><br><span class="line"></span><br><span class="line">instance_id = i-0f87444adc1c2b7b4</span><br><span class="line">private_ip = 172.31.19.113</span><br></pre></td></tr></table></figure>
+<p>也可以通过<code>terraform output</code>命令输出output值:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># terraform output</span><br><span class="line">instance_ip = i-0f87444adc1c2b7b4</span><br><span class="line">private_ip = 172.31.19.113</span><br></pre></td></tr></table></figure>
+<h3 id="3-3-Modules"><a href="#3-3-Modules" class="headerlink" title="3.3 Modules"></a>3.3 Modules</h3><p>如果把所有的资源都杂糅放到一块，则必然导致脚本很难维护，因此有必要按照不同的功能将代码分开，Terraform支持Module功能，通过<code>source</code>加载子模块。</p>
+<p>如下是目录的结构:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"># tree</span><br><span class="line">.</span><br><span class="line">├── example.tfvars</span><br><span class="line">├── main.tf</span><br><span class="line">├── sub_module</span><br><span class="line">│   ├── main.tf</span><br><span class="line">│   └── variables.tf</span><br><span class="line">├── terraform.tfstate</span><br><span class="line">└── terraform.tfstate.backup</span><br><span class="line"></span><br><span class="line">1 directory, 6 files</span><br></pre></td></tr></table></figure>
+<p>在当前工作目录中有一个子目录sub_module，这个子目录也是一个基本完整的Terraform项目。然后通过<code>module</code>关键字加载模块：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"># cat main.tf provider &quot;aws&quot; &#123;</span><br><span class="line">  profile = &quot;default&quot;</span><br><span class="line">  region  = &quot;cn-northwest-1&quot;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">module &quot;example&quot; &#123;</span><br><span class="line">  source        = &quot;./sub_module&quot;</span><br><span class="line">  image_id      = &quot;ami-08af324f69cf03287&quot;</span><br><span class="line">  instance_type = &quot;t2.micro&quot;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">output &quot;private_ip&quot; &#123;</span><br><span class="line">  value = module.example.private_ip</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">output &quot;instance_id&quot; &#123;</span><br><span class="line">  value = module.example.instance_id</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>module中必须通过<code>source</code>参数指定子模块路径，如果子模块中有Input Variables，可以在module的body中指定。</p>
+<p>另外由上面的例子可知，在父模块中可以引用子模块的output值。</p>
+<h3 id="3-4-Data-Sources"><a href="#3-4-Data-Sources" class="headerlink" title="3.4 Data Sources"></a>3.4 Data Sources</h3><p>前面我们使用的参数都是固定的静态变量，但有些情况下可能参数变量不确定或者参数可能随时变化。比如我们创建虚拟机通常需要指定我们自己的镜像模块，但我们的模板可能随时更新，如果在代码中指定AMI ID，则一旦我们更新镜像模板就需要重新修改代码。</p>
+<p>Terraform中的Data Sources可以认为是动态变量，只有在运行时才能知道变量的值。</p>
+<p>Data Sources通过<code>data</code>关键字声明，如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">data &quot;aws_ami&quot; &quot;my_image&quot; &#123;</span><br><span class="line">  most_recent = true</span><br><span class="line">  owners      = [&quot;self&quot;]</span><br><span class="line">  tags = &#123;</span><br><span class="line">    Name   = &quot;test-template-ami&quot;</span><br><span class="line">    Tested = &quot;True&quot;</span><br><span class="line">  &#125;</span><br><span class="line">  filter &#123;</span><br><span class="line">    name   = &quot;state&quot;</span><br><span class="line">    values = [&quot;available&quot;]</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">resource &quot;aws_instance&quot; &quot;example&quot; &#123;</span><br><span class="line">  ami           = data.aws_ami.my_image.id</span><br><span class="line">  instance_type = var.instance_type</span><br><span class="line">  tags = &#123;</span><br><span class="line">    &quot;Owner&quot;  = &quot;int32bit&quot;</span><br><span class="line">    &quot;Name&quot;   = &quot;int32bit-test-ft&quot;</span><br><span class="line">    &quot;Newkey&quot; = &quot;test_new_key&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如上例子中的EC2镜像没有指定AMI ID，而是通过<code>data</code>引用，Terraform运行时将首先根据标签选择镜像，然后选择状态为<code>available</code>的镜像，如果同时有多个镜像满足条件，则选择最新的镜像。</p>
+<h2 id="4-总结"><a href="#4-总结" class="headerlink" title="4 总结"></a>4 总结</h2><p>Terraform是非常强大的混合云编排工具，语法简单明了，只需要通过配置文件声明需要的资源列表，Terraform就能够快速地完成多云资源的创建。</p>
+<p>当然Terraform也有个问题就是前面提到的它是一个有状态服务，意味着被Terraform管理的资源，不能通过手动或者借助其他工具管理资源，因为外部修改资源后，Terraform会认为和期望结果不一致而触发一次更新操作。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/terraform/" rel="tag"># terraform</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/10/03/k8s/service catalog/service catalog/" rel="next" title="service catalog">
+                <i class="fa fa-chevron-left"></i> service catalog
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/10/05/docker/runtimes/docker组件/" rel="prev" title="docker组件介绍">
+                docker组件介绍 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-Terraform背景"><span class="nav-number">1.</span> <span class="nav-text">1 Terraform背景</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-混合云编排"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 混合云编排</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-Terraform简介"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 Terraform简介</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-Terraform入门"><span class="nav-number">2.</span> <span class="nav-text">2 Terraform入门</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-Provider"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 Provider</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-Resource"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 Resource</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-1-Resource声明与创建"><span class="nav-number">2.2.1.</span> <span class="nav-text">2.2.1 Resource声明与创建</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-2-Resource-state文件"><span class="nav-number">2.2.2.</span> <span class="nav-text">2.2.2 Resource state文件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-3-Resource更新"><span class="nav-number">2.2.3.</span> <span class="nav-text">2.2.3 Resource更新</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-4-Resource之间的依赖"><span class="nav-number">2.2.4.</span> <span class="nav-text">2.2.4 Resource之间的依赖</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Terraform其他功能"><span class="nav-number">3.</span> <span class="nav-text">3 Terraform其他功能</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-Input-Variables"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 Input Variables</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-Output-Values"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 Output Values</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-Modules"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 Modules</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-Data-Sources"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 Data Sources</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-总结"><span class="nav-number">4.</span> <span class="nav-text">4 总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

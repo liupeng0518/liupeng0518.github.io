@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="k8s,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="在本文中，我将探讨Kubernetes中的PLEG is not healthy问题，该问题有时会导致节点“ NodeNotReady” 。当了解Pod Lifecycle Event Generator (PLEG) 如何工作后，在遇到此问题也就方便排查。 什么是PLEG PLEG 主要是通过每个匹配的 Pod 级别事件来调整容器运行时的状态，并将调整后的结果写入缓存，使 Pod 缓存保持最新状">
+<meta name="keywords" content="k8s">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Understanding: PLEG is not healthy">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/12/24/k8s/op/understanding-the-pleg-is-not-healthy/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="在本文中，我将探讨Kubernetes中的PLEG is not healthy问题，该问题有时会导致节点“ NodeNotReady” 。当了解Pod Lifecycle Event Generator (PLEG) 如何工作后，在遇到此问题也就方便排查。 什么是PLEG PLEG 主要是通过每个匹配的 Pod 级别事件来调整容器运行时的状态，并将调整后的结果写入缓存，使 Pod 缓存保持最新状">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://developers.redhat.com/blog/wp-content/uploads/2019/10/orig-pleg-1.png">
+<meta property="og:image" content="https://developers.redhat.com/blog/wp-content/uploads/2019/10/pleg-healthy-checks.png">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Understanding: PLEG is not healthy">
+<meta name="twitter:description" content="在本文中，我将探讨Kubernetes中的PLEG is not healthy问题，该问题有时会导致节点“ NodeNotReady” 。当了解Pod Lifecycle Event Generator (PLEG) 如何工作后，在遇到此问题也就方便排查。 什么是PLEG PLEG 主要是通过每个匹配的 Pod 级别事件来调整容器运行时的状态，并将调整后的结果写入缓存，使 Pod 缓存保持最新状">
+<meta name="twitter:image" content="https://developers.redhat.com/blog/wp-content/uploads/2019/10/orig-pleg-1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/12/24/k8s/op/understanding-the-pleg-is-not-healthy/">
+
+
+
+
+
+  <title>Understanding: PLEG is not healthy | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/12/24/k8s/op/understanding-the-pleg-is-not-healthy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Understanding: PLEG is not healthy</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-12-24T17:13:01+00:00">
+                2019-12-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>在本文中，我将探讨Kubernetes中的<strong>PLEG is not healthy</strong>问题，该问题有时会导致节点“ NodeNotReady” 。当了解Pod Lifecycle Event Generator (PLEG) 如何工作后，在遇到此问题也就方便排查。</p>
+<h1 id="什么是PLEG"><a href="#什么是PLEG" class="headerlink" title="什么是PLEG"></a>什么是PLEG</h1><hr>
+<p>PLEG 主要是通过每个匹配的 Pod 级别事件来调整容器运行时的状态，并将调整后的结果写入缓存，使 <code>Pod</code> 缓存保持最新状态。 他是 kubelet (Kubernetes)  中的一个模块。</p>
+<p>下面红线部分是PLEG的工作：</p>
+<p><img src="https://developers.redhat.com/blog/wp-content/uploads/2019/10/orig-pleg-1.png" alt="img"></p>
+<p>出处: <a href="https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node/pod-lifecycle-event-generator.md" target="_blank" rel="noopener">Kubelet: Pod Lifecycle Event Generator (PLEG)</a>.</p>
+<h1 id="“PLEG-is-not-healthy”如何产生的"><a href="#“PLEG-is-not-healthy”如何产生的" class="headerlink" title="“PLEG is not healthy”如何产生的"></a>“PLEG is not healthy”如何产生的</h1><p>Kubelet会在SyncLoop()中定期调用Healthy()来对PLEG运行状况进行健康检查。</p>
+<p><code>Healthy()</code> 函数会检查 <code>relist</code> 进程（PLEG 的关键任务）是否在 3 分钟内完成。此函数会以 “PLEG” 的形式添加到 <code>runtimeState</code> 中，Kubelet 在一个同步循环（<code>SyncLoop()</code> 函数）中会定期（默认是 10s）调用 <code>Healthy()</code> 函数。如果 relist 进程的完成时间超过了 3 分钟，就会报告 <strong>PLEG is not healthy</strong>。</p>
+<p><img src="https://developers.redhat.com/blog/wp-content/uploads/2019/10/pleg-healthy-checks.png" alt="img"></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//// pkg/kubelet/pleg/generic.go - Healthy()</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// The threshold needs to be greater than the relisting period + the</span></span><br><span class="line"><span class="comment">// relisting time, which can vary significantly. Set a conservative</span></span><br><span class="line"><span class="comment">// threshold to avoid flipping between healthy and unhealthy.</span></span><br><span class="line">relistThreshold = <span class="number">3</span> * time.Minute</span><br><span class="line">:</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(g *GenericPLEG)</span> <span class="title">Healthy</span><span class="params">()</span> <span class="params">(<span class="keyword">bool</span>, error)</span></span> &#123;</span><br><span class="line">  relistTime := g.getRelistTime()</span><br><span class="line">  elapsed := g.clock.Since(relistTime)</span><br><span class="line">  <span class="keyword">if</span> elapsed &gt; relistThreshold &#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">false</span>, fmt.Errorf(<span class="string">"pleg was last seen active %v ago; threshold is %v"</span>, elapsed, relistThreshold)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">true</span>, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//// pkg/kubelet/kubelet.go - NewMainKubelet()</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewMainKubelet</span><span class="params">(kubeCfg *kubeletconfiginternal.KubeletConfiguration, ...</span></span></span><br><span class="line"><span class="function"><span class="params">:</span></span></span><br><span class="line">  klet.runtimeState.addHealthCheck("PLEG", klet.pleg.Healthy)</span><br><span class="line"></span><br><span class="line"><span class="comment">//// pkg/kubelet/kubelet.go - syncLoop()</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(kl *Kubelet)</span> <span class="title">syncLoop</span><span class="params">(updates &lt;-<span class="keyword">chan</span> kubetypes.PodUpdate, handler SyncHandler)</span></span> &#123;</span><br><span class="line">:</span><br><span class="line"><span class="comment">// The resyncTicker wakes up kubelet to checks if there are any pod workers</span></span><br><span class="line"><span class="comment">// that need to be sync'd. A one-second period is sufficient because the</span></span><br><span class="line"><span class="comment">// sync interval is defaulted to 10s.</span></span><br><span class="line">:</span><br><span class="line">  <span class="keyword">const</span> (</span><br><span class="line">	base   = <span class="number">100</span> * time.Millisecond</span><br><span class="line">	max	= <span class="number">5</span> * time.Second</span><br><span class="line">	factor = <span class="number">2</span></span><br><span class="line">  )</span><br><span class="line">  duration := base</span><br><span class="line">  <span class="keyword">for</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> rs := kl.runtimeState.runtimeErrors(); <span class="built_in">len</span>(rs) != <span class="number">0</span> &#123;</span><br><span class="line">   	   glog.Infof(<span class="string">"skipping pod synchronization - %v"</span>, rs)</span><br><span class="line">   	   <span class="comment">// exponential backoff</span></span><br><span class="line">   	   time.Sleep(duration)</span><br><span class="line">   	   duration = time.Duration(math.Min(<span class="keyword">float64</span>(max), factor*<span class="keyword">float64</span>(duration)))</span><br><span class="line">   	   <span class="keyword">continue</span></span><br><span class="line">      &#125;</span><br><span class="line">	:</span><br><span class="line">  &#125;</span><br><span class="line">:</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//// pkg/kubelet/runtime.go - runtimeErrors()</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *runtimeState)</span> <span class="title">runtimeErrors</span><span class="params">()</span> []<span class="title">string</span></span> &#123;</span><br><span class="line">:</span><br><span class="line">    <span class="keyword">for</span> _, hc := <span class="keyword">range</span> s.healthChecks &#123;</span><br><span class="line">   	 <span class="keyword">if</span> ok, err := hc.fn(); !ok &#123;</span><br><span class="line">   		 ret = <span class="built_in">append</span>(ret, fmt.Sprintf(<span class="string">"%s is not healthy: %v"</span>, hc.name, err))</span><br><span class="line">   	 &#125;</span><br><span class="line">    &#125;</span><br><span class="line">:</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="Review-“relist”"><a href="#Review-“relist”" class="headerlink" title="Review “relist”"></a>Review “relist”</h1><h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><hr>
+<ul>
+<li><a href="https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node/pod-lifecycle-event-generator.md" target="_blank" rel="noopener">Kubelet: Pod Lifecycle Event Generator (PLEG)</a></li>
+<li><a href="https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node/runtime-pod-cache.md" target="_blank" rel="noopener">Kubelet: Runtime Pod Cache</a></li>
+<li><a href="https://github.com/openshift/origin/blob/release-3.11/vendor/k8s.io/kubernetes/pkg/kubelet/pleg/generic.go#L180-L284" target="_blank" rel="noopener">relist() in kubernetes/pkg/kubelet/pleg/generic.go</a></li>
+<li><a href="https://bugzilla.redhat.com/show_bug.cgi?id=1486914#c16" target="_blank" rel="noopener">Past bug about CNI — PLEG is not healthy error, node marked NotReady</a></li>
+</ul>
+<h1 id="原文"><a href="#原文" class="headerlink" title="原文"></a>原文</h1><p><a href="https://access.redhat.com/articles/4528671" target="_blank" rel="noopener">https://access.redhat.com/articles/4528671</a></p>
+<p><a href="https://developers.redhat.com/blog/2019/11/13/pod-lifecycle-event-generator-understanding-the-pleg-is-not-healthy-issue-in-kubernetes/" target="_blank" rel="noopener">https://developers.redhat.com/blog/2019/11/13/pod-lifecycle-event-generator-understanding-the-pleg-is-not-healthy-issue-in-kubernetes/</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/12/24/k8s/registry/registryv2/镜像仓库/" rel="next" title="镜像仓库">
+                <i class="fa fa-chevron-left"></i> 镜像仓库
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/01/09/docker/build/build docker bin/" rel="prev" title="源码编译docker-ce">
+                源码编译docker-ce <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#什么是PLEG"><span class="nav-number">1.</span> <span class="nav-text">什么是PLEG</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#“PLEG-is-not-healthy”如何产生的"><span class="nav-number">2.</span> <span class="nav-text">“PLEG is not healthy”如何产生的</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Review-“relist”"><span class="nav-number">3.</span> <span class="nav-text">Review “relist”</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#原文"><span class="nav-number">5.</span> <span class="nav-text">原文</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

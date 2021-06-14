@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="k8s,metallb,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="MetalLB简介在bare metal上部署的Kubernetes集群，是无法使用LoadBalancer类型的Service的，因为Kubernetes本身没有提供针对裸金属集群的负载均衡器。Kubernetes仅仅提供了针对部分IaaS平台（GCP, AWS, Azure……）的胶水代码，以使用这些平台的负载均衡器。 为了从外部访问集群，对于裸金属集群，只能使用NodePort服务或Ingr">
+<meta name="keywords" content="k8s,metallb">
+<meta property="og:type" content="article">
+<meta property="og:title" content="metallb">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/06/08/k8s/服务发现/metallb/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="MetalLB简介在bare metal上部署的Kubernetes集群，是无法使用LoadBalancer类型的Service的，因为Kubernetes本身没有提供针对裸金属集群的负载均衡器。Kubernetes仅仅提供了针对部分IaaS平台（GCP, AWS, Azure……）的胶水代码，以使用这些平台的负载均衡器。 为了从外部访问集群，对于裸金属集群，只能使用NodePort服务或Ingr">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://raw.githubusercontent.com/liupeng0518/e-book/master/k8s/.images/bgp-calico-metallb.png">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="metallb">
+<meta name="twitter:description" content="MetalLB简介在bare metal上部署的Kubernetes集群，是无法使用LoadBalancer类型的Service的，因为Kubernetes本身没有提供针对裸金属集群的负载均衡器。Kubernetes仅仅提供了针对部分IaaS平台（GCP, AWS, Azure……）的胶水代码，以使用这些平台的负载均衡器。 为了从外部访问集群，对于裸金属集群，只能使用NodePort服务或Ingr">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/liupeng0518/e-book/master/k8s/.images/bgp-calico-metallb.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/06/08/k8s/服务发现/metallb/">
+
+
+
+
+
+  <title>metallb | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/06/08/k8s/服务发现/metallb/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">metallb</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-06-08T15:47:19+00:00">
+                2019-06-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="MetalLB简介"><a href="#MetalLB简介" class="headerlink" title="MetalLB简介"></a>MetalLB简介</h1><p>在bare metal上部署的Kubernetes集群，是无法使用LoadBalancer类型的Service的，因为Kubernetes本身没有提供针对裸金属集群的负载均衡器。Kubernetes仅仅提供了针对部分IaaS平台（GCP, AWS, Azure……）的胶水代码，以使用这些平台的负载均衡器。</p>
+<p>为了从外部访问集群，对于裸金属集群，只能使用NodePort服务或Ingress。</p>
+<p>MetalLB是一个负载均衡器，专门解决裸金属K8S集群无法使用LoadBalancer类型服务的痛点，它使用标准化的路由协议。该项目目前处于Beta状态。MetalLB和kube-proxy的IPVS模式存在<a href="https://github.com/google/metallb/issues/153" target="_blank" rel="noopener">兼容性问题</a>，在K8S 1.12.1上此问题已经解决。</p>
+<p>MetalLB的两个核心特性：</p>
+<h2 id="地址分配"><a href="#地址分配" class="headerlink" title="地址分配"></a>地址分配</h2><p>在云环境中，当你请求一个负载均衡器时，云平台会自动分配一个负载均衡器的IP地址给你，应用程序通过此IP来访问经过负载均衡处理的服务。</p>
+<p>使用MetalLB时，MetalLB自己负责IP地址的分配工作。你需要为MetalLB提供一个IP地址池供其分配（给K8S服务）。</p>
+<h2 id="外部声明"><a href="#外部声明" class="headerlink" title="外部声明"></a>外部声明</h2><p>地址分配后还需要通知到网络中的其他主机。MetalLB支持两种声明模式：</p>
+<p>Layer 2模式：ARP/NDP</p>
+<p>BGP模式</p>
+<h3 id="L2模式"><a href="#L2模式" class="headerlink" title="L2模式"></a>L2模式</h3><p>在任何以太网环境均可使用该模式。当在第二层工作时，将由一台机器获得IP地址（即服务的所有权）。MetalLB使用标准的地址发现协议（对于IPv4是ARP，对于IPv6是NDP）宣告IP地址，是其在本地网路中可达。从LAN的角度来看，仅仅是某台机器多配置了一个IP地址。</p>
+<p>L2模式下，服务的入口流量全部经由单个节点，然后该节点的kube-proxy会把流量再转发给服务的Pods。也就是说，该模式下MetalLB并没有真正提供负载均衡器。尽管如此，MetalLB提供了故障转移功能，如果持有IP的节点出现故障，则默认10秒后即发生故障转移，IP被分配给其它健康的节点。</p>
+<p>L2模式的缺点：</p>
+<ol>
+<li><p>单点问题，服务的所有入口流量经由单点，其网络带宽可能成为瓶颈</p>
+</li>
+<li><p>需要ARP客户端的配合，当故障转移发生时，MetalLB会发送ARP包来宣告MAC地址和IP映射关系的变化。客户端必须能正确处理这些包，大部分现代操作系统能正确处理ARP包</p>
+</li>
+</ol>
+<p>Layer 2模式更为通用，不需要用户有额外的设备；但由于Layer 2模式使用ARP/NDP，地址池分配需要跟客户端在同一子网，地址分配略为繁琐。</p>
+<h3 id="BGP模式"><a href="#BGP模式" class="headerlink" title="BGP模式"></a>BGP模式</h3><p>当在第三层工作时，集群中所有机器都和你控制的最接近的路由器建立BGP会话，此会话让路由器能学习到如何转发针对K8S服务IP的数据报。</p>
+<p>通过使用BGP，可以实现真正的跨多节点负载均衡（需要路由器支持multipath），还可以基于BGP的策略机制实现细粒度的流量控制。</p>
+<p>具体的负载均衡行为和路由器有关，可保证的共同行为是：每个连接（TCP或UDP会话）的数据报总是路由到同一个节点上，这很重要，因为：</p>
+<ol>
+<li>将单个连接的数据报路由给多个不同节点，会导致数据报的reordering，并大大影像性能</li>
+<li>K8S节点会在转发流量给Pod时可能导致连接失败，因为多个节点可能将同一连接的数据报发给不同Pod</li>
+</ol>
+<p>BGP模式的缺点：</p>
+<ol>
+<li>不能优雅处理故障转移，当持有服务的节点宕掉后，所有活动连接的客户端将收到Connection reset by peer</li>
+<li>BGP路由器对数据报的源IP、目的IP、协议类型进行简单的哈希，并依据哈希值决定发给哪个K8S节点。问题是K8S节点集是不稳定的，一旦（参与BGP）的节点宕掉，很大部分的活动连接都会因为rehash而坏掉</li>
+</ol>
+<p>缓和措施：</p>
+<ol>
+<li>将服务绑定到一部分固定的节点上，降低rehash的概率</li>
+<li>在流量低的时段改变服务的部署</li>
+<li>客户端添加透明重试逻辑，当发现连接TCP层错误时自动重试</li>
+</ol>
+<p>BGP模式下，集群中所有node都会跟上联路由器建立BGP连接，并且会告知路由器应该如何转发service的流量。</p>
+<p>BGP模式是真正的LoadBalancer。</p>
+<h1 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h1><p>安装MetalLB比较简单。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f https://raw.githubusercontent.com/google/metallb/v0.7.3/manifests/metallb.yaml</span><br></pre></td></tr></table></figure>
+<p>编排文件主要部署2个组件：</p>
+<ul>
+<li><code>metallb-system/controller</code>，负责IP地址的分配，以及service和endpoint的监听</li>
+<li><code>metallb-system/speaker</code>，负责保证service地址可达，例如Layer 2模式下，speaker会负责ARP请求应答。</li>
+</ul>
+<p>注意，部署后，还需要根据具体的地址通告方式，配置configmap <code>metallb-system/config</code>。controller会读取该configmap，并reload配置。</p>
+<p>在裸金属集群上安装MetalLB后，LoadBalancer类型的服务即可使用。注意，除了自动分配，你也可以通过服务的spec.loadBalancerIP静态的指定IP地址。</p>
+<h2 id="前提条件"><a href="#前提条件" class="headerlink" title="前提条件"></a>前提条件</h2><p>要使用MetalLB，你的基础设施必须满足以下条件：</p>
+<ol>
+<li>版本在1.9.0+的K8S集群</li>
+<li>可以和MetalLB兼容的CNI网络</li>
+<li>供MetalLB分配的IPv4地址范围</li>
+<li>你可能需要一个或多个支持BGP的路由器</li>
+</ol>
+<h3 id="CNI要求"><a href="#CNI要求" class="headerlink" title="CNI要求"></a>CNI要求</h3><p>Flannel、Calico、Romana都支持。</p>
+<p>如果你使用Calico的外部BGP Peering特性来同步路由，同时也想在MetalLB中使用BGP，则需要一些变通手段。这个问题是由BGP协议本身导致的 —— BGP协议只每对节点之间有一个会话，这意味着当Calico和BGP路由器建立会话后，MetalLB就无法创建会话了。</p>
+<p>由于目前Calico没有暴露扩展点，MetalLB没有办法与之集成。</p>
+<p>一个变通手段是，让Calico、MetalLB和不同的BGP路由进行配对，如下图：</p>
+<p><img src="https://raw.githubusercontent.com/liupeng0518/e-book/master/k8s/.images/bgp-calico-metallb.png" alt="bgp-calico-metallb"></p>
+<h2 id="BGP模式安装"><a href="#BGP模式安装" class="headerlink" title="BGP模式安装"></a>BGP模式安装</h2><p>略</p>
+<h2 id="L2模式安装"><a href="#L2模式安装" class="headerlink" title="L2模式安装"></a>L2模式安装</h2><p>执行下面的命令安装：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f https://raw.githubusercontent.com/google/metallb/v0.7.3/manifests/metallb.yaml</span><br></pre></td></tr></table></figure></p>
+<p>然后提供配置：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">cat &lt;&lt;EOF | kubectl apply -f -</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: ConfigMap</span><br><span class="line">metadata:</span><br><span class="line">  namespace: metallb-system</span><br><span class="line">  name: config</span><br><span class="line">data:</span><br><span class="line">  config: |</span><br><span class="line">    address-pools:</span><br><span class="line">    - name: metallb</span><br><span class="line">      # 工作在第二层</span><br><span class="line">      protocol: layer2</span><br><span class="line">      # 负责分配的地址范围</span><br><span class="line">      addresses:</span><br><span class="line">      - 10.0.11.10-10.0.11.254</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<h3 id="helm安装"><a href="#helm安装" class="headerlink" title="helm安装"></a>helm安装</h3><figure class="highlight plain"><figcaption><span>install --name metallb --**namespace** metallb-system stable/metallb                   ```</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">通过Helm安装时，MetalLB读取的ConfigMap为metallb-config。</span><br><span class="line"></span><br><span class="line">### kubespray部署</span><br><span class="line">```yaml</span><br><span class="line">---</span><br><span class="line">metallb:</span><br><span class="line">  ip_range: &quot;10.7.13.200-10.7.13.240&quot;</span><br><span class="line">  protocol: &quot;layer2&quot;</span><br><span class="line">  # additional_address_pools:</span><br><span class="line">  #   kube_service_pool:</span><br><span class="line">  #     ip_range: &quot;10.5.1.50-10.5.1.99&quot;</span><br><span class="line">  #     protocol: &quot;layer2&quot;</span><br><span class="line">  #     auto_assign: false</span><br><span class="line">  limits:</span><br><span class="line">    cpu: &quot;100m&quot;</span><br><span class="line">    memory: &quot;100Mi&quot;</span><br><span class="line">  port: &quot;7472&quot;</span><br><span class="line">  version: v0.7.3</span><br></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ansible-playbook  -i ../../inventory/mycluster/hosts.yml  metallb.yml</span><br></pre></td></tr></table></figure>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a href="https://ieevee.com/tech/2019/06/30/metallb.html" target="_blank" rel="noopener">https://ieevee.com/tech/2019/06/30/metallb.html</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/metallb/" rel="tag"># metallb</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/06/08/k8s/服务发现/nginx-ingress/ingress https双向认证/" rel="next" title="ingress https双向认证">
+                <i class="fa fa-chevron-left"></i> ingress https双向认证
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/06/13/docker/image/制作更小的镜像/" rel="prev" title="[转]制作更小的镜像">
+                [转]制作更小的镜像 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#MetalLB简介"><span class="nav-number">1.</span> <span class="nav-text">MetalLB简介</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#地址分配"><span class="nav-number">1.1.</span> <span class="nav-text">地址分配</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#外部声明"><span class="nav-number">1.2.</span> <span class="nav-text">外部声明</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#L2模式"><span class="nav-number">1.2.1.</span> <span class="nav-text">L2模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#BGP模式"><span class="nav-number">1.2.2.</span> <span class="nav-text">BGP模式</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#安装"><span class="nav-number">2.</span> <span class="nav-text">安装</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#前提条件"><span class="nav-number">2.1.</span> <span class="nav-text">前提条件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#CNI要求"><span class="nav-number">2.1.1.</span> <span class="nav-text">CNI要求</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#BGP模式安装"><span class="nav-number">2.2.</span> <span class="nav-text">BGP模式安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#L2模式安装"><span class="nav-number">2.3.</span> <span class="nav-text">L2模式安装</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#helm安装"><span class="nav-number">2.3.1.</span> <span class="nav-text">helm安装</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">3.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

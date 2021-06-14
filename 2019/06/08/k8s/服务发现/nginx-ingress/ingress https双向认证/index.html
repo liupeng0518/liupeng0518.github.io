@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="k8s,ingress,https,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="什么是相互认证相互身份验证也称为双向身份验证。它是一个过程，在这个过程中，客户机和服务器都通过证书颁发机构彼此验证身份。CodeProject.com对互认证有一个很好的定义:  相互SSL认证或基于证书的相互认证是指双方通过验证提供的数字证书来相互认证，以便双方确保其他人的身份。   在项目中我们经常会用到https双向认证,通常我们在nginx 配置https 双向证书：12345678910">
+<meta name="keywords" content="k8s,ingress,https">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ingress https双向认证">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/06/08/k8s/服务发现/nginx-ingress/ingress https双向认证/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="什么是相互认证相互身份验证也称为双向身份验证。它是一个过程，在这个过程中，客户机和服务器都通过证书颁发机构彼此验证身份。CodeProject.com对互认证有一个很好的定义:  相互SSL认证或基于证书的相互认证是指双方通过验证提供的数字证书来相互认证，以便双方确保其他人的身份。   在项目中我们经常会用到https双向认证,通常我们在nginx 配置https 双向证书：12345678910">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://raw.githubusercontent.com/liupeng0518/e-book/master/k8s/.images/k8s-ingress-tls.png">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ingress https双向认证">
+<meta name="twitter:description" content="什么是相互认证相互身份验证也称为双向身份验证。它是一个过程，在这个过程中，客户机和服务器都通过证书颁发机构彼此验证身份。CodeProject.com对互认证有一个很好的定义:  相互SSL认证或基于证书的相互认证是指双方通过验证提供的数字证书来相互认证，以便双方确保其他人的身份。   在项目中我们经常会用到https双向认证,通常我们在nginx 配置https 双向证书：12345678910">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/liupeng0518/e-book/master/k8s/.images/k8s-ingress-tls.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/06/08/k8s/服务发现/nginx-ingress/ingress https双向认证/">
+
+
+
+
+
+  <title>ingress https双向认证 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/06/08/k8s/服务发现/nginx-ingress/ingress https双向认证/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">ingress https双向认证</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-06-08T15:47:19+00:00">
+                2019-06-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="什么是相互认证"><a href="#什么是相互认证" class="headerlink" title="什么是相互认证"></a>什么是相互认证</h1><p>相互身份验证也称为双向身份验证。它是一个过程，在这个过程中，客户机和服务器都通过证书颁发机构彼此验证身份。<a href="https://www.codeproject.com/Articles/326574/An-Introduction-to-Mutual-SSL-Authentication" target="_blank" rel="noopener">CodeProject.com</a>对互认证有一个很好的定义:</p>
+<blockquote>
+<p>相互SSL认证或基于证书的相互认证是指双方通过验证提供的数字证书来相互认证，以便双方确保其他人的身份。</p>
+</blockquote>
+<p><img src="https://raw.githubusercontent.com/liupeng0518/e-book/master/k8s/.images/k8s-ingress-tls.png" alt></p>
+<p>在项目中我们经常会用到https双向认证,通常我们在nginx 配置https 双向证书：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">Nginx HTTPS双向认证配置参考</span><br><span class="line">server &#123;</span><br><span class="line">    listen 443 ssl;</span><br><span class="line">    ssl_protocols TLSv1 TLSv1.1;</span><br><span class="line"></span><br><span class="line">    server_name            www.example.com;      #域名</span><br><span class="line">    ssl_certificate        www.example.com.crt;  #第三方或自签发的证书</span><br><span class="line">    ssl_certificate_key    www.example.com.key;  #和证书配对的私钥</span><br><span class="line"></span><br><span class="line">    ssl_verify_client on;  #验证请求来源</span><br><span class="line">    ssl_client_certificate ca.crt;  #CA根证书</span><br><span class="line">    ssl_verify_depth 2;</span><br><span class="line">    ssl_crl ssl/dr-crl.chain.pem;  # 客户端证书链</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        root   html;</span><br><span class="line">        index  index.html index.htm;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>同样，在k8s中我们可以借助ingress实现</p>
+<h1 id="部署-Ingress-Controller"><a href="#部署-Ingress-Controller" class="headerlink" title="部署 Ingress Controller"></a>部署 Ingress Controller</h1><p>这里使用kubespray部署的集群，故使用脚本默认的nginx-ingress</p>
+<h1 id="设置相互身份验证"><a href="#设置相互身份验证" class="headerlink" title="设置相互身份验证"></a>设置相互身份验证</h1><p>要设置相互身份验证，您需要执行几个步骤。</p>
+<h2 id="创建证书"><a href="#创建证书" class="headerlink" title="创建证书"></a>创建证书</h2><p>对于此示例，我们将创建自签名证书（仅用于测试目的，而不是在生产中完成）。 作为一个简单的介绍，这里有几个术语，有用的知道：</p>
+<p>CommonName（CN）：标识与证书关联的主机名或所有者。</p>
+<p>证书颁发机构（CA）：颁发证书的受信任第三方。 通常你会从一个受信任的来源获得这个，但是对于这个例子我们只会创建一个。 CN通常是发行人的名称。</p>
+<p>服务器证书：用于标识服务器的证书。 这里的CN是服务器的主机名。 仅当服务器证书安装在主机名与CN匹配的服务器上时，服务器证书才有效。</p>
+<p>客户端证书：用于标识客户端/用户的证书。 这里的CN通常是客户端/用户的名称。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"># 生成根秘钥及证书</span><br><span class="line">$ openssl req -x509 -sha256 -newkey rsa:4096 -keyout ca.key -out ca.crt -days 356 -nodes -subj &apos;/CN=Fern Cert Authority&apos;</span><br><span class="line"></span><br><span class="line"># 生成服务器密钥，证书并使用CA证书签名</span><br><span class="line">$ openssl req -new -newkey rsa:4096 -keyout server.key -out server.csr -nodes -subj &apos;/CN=meow.com&apos;</span><br><span class="line">$   </span><br><span class="line"></span><br><span class="line"># 生成客户端密钥，证书并使用CA证书签名</span><br><span class="line">$ openssl req -new -newkey rsa:4096 -keyout client.key -out client.csr -nodes -subj &apos;/CN=Fern&apos;</span><br><span class="line">$ openssl x509 -req -sha256 -days 365 -in client.csr -CA ca.crt -CAkey ca.key -set_serial 02 -out client.crt</span><br><span class="line"># 生成p12 </span><br><span class="line">$ openssl pkcs12 -export -clcerts -inkey client.key -in client.crt -out client.p12 -name &quot;k8s-client&quot;</span><br></pre></td></tr></table></figure>
+<p>Github证书参考链接：</p>
+<p><a href="https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#creating-the-ca-authentication-secret" target="_blank" rel="noopener">Creating the CA Authentication secret</a></p>
+<p><a href="https://github.com/kubernetes/ingress-nginx/tree/master/docs/examples/auth/client-certs" target="_blank" rel="noopener">Client Certificate Authentication</a></p>
+<h2 id="创建-k8s-secret"><a href="#创建-k8s-secret" class="headerlink" title="创建 k8s secret"></a>创建 k8s secret</h2><p>我们需要将上面生成的证书存储在Kubernetes Secret中，以便在我们的Ingress-NGINX控制器中使用它们。</p>
+<p>在此示例中，为简单起见，这个 secret 将包含 服务器证书 和 CA证书 。Ingress Controller将会自动匹配使用哪些证书以及在何处使用它们。它们也可以分成单独的secret，可以参考<a href="https://github.com/kubernetes/ingress-nginx/tree/master/docs/examples/auth/client-certs" target="_blank" rel="noopener">这里</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl create secret generic my-certs --from-file=tls.crt=server.crt --from-file=tls.key=server.key --from-file=ca.crt=ca.crt</span><br></pre></td></tr></table></figure>
+<h1 id="部署测试服务"><a href="#部署测试服务" class="headerlink" title="部署测试服务"></a>部署测试服务</h1><h2 id="部署一个nginx"><a href="#部署一个nginx" class="headerlink" title="部署一个nginx"></a>部署一个nginx</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">kubectl run my-nginx --image=nginx --replicas=2 --port=80</span><br><span class="line"># kubectl expose deployment my-nginx --port=8080 --target-port=80 --external-ip=x.x.x.168</span><br><span class="line">kubectl expose deployment my-nginx --type=NodePort --port=80 --target-port=80</span><br></pre></td></tr></table></figure>
+<h2 id="添加双向证书ingress-服务"><a href="#添加双向证书ingress-服务" class="headerlink" title="添加双向证书ingress 服务"></a>添加双向证书ingress 服务</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: extensions/v1beta1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: my-nginx</span><br><span class="line">  annotations:</span><br><span class="line">    kubernetes.io/ingress.class: nginx</span><br><span class="line">    # Enable client certificate authentication</span><br><span class="line">    nginx.ingress.kubernetes.io/auth-tls-verify-client: &quot;on&quot;</span><br><span class="line">    # Create the secret containing the trusted ca certificates</span><br><span class="line">    nginx.ingress.kubernetes.io/auth-tls-secret: &quot;default/my-certs&quot;</span><br><span class="line">    # Specify the verification depth in the client certificates chain</span><br><span class="line">    nginx.ingress.kubernetes.io/auth-tls-verify-depth: &quot;1&quot;</span><br><span class="line">    # Specify an error page to be redirected to verification errors</span><br><span class="line">    nginx.ingress.kubernetes.io/auth-tls-error-page: &quot;http://www.mysite.com/error-cert.html&quot;</span><br><span class="line">    # Specify if certificates are passed to upstream server</span><br><span class="line">    nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: &quot;true&quot;</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: meow.com</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        backend:</span><br><span class="line">          serviceName: my-nginx</span><br><span class="line">          servicePort: 80</span><br><span class="line">  tls:</span><br><span class="line">  - hosts:</span><br><span class="line">    - meow.com</span><br><span class="line">    secretName: my-certs</span><br></pre></td></tr></table></figure>
+<ul>
+<li>TLS已启用，它会使用my-certs secret中提供的tls.key和tls.crt。</li>
+<li>nginx.ingress.kubernetes.io/auth-tls-secret批注使用my-certs secret中的ca.crt。</li>
+</ul>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>浏览器访问 <a href="https://meow.com" target="_blank" rel="noopener">https://meow.com</a> 并导入我们生成的p12证书</p>
+<h1 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h1><p>kubespray 默认部署的ingress-nginx ssl-protocols 只开启了SSLv2 协议。 我们需要添加TLSv1 TLSv1.1 TLSv1.2完整的 ssl 协议</p>
+<p>这里 <a href="https://kubernetes.github.io/ingress-nginx/user-guide/tls/" target="_blank" rel="noopener">https://kubernetes.github.io/ingress-nginx/user-guide/tls/</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">cat cm-ingress-nginx.yml</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: ConfigMap</span><br><span class="line">metadata:</span><br><span class="line">  name: ingress-nginx</span><br><span class="line">  namespace: kube-system</span><br><span class="line">  labels:</span><br><span class="line">    k8s-app: ingress-nginx</span><br><span class="line">data:</span><br><span class="line">  map-hash-bucket-size: &apos;128&apos;</span><br><span class="line">  ssl-protocols: &quot;SSLv2 TLSv1 TLSv1.1 TLSv1.2&quot;</span><br></pre></td></tr></table></figure>
+<p>HTTPS 证书添加<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl create secret generic  test.com-secret  --from-file=tls.crt=test.com.pem --from-file=tls.key=test.com.key  -n ftc-demo</span><br></pre></td></tr></table></figure></p>
+<h1 id="参考："><a href="#参考：" class="headerlink" title="参考："></a>参考：</h1><p><a href="http://www.lstop.pub/2018/06/05/traefik%E5%AE%9E%E7%8E%B0ssl%E5%8F%8C%E5%90%91%E8%AE%A4%E8%AF%81/" target="_blank" rel="noopener">traefic开启方式参考</a></p>
+<p><a href="https://medium.com/@awkwardferny/configuring-certificate-based-mutual-authentication-with-kubernetes-ingress-nginx-20e7e38fdfca" target="_blank" rel="noopener">原文</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/ingress/" rel="tag"># ingress</a>
+          
+            <a href="/tags/https/" rel="tag"># https</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/05/29/k8s/kube-proxy/kube-proxy/" rel="next" title="Understanding Kubernetes Kube-Proxy">
+                <i class="fa fa-chevron-left"></i> Understanding Kubernetes Kube-Proxy
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/06/08/k8s/服务发现/metallb/" rel="prev" title="metallb">
+                metallb <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#什么是相互认证"><span class="nav-number">1.</span> <span class="nav-text">什么是相互认证</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#部署-Ingress-Controller"><span class="nav-number">2.</span> <span class="nav-text">部署 Ingress Controller</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#设置相互身份验证"><span class="nav-number">3.</span> <span class="nav-text">设置相互身份验证</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#创建证书"><span class="nav-number">3.1.</span> <span class="nav-text">创建证书</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#创建-k8s-secret"><span class="nav-number">3.2.</span> <span class="nav-text">创建 k8s secret</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#部署测试服务"><span class="nav-number">4.</span> <span class="nav-text">部署测试服务</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#部署一个nginx"><span class="nav-number">4.1.</span> <span class="nav-text">部署一个nginx</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#添加双向证书ingress-服务"><span class="nav-number">4.2.</span> <span class="nav-text">添加双向证书ingress 服务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#测试"><span class="nav-number">4.3.</span> <span class="nav-text">测试</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#注意事项"><span class="nav-number">5.</span> <span class="nav-text">注意事项</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考："><span class="nav-number">6.</span> <span class="nav-text">参考：</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

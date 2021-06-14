@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="docker,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="docker现在已经支持构建多cpu架构images,这里我们将一步步的实现arm64和amd64架构的docker images Multi architecture Docker ImageDocker image 存储设计之初，没有充分考虑到镜像Multi architecture的支持，而是简单的使用镜像存储库的前缀来区分相同应用的不同平台，并建议开发者将不同平台的镜像应该push到相对应">
+<meta name="keywords" content="docker">
+<meta property="og:type" content="article">
+<meta property="og:title" content="多架构 CPU docker 镜像构建">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/03/28/docker/image/Multi Architecture Docker Builds/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="docker现在已经支持构建多cpu架构images,这里我们将一步步的实现arm64和amd64架构的docker images Multi architecture Docker ImageDocker image 存储设计之初，没有充分考虑到镜像Multi architecture的支持，而是简单的使用镜像存储库的前缀来区分相同应用的不同平台，并建议开发者将不同平台的镜像应该push到相对应">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://raw.githubusercontent.com/liupeng0518/e-book/master/docker/.images/docker_image_manifest_list.png">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.956Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="多架构 CPU docker 镜像构建">
+<meta name="twitter:description" content="docker现在已经支持构建多cpu架构images,这里我们将一步步的实现arm64和amd64架构的docker images Multi architecture Docker ImageDocker image 存储设计之初，没有充分考虑到镜像Multi architecture的支持，而是简单的使用镜像存储库的前缀来区分相同应用的不同平台，并建议开发者将不同平台的镜像应该push到相对应">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/liupeng0518/e-book/master/docker/.images/docker_image_manifest_list.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/03/28/docker/image/Multi Architecture Docker Builds/">
+
+
+
+
+
+  <title>多架构 CPU docker 镜像构建 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/03/28/docker/image/Multi Architecture Docker Builds/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">多架构 CPU docker 镜像构建</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-28T09:47:19+00:00">
+                2019-03-28
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index">
+                    <span itemprop="name">docker</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>docker现在已经支持构建多cpu架构images,这里我们将一步步的实现arm64和amd64架构的docker images</p>
+<h1 id="Multi-architecture-Docker-Image"><a href="#Multi-architecture-Docker-Image" class="headerlink" title="Multi architecture Docker Image"></a>Multi architecture Docker Image</h1><p>Docker image 存储设计之初，没有充分考虑到镜像Multi architecture的支持，而是简单的使用镜像存储库的前缀来区分相同应用的不同平台，并建议开发者将不同平台的镜像应该push到相对应的Docker hub的镜像仓库中，目前这种设计依旧保存在最新的Docker设计文档中：</p>
+<p><a href="https://github.com/docker-library/official-images#architectures-other-than-amd64" target="_blank" rel="noopener">https://github.com/docker-library/official-images#architectures-other-than-amd64</a></p>
+<p>我们可以基于镜像存储库的前缀，或者是基于tag或image名称后缀来区分不同的运行平台来pull相应的Docker镜像，例如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">arm32v7 variant</span><br><span class="line">$ docker run arm32v7/busybox uname -a</span><br><span class="line"></span><br><span class="line">Linux 9e3873123d09 4.9.125-linuxkit #1 SMP Fri Sep 7 08:20:28 UTC 2018 armv7l GNU/Linux</span><br><span class="line">ppc64le variant</span><br><span class="line">$ docker run ppc64le/busybox uname -a</span><br><span class="line"></span><br><span class="line">Linux 57a073cc4f10 4.9.125-linuxkit #1 SMP Fri Sep 7 08:20:28 UTC 2018 ppc64le GNU/Linux</span><br><span class="line"></span><br><span class="line">来源：https://docs.docker.com/docker-for-mac/multi-arch/</span><br></pre></td></tr></table></figure>
+<p>不过这对用户来说是不友好的设计，而好的设计是应该用户只要执行docker pull myapp就行了而不用关心容器的运行平台，Docker engine根据运行环境来pull相关的镜像，真正的做到 “Run Any App, Anywhere”。</p>
+<p>Docker社区早就注意到了这个问题，并通过重新定义 v2.2 Image specification format（<a href="https://github.com/docker/distribution/pull/1281/" target="_blank" rel="noopener">PR #1068</a>）并在 Implement schema2 manifest formats（<a href="https://github.com/docker/distribution/pull/1068" target="_blank" rel="noopener">PR #1281</a>）实现了Multi architecture Docker镜像功能。从Docker registry v2.3和Docker 1.10 开始，Docker hub就可以pull multi architecture Docker镜像了。</p>
+<p>那么，我们就run相同的命令 “docker run -it –rm busybox arch” 在不同CPU architecture的host都得到了正确的运行结果，这是用户体验的一个极大的提升，用户根本不用关心 image的CPU arch 和OS的类型了。</p>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>自从Docker registry v2.3和Docker 1.10开始，Docker通过支持新的image Media 类型 manifest list 实现了Multi architecture Docker镜像功能：</p>
+<ol>
+<li>一个image manifest list 包含指向已经存在镜像的manifest对象列表</li>
+</ol>
+<p><img src="https://raw.githubusercontent.com/liupeng0518/e-book/master/docker/.images/docker_image_manifest_list.png" alt="docker_image_manifest_list.png"></p>
+<ol start="2">
+<li>一个image manifest list包含已经存在镜像的manifest对象的平台特性（CPU arch和OS类型）特征</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&quot;platform&quot;: &#123;</span><br><span class="line">   &quot;architecture&quot;: &quot;amd64&quot;,</span><br><span class="line">   &quot;os&quot;: &quot;linux&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ol>
+<li>根据manifest list对象定义，我们可以通过下面的流程了解Docker是如何支持Multi architecture Docker镜像</li>
+</ol>
+<div id="flowchart-0" class="flow-chart"></div>
+
+
+<h1 id="实践"><a href="#实践" class="headerlink" title="实践"></a>实践</h1><h2 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h2><p>这里实现一个 arm或者amd64 平台都可以执行的main.go脚本</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">import (</span><br><span class="line">	&quot;fmt&quot;</span><br><span class="line">	&quot;runtime&quot;</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">	fmt.Println(&quot;Hello, 世界!&quot;)</span><br><span class="line">	fmt.Println(&quot;GOOS:&quot;, runtime.GOOS)</span><br><span class="line">	fmt.Println(&quot;GOARCH&quot;, runtime.GOARCH)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="构建镜像"><a href="#构建镜像" class="headerlink" title="构建镜像"></a>构建镜像</h2><p>虽然我们要实现 “多架构” 构建，但我们首先构建这两个架构的image。</p>
+<p>Dockerfile-amd64，使用它构建 amd64 版本（注意GOARCH = amd64）。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">FROM golang:1.11.1-alpine as build</span><br><span class="line"></span><br><span class="line">RUN apk add --update --no-cache ca-certificates git</span><br><span class="line">RUN mkdir /app</span><br><span class="line">WORKDIR /app</span><br><span class="line">COPY . .</span><br><span class="line"></span><br><span class="line">RUN GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags=&quot;-w -s&quot; -o /go/bin/app</span><br><span class="line"></span><br><span class="line">FROM scratch</span><br><span class="line">COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/</span><br><span class="line">COPY --from=build /go/bin/app /go/bin/app</span><br><span class="line">ENTRYPOINT [&quot;/go/bin/app&quot;]</span><br></pre></td></tr></table></figure></p>
+<p>构建镜像<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># docker build -f Dockerfile-amd64 -t liupeng0518/test-arch:amd64 .</span><br></pre></td></tr></table></figure></p>
+<p>推送</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker push liupeng0518/test-arch:amd64</span><br></pre></td></tr></table></figure>
+<p>接下来构建arm版本(注意GOARCH=arm)，Dockerfile-arm</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">FROM golang:1.11.1-alpine as build</span><br><span class="line"></span><br><span class="line">RUN apk add --update --no-cache ca-certificates git</span><br><span class="line">RUN mkdir /app</span><br><span class="line">WORKDIR /app</span><br><span class="line">COPY . .</span><br><span class="line"></span><br><span class="line">RUN GOOS=linux GOARCH=arm go build -a -installsuffix cgo -ldflags=&quot;-w -s&quot; -o /go/bin/app</span><br><span class="line"></span><br><span class="line">FROM scratch</span><br><span class="line">COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/</span><br><span class="line">COPY --from=build /go/bin/app /go/bin/app</span><br><span class="line">ENTRYPOINT [&quot;/go/bin/app&quot;]</span><br></pre></td></tr></table></figure>
+<p>构建镜像<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># docker build -f Dockerfile-arm -t liupeng0518/test-arch:arm .</span><br></pre></td></tr></table></figure></p>
+<p>推送</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># docker push  liupeng0518/test-arch:arm</span><br></pre></td></tr></table></figure>
+<p>本地run测试:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># docker run -it liupeng0518/test-arch:arm</span><br><span class="line">Hello, 世界!</span><br><span class="line">GOOS: linux</span><br><span class="line">GOARCH arm</span><br></pre></td></tr></table></figure>
+<h2 id="Multi-Architecture-Manifest"><a href="#Multi-Architecture-Manifest" class="headerlink" title="Multi-Architecture Manifest"></a>Multi-Architecture Manifest</h2><p>这里开启docker Experimental：</p>
+<p>server:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;experimental&quot; : true,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>client:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">➜ sudo cat  /etc/docker/daemon.json</span><br><span class="line">&#123;</span><br><span class="line">  &quot;experimental&quot; : true,</span><br><span class="line">  &quot;registry-mirrors&quot;: [&quot;https://uibirsz0.mirror.aliyuncs.com&quot;],&quot;graph&quot;:&quot;/home/.docker-graph&quot;</span><br><span class="line">&#125;</span><br><span class="line">➜  test cat ~/.docker/config.json </span><br><span class="line">&#123;</span><br><span class="line">...</span><br><span class="line">        &quot;experimental&quot;: &quot;enabled&quot;</span><br><span class="line">...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>使用docker verison查看是否开启。</p>
+<p>确保镜像推送至仓库后，我们现在可以创建multi-architecture manifest</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">➜ docker manifest create liupeng0518/test-arch liupeng0518/test-arch:arm liupeng0518/test-arch:amd64 --amend</span><br><span class="line">Created manifest list docker.io/liupeng0518/test-arch:latest</span><br></pre></td></tr></table></figure>
+<p>这里，第一个参数liupeng0518/test-arch是我们的多架构清单的名称。剩下的参数是我们想要包含的images。</p>
+<p>理论上讲这样就ok，如果我们使用架构特定的基础图像，那么一切都会好的。我们应该使用与架构无关的 scratch 镜像。    我们来看一下multi-architecture image的问题：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜ docker manifest inspect docker.io/liupeng0518/test-arch:latest</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">   &quot;schemaVersion&quot;: 2,</span><br><span class="line">   &quot;mediaType&quot;: &quot;application/vnd.docker.distribution.manifest.list.v2+json&quot;,</span><br><span class="line">   &quot;manifests&quot;: [</span><br><span class="line">      &#123;</span><br><span class="line">         &quot;mediaType&quot;: &quot;application/vnd.docker.distribution.manifest.v2+json&quot;,</span><br><span class="line">         &quot;size&quot;: 590,</span><br><span class="line">         &quot;digest&quot;: &quot;sha256:27e502b80483754f464e4f8b1036355148b2599712a73dbcf1c6763aa2efd588&quot;,</span><br><span class="line">         &quot;platform&quot;: &#123;</span><br><span class="line">            &quot;architecture&quot;: &quot;amd64&quot;,</span><br><span class="line">            &quot;os&quot;: &quot;linux&quot;</span><br><span class="line">         &#125;</span><br><span class="line">      &#125;,</span><br><span class="line">      &#123;</span><br><span class="line">         &quot;mediaType&quot;: &quot;application/vnd.docker.distribution.manifest.v2+json&quot;,</span><br><span class="line">         &quot;size&quot;: 590,</span><br><span class="line">         &quot;digest&quot;: &quot;sha256:aaa952b43d5d9390d6fb540223177a42807c4deac78a4564ebd22d36a86b54b0&quot;,</span><br><span class="line">         &quot;platform&quot;: &#123;</span><br><span class="line">            &quot;architecture&quot;: &quot;arm64&quot;,</span><br><span class="line">            &quot;os&quot;: &quot;linux&quot;</span><br><span class="line">         &#125;</span><br><span class="line">      &#125;</span><br><span class="line">   ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>此清单中，如果有问题可以如下命令修复：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜ docker manifest annotate --arch arm liupeng0518/test-arch liupeng0518/test-arch:arm</span><br></pre></td></tr></table></figure></p>
+<p>推送镜像<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜ docker manifest push docker.io/liupeng0518/test-arch:latest</span><br></pre></td></tr></table></figure></p>
+<p>我们来测试下我们构建的镜像：</p>
+<p>amd64：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">➜ docker run -it   liupeng0518/test-arch                                                              </span><br><span class="line">Unable to find image &apos;liupeng0518/test-arch:latest&apos; locally</span><br><span class="line">latest: Pulling from liupeng0518/test-arch</span><br><span class="line">Digest: sha256:cd2ac5a36c5cfa62146469ea1bb6f4d02547682921623de9387b6b076523e747</span><br><span class="line">Status: Downloaded newer image for liupeng0518/test-arch:latest</span><br><span class="line">Hello, 世界!</span><br><span class="line">GOOS: linux</span><br><span class="line">GOARCH amd64</span><br></pre></td></tr></table></figure>
+<p>arm64</p>
+<p><code>`</code><br>docker run -it   liupeng0518/test-arch<br>Unable to find image ‘liupeng0518/test-arch:latest’ locally<br>latest: Pulling from liupeng0518/test-arch<br>Digest: sha256:c411f59f30210801e7f0921cb9350455f66ef67a23175bd136fddb4663afa0f6<br>Status: Downloaded newer image for liupeng0518/test-arch:latest<br>Hello, 世界!<br>GOOS: linux<br>GOARCH arm</p>
+<p><code>`</code><script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.6.5/flowchart.min.js"></script><textarea id="flowchart-0-code" style="display: none">st=>start: 开始
+e=>end
+op1=>operation: pull 镜像
+op2=>operation: pull target镜像
+op3=>operation: old case
+sub1=>subroutine: My Subroutine
+cond1=>condition: registry返回
+是否支持多muitiarch的
+manifest list对象
+
+cond2=>condition: 匹配到对应镜像
+io=>inputoutput: docker engine根据client运行环境，
+遍历查找符合CPU arch和
+OS的manifest对象
+
+
+st->op1->cond1
+cond1(yes)->io->cond2(yes)->op2->e
+cond1(no)->op3->cond2
+cond2(no)->e</textarea><textarea id="flowchart-0-options" style="display: none">{"scale":1,"line-width":2,"line-length":50,"text-margin":10,"font-size":12}</textarea><script>  var code = document.getElementById("flowchart-0-code").value;  var options = JSON.parse(decodeURIComponent(document.getElementById("flowchart-0-options").value));  var diagram = flowchart.parse(code);  diagram.drawSVG("flowchart-0", options);</script></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/docker/" rel="tag"># docker</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/28/docker/docker-compose.yml 语法说明/" rel="next" title="docker-compose.yml 语法说明">
+                <i class="fa fa-chevron-left"></i> docker-compose.yml 语法说明
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/03/28/docker/network/docker网络/" rel="prev" title="docker网络">
+                docker网络 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Multi-architecture-Docker-Image"><span class="nav-number">1.</span> <span class="nav-text">Multi architecture Docker Image</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析"><span class="nav-number">2.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#实践"><span class="nav-number">3.</span> <span class="nav-text">实践</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#准备"><span class="nav-number">3.1.</span> <span class="nav-text">准备</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#构建镜像"><span class="nav-number">3.2.</span> <span class="nav-text">构建镜像</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Multi-Architecture-Manifest"><span class="nav-number">3.3.</span> <span class="nav-text">Multi-Architecture Manifest</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

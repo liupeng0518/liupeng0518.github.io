@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="ceph,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="问题描述ceph集群状态为HEALTH_ERR，ceph -s显示有pg状态不一致，ceph health detail输出如下：12345# ceph health detailHEALTH_ERR 2 pgs inconsistent; 1 pgs repair; 8 scrub errorspg 14.16a is active+clean+scrubbing+deep+inconsiste">
+<meta name="keywords" content="ceph">
+<meta property="og:type" content="article">
+<meta property="og:title" content="\[转\]Ceph PG Inconsistent Error处理">
+<meta property="og:url" content="http://liupeng0518.github.io/2018/12/29/ceph/问题处理/Ceph_PG_Inconsistent_Error处理/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="问题描述ceph集群状态为HEALTH_ERR，ceph -s显示有pg状态不一致，ceph health detail输出如下：12345# ceph health detailHEALTH_ERR 2 pgs inconsistent; 1 pgs repair; 8 scrub errorspg 14.16a is active+clean+scrubbing+deep+inconsiste">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.936Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="\[转\]Ceph PG Inconsistent Error处理">
+<meta name="twitter:description" content="问题描述ceph集群状态为HEALTH_ERR，ceph -s显示有pg状态不一致，ceph health detail输出如下：12345# ceph health detailHEALTH_ERR 2 pgs inconsistent; 1 pgs repair; 8 scrub errorspg 14.16a is active+clean+scrubbing+deep+inconsiste">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2018/12/29/ceph/问题处理/Ceph_PG_Inconsistent_Error处理/">
+
+
+
+
+
+  <title>\[转\]Ceph PG Inconsistent Error处理 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2018/12/29/ceph/问题处理/Ceph_PG_Inconsistent_Error处理/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">\[转\]Ceph PG Inconsistent Error处理</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-29T09:47:19+00:00">
+                2018-12-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/ceph/" itemprop="url" rel="index">
+                    <span itemprop="name">ceph</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h1><p>ceph集群状态为HEALTH_ERR，ceph -s显示有pg状态不一致，ceph health detail输出如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># ceph health detail</span><br><span class="line">HEALTH_ERR 2 pgs inconsistent; 1 pgs repair; 8 scrub errors</span><br><span class="line">pg 14.16a is active+clean+scrubbing+deep+inconsistent+repair, acting [1,27,16]</span><br><span class="line">pg 15.118 is active+clean+inconsistent, acting [0,15,27]</span><br><span class="line">8 scrub errors</span><br></pre></td></tr></table></figure></p>
+<h1 id="分析-amp-解决"><a href="#分析-amp-解决" class="headerlink" title="分析 &amp; 解决"></a>分析 &amp; 解决</h1><p>手动执行pg修复<br>ceph pg repair 14.16a<br>ceph pg deep-scrub 14.16a<br>结果：集群状态依旧HEALTH_ERR</p>
+<p>重启对应osd daemon<br>systemctl restart ceph-osd@<osdid>.service<br>结果：集群状态依旧HEALTH_ERR</osdid></p>
+<p>检查ceph-osd log<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># vim ceph-osd.1.log-xxx.gz</span><br><span class="line">...</span><br><span class="line">2017-05-31 02:30:14.166348 7f7aeefff700 -1 log_channel(cluster) log [ERR] : 14.16a shard 27: soid 14:56a14fcc:::10000002380.0000061d:head candidate had a read error</span><br><span class="line">2017-05-31 02:30:14.166358 7f7aeefff700 -1 log_channel(cluster) log [ERR] : 14.16a shard 27: soid 14:56a7ab13:::10000002380.00000446:head candidate had a read error</span><br><span class="line">2017-05-31 02:30:14.166361 7f7aeefff700 -1 log_channel(cluster) log [ERR] : 14.16a shard 27: soid 14:56b34a7a:::10000002356.00000218:head candidate had a read error</span><br><span class="line">2017-05-31 02:30:14.166363 7f7aeefff700 -1 log_channel(cluster) log [ERR] : 14.16a shard 27: soid 14:56c557e8:::10000002380.0000007a:head candidate had a read error</span><br><span class="line">2017-05-31 02:30:14.166366 7f7aeefff700 -1 log_channel(cluster) log [ERR] : 14.16a shard 27: soid 14:56c8ceeb:::10000002380.00000854:head candidate had a read error</span><br><span class="line">2017-05-31 02:30:14.166372 7f7aeefff700 -1 log_channel(cluster) log [ERR] : 14.16a shard 27: soid 14:56f50799:::1000000237c.0000019a:head candidate had a read error</span><br><span class="line">2017-05-31 02:30:14.168485 7f7acebff700 -1 log_channel(cluster) log [ERR] : 14.16a deep-scrub 0 missing, 6 inconsistent objects</span><br><span class="line">2017-05-31 02:30:14.168499 7f7acebff700 -1 log_channel(cluster) log [ERR] : 14.16a deep-scrub 6 errors</span><br></pre></td></tr></table></figure></p>
+<p>上面可以看出pg 14.16a里有几个objects报告candidate had a read error</p>
+<p>查看出错的object的md5值<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># md5sum /var/lib/ceph/osd/ceph-1/current/14.16a_head/10000002380.0000061d__head_33F2856A__e</span><br><span class="line">dc191d3144c49077952ed059425d68b1  /var/lib/ceph/osd/ceph-1/current/14.16a_head/10000002380.0000061d__head_33F2856A__e</span><br><span class="line"></span><br><span class="line"># md5sum /var/lib/ceph/osd/ceph-16/current/14.16a_head/10000002380.0000061d__head_33F2856A__e</span><br><span class="line">dc191d3144c49077952ed059425d68b1  /var/lib/ceph/osd/ceph-16/current/14.16a_head/10000002380.0000061d__head_33F2856A__e</span><br><span class="line"></span><br><span class="line"># md5sum /var/lib/ceph/osd/ceph-27/current/14.16a_head/10000002380.0000061d__head_33F2856A__e</span><br><span class="line">md5sum: /var/lib/ceph/osd/ceph-27/current/14.16a_head/10000002380.0000061d__head_33F2856A__e: Input/output error</span><br></pre></td></tr></table></figure></p>
+<p>上面得出ceph-27上的object获取md5值失败，报Input/output error，这里猜测其对应的磁盘有问题；<br>查看ceph-27上pg 14.16a里别的object的md5值，输出正常，则证明磁盘还能工作，可能是文件有损坏，也可能磁盘上有部分坏道；</p>
+<p>删除md5sum报IO错误的文件，然后执行ceph pg repair 14.16a，pg状态恢复正常；</p>
+<p>磁盘检查与恢复<br>那磁盘是否有问题呢？执行以下步骤来检测并恢复：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># systemctl stop ceph-osd@27.service</span><br><span class="line"># umount /dev/sdi1</span><br><span class="line"></span><br><span class="line"># badblocks -svn /dev/sdi1 -o badblocks.log</span><br><span class="line">Checking for bad blocks in non-destructive read-write mode</span><br><span class="line">From block 0 to 3906984774</span><br><span class="line">Checking for bad blocks (non-destructive read-write test)</span><br><span class="line">Testing with random pattern: 0.00% done, 16:22 elapsed. (223/0/0 errors)</span><br></pre></td></tr></table></figure></p>
+<p>上述检查会花费比较长时间，一般SATA盘的read速度为100-120MB/s，4TB大小的SATA盘，约需要4<em>1024</em>1024/120/3600 = 9.7小时；</p>
+<p>不过你可以在别的窗口查看输出文件badblocks.log的内容，如果里面有信息，那证明你的磁盘确实有坏块，就需要尝试恢复检查了:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># head -n 10 badblocks.log</span><br><span class="line">10624</span><br><span class="line">10625</span><br><span class="line">10626</span><br><span class="line">10627</span><br><span class="line">10628</span><br><span class="line">10629</span><br><span class="line">10630</span><br><span class="line">10631</span><br><span class="line">10632</span><br><span class="line">10633</span><br><span class="line"></span><br><span class="line">kill badblocks检查进程</span><br><span class="line"># ps aux | pgrep badblocks | xargs kill -9</span><br><span class="line">[1]+  Killed                  badblocks -v /dev/sdi1 &gt; badblocks</span><br></pre></td></tr></table></figure></p>
+<p>通过badblocks修复坏块，注意会丢失坏块里的数据<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"># badblocks -ws /dev/sdi1 10633 10624</span><br><span class="line">Testing with pattern 0xaa: done</span><br><span class="line">Reading and comparing: done</span><br><span class="line">Testing with pattern 0x55: done</span><br><span class="line">Reading and comparing: done</span><br><span class="line">Testing with pattern 0xff: done</span><br><span class="line">Reading and comparing: done</span><br><span class="line">Testing with pattern 0x00: done</span><br><span class="line">Reading and comparing: done</span><br><span class="line"></span><br><span class="line"># badblocks -svn /dev/sdi1 10633 10624</span><br><span class="line">Checking for bad blocks in non-destructive read-write mode</span><br><span class="line">From block 10624 to 10633</span><br><span class="line">Checking for bad blocks (non-destructive read-write test)</span><br><span class="line">Testing with random pattern: done</span><br><span class="line">Pass completed, 0 bad blocks found. (0/0/0 errors)</span><br></pre></td></tr></table></figure></p>
+<p>通过上述步骤恢复了磁盘中的坏块，有如下两种情况：</p>
+<p>坏块中有xfs的元数据信息<br>执行xfs_repair修复磁盘上的xfs系统，很可能报错；<br>没有办法，只能重新格式化磁盘，然后执行ceph的recovery了；</p>
+<p>坏块中无xfs的元数据信息<br>通过xfs_repair修复磁盘上的xfs系统，报告done<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"># xfs_repair  -f /dev/sdi1</span><br><span class="line">Phase 1 - find and verify superblock...</span><br><span class="line">Cannot get host filesystem geometry.</span><br><span class="line">Repair may fail if there is a sector size mismatch between</span><br><span class="line">the image and the host filesystem.</span><br><span class="line">        - reporting progress in intervals of 15 minutes</span><br><span class="line">Phase 2 - using internal log</span><br><span class="line">        - zero log...</span><br><span class="line">        - scan filesystem freespace and inode maps...</span><br><span class="line">        - 15:23:37: scanning filesystem freespace - 32 of 32 allocation groups done</span><br><span class="line">        - found root inode chunk</span><br><span class="line">Phase 3 - for each AG...</span><br><span class="line">        - scan and clear agi unlinked lists...</span><br><span class="line">        - 15:23:37: scanning agi unlinked lists - 32 of 32 allocation groups done</span><br><span class="line">        - process known inodes and perform inode discovery...</span><br><span class="line">...</span><br><span class="line">        - 15:23:42: process known inodes and inode discovery - 3584 of 3584 inodes done</span><br><span class="line">        - process newly discovered inodes...</span><br><span class="line">        - 15:23:42: process newly discovered inodes - 32 of 32 allocation groups done</span><br><span class="line">Phase 4 - check for duplicate blocks...</span><br><span class="line">        - setting up duplicate extent list...</span><br><span class="line">        - 15:23:42: setting up duplicate extent list - 32 of 32 allocation groups done</span><br><span class="line">        - check for inodes claiming duplicate blocks...</span><br><span class="line">...</span><br><span class="line">        - 15:23:42: check for inodes claiming duplicate blocks - 3584 of 3584 inodes done</span><br><span class="line">Phase 5 - rebuild AG headers and trees...</span><br><span class="line">        - 15:23:42: rebuild AG headers and trees - 32 of 32 allocation groups done</span><br><span class="line">        - reset superblock...</span><br><span class="line">Phase 6 - check inode connectivity...</span><br><span class="line">        - resetting contents of realtime bitmap and summary inodes</span><br><span class="line">        - traversing filesystem ...</span><br><span class="line">        - traversal finished ...</span><br><span class="line">        - moving disconnected inodes to lost+found ...</span><br><span class="line">Phase 7 - verify and correct link counts...</span><br><span class="line">done</span><br></pre></td></tr></table></figure></p>
+<p>这时mount，start ceph-osd damon后，ceph报HEALTH_OK，但其实osd上的部分数据已经丢失，这个等ceph的deep scrub触发后会自动修复；</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a href="http://ceph.com/planet/ceph-manually-repair-object/" target="_blank" rel="noopener">http://ceph.com/planet/ceph-manually-repair-object/</a><br><a href="https://linux.cn/article-7961-1.html" target="_blank" rel="noopener">https://linux.cn/article-7961-1.html</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ceph/" rel="tag"># ceph</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/29/k8s/服务发现/nginx-ingress/nginx-ingress部署/" rel="next" title="nginx-ingress部署">
+                <i class="fa fa-chevron-left"></i> nginx-ingress部署
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/29/ceph/管理/ceph运维管理/" rel="prev" title="ceph运维管理">
+                ceph运维管理 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#问题描述"><span class="nav-number">1.</span> <span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析-amp-解决"><span class="nav-number">2.</span> <span class="nav-text">分析 &amp; 解决</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">3.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

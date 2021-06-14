@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="mysql,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="英文原文地址：https://www.percona.com/blog/2016/05/16/mysql-got-an-error-reading-communication-packet-errors/ 在这篇博客中，我们来讨论一下引起MySQL出现”Got an error reading communication packet”错误的可能原因，以及如何解决这个错误。 在Percona的托管">
+<meta name="keywords" content="mysql">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL &quot;Got an Error Reading Communication Packet&quot; Errors">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/03/27/linux/middleware/mysql/MySQL_Got an Error Reading Communication Packet_Errors/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="英文原文地址：https://www.percona.com/blog/2016/05/16/mysql-got-an-error-reading-communication-packet-errors/ 在这篇博客中，我们来讨论一下引起MySQL出现”Got an error reading communication packet”错误的可能原因，以及如何解决这个错误。 在Percona的托管">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.996Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MySQL &quot;Got an Error Reading Communication Packet&quot; Errors">
+<meta name="twitter:description" content="英文原文地址：https://www.percona.com/blog/2016/05/16/mysql-got-an-error-reading-communication-packet-errors/ 在这篇博客中，我们来讨论一下引起MySQL出现”Got an error reading communication packet”错误的可能原因，以及如何解决这个错误。 在Percona的托管">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/03/27/linux/middleware/mysql/MySQL_Got an Error Reading Communication Packet_Errors/">
+
+
+
+
+
+  <title>MySQL "Got an Error Reading Communication Packet" Errors | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/03/27/linux/middleware/mysql/MySQL_Got an Error Reading Communication Packet_Errors/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MySQL "Got an Error Reading Communication Packet" Errors</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-27T09:47:19+00:00">
+                2019-03-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index">
+                    <span itemprop="name">mysql</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>英文原文地址：<a href="https://www.percona.com/blog/2016/05/16/mysql-got-an-error-reading-communication-packet-errors/" target="_blank" rel="noopener">https://www.percona.com/blog/2016/05/16/mysql-got-an-error-reading-communication-packet-errors/</a></p>
+<p>在这篇博客中，我们来讨论一下引起MySQL出现”Got an error reading communication packet”错误的可能原因，以及如何解决这个错误。</p>
+<p>在Percona的托管服务中，我们经常收到客户关于通信故障错误的问题—客户面临间歇性的”Got an error reading communication packet”错误，我认为这个话题值得写一篇博客，所以我们在这里讨论这个错误出现的可能原因，以及如何解决这个问题。我希望这些能够帮助读者如何调查和解决这个问题。</p>
+<p>首先，当通信故障错误出现时，MySQL的状态变量Aborted_clients和Aborted_connects的计数会增加。这两个状态变量描述了由于客户端没有正确关闭连接而导致中断的连接数以及那些尝试登录MySQL失败的连接数量（分别）。两个错误出现的可能原因很多（请参考官方文档关于Aborted_clients increments or Aborted_connects increments 章节）。</p>
+<p>在系统变量log_warnings &gt; 1的情况下，MySQL会将这些信息写入错误日志（如下所示）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[Warning] Aborted connection 305628 to db: &apos;db&apos; user: &apos;dbuser&apos; host: &apos;hostname&apos; (Got an error reading communication packets)</span><br><span class="line"></span><br><span class="line">[Warning] Aborted connection 305627 to db: &apos;db&apos; user: &apos;dbuser&apos; host: &apos;hostname&apos; (Got an error reading communication packets)</span><br></pre></td></tr></table></figure>
+<p>在下面这些情况下， MySQL会增加Aborted_clients状态变量的计数，这可能意味着：</p>
+<ul>
+<li>客户端已经成功连接，但是异常终止了（可能与未正确关闭连接有关系）</li>
+<li>客户端休眠时间超过了系统变量wait_timeout或interactive_timeout的定义值（最终导致连接休眠的时间超过系统变量wait_timeout的值，然后被MySQL强行关闭）</li>
+<li>客户端异常中断或查询超出了max_allowed_packet值。</li>
+</ul>
+<p>上面不是一个包括了全部可能原因的列表，现在，我们来聊聊如何识别导致这个问题的原因以及如何解决这个。</p>
+<p>我们如何识别导致此问题的原因，以及如何解决、修复这个问题呢？</p>
+<p>老实来说，连接中断错误不容易诊断，但根据我的经验，大部分时候它跟网络/防火墙问题有关，我们通常在Percona Toolkit脚本的帮助下来调查这些问题。例如pt-summary / pt-mysql-summary / pt-stalk 这些脚本的输出信息非常有帮助。</p>
+<p>其中的一些可能原因：</p>
+<p>在MySQL内部，大量的MySQL连接处于休眠状态并休眠了数百秒是应用程序在完成工作后没有关闭连接的症状之一，它们依靠wait_tiemout系统变量来关闭连接。 我强烈建议修改应用程序逻辑，在操作结束后正确关闭连接。</p>
+<p>检查并确保max_allowed_packet的值足够大，并且客户端没有收到“packet Too large”这种消息，这种情况会导致连接中断而无法正常关闭连接。</p>
+<p>另外一种可能性是TIME_WAIT， 我注意到了许多来自netstat的TIME_WAIT通知，所以我建议在应用程序端管理好连接并关闭连接。</p>
+<p>确保事务正确的提交（begin 和 commit），以便一旦应用程序完成后，它保持干净状态。</p>
+<p>你应该确保客户端应用程序不会终止连接。 例如，如果PHP将选项max_execution_time设置成5秒，则增加connection_timeout将无济于事， 因为PHP将终止该脚本。其它编程语言和环境可能有类似的安全选项。</p>
+<p>引起连接延迟的另外一个原因是DNS问题，检查是否启用了跳过名称解析，以及主机是否针对其IP地址而不是其主键名进行身份验证。</p>
+<p>找出应用程序错误行为的一种方法在代码中增加一些日志记录，以便将应用程序的操作与MySQL连接标识信息一起保存。这样你可以将它与错误行中的连接号关联起来。启用PerConna审计日志插件(Audit log plugin)，记录连接和查询活动，并在你遇到连接中断时检查Percona Audit Log Plugin的日志，以确定哪个查询是罪魁祸首。如果你由于某种原因不能使用Audit插件，你可以考虑使用MySQL的查询日志，尽管在负荷较高的服务器可能有风险， 你也应该启用查询日志至少几分钟。虽然它给服务器带来了沉重的负担，由于错误往往会经常发生，所以你应该能够在日志变得过大前收集到所需的数据，我建议使用启用查询日志并使用tail -f来查看查询日志，当你在查询日志中看到下一个告警出现时，就禁用查询日志。</p>
+<p> 一旦你从中断的连接中找到一些查询语句后，在应用程序中找到使用这些查询的相关应用程序部分。</p>
+<p>尝试增加MySQL的系统变量net_read_timeout 和 net_write_timeout 的值，看看是否会减少错误的数量，net_read_timeout是很少出现的异常，除非你的网络环境实在是太糟糕了，尝试调整这些值，因为在大多数情况下，会生成一个查询并将其作为单个数据包发送到服务器，并且应用程序无法切换到执行其他操作，而将服务器保留作为部分接收的查询。我们的首席执行官Peter Zaitsev关于这个话题有一篇非常详细的博客文章。</p>
+<p>中断连接的出现是因为连接未正确关闭。除非服务器和客户端直接存在网络问题（例如，服务器是半双工，客户端是全双工），否则服务器不会导致连接中断，所以引起问题的是网络，而不是服务器，在任何情况下，这些问题应该显示为网络接口上的错误，为了更加确定，请在MySQL服务器上使用ifconfig -a命令输出相关信息。以检查是否有错误。</p>
+<p>解决这个问题的另外一个方法是通过tcpdump工具，你可以参考这篇博客，了解如何追踪连接中断的来源，查找潜在的网络问题、超时和与 MySQL 相关的资源问题。</p>
+<p>我发现这篇博客对解释如何在繁忙的主机上使用tcpdump非常有用，它为跟踪导致中止连接的TCP交换序列提供了帮助，这可以帮助您找出连接断开的原因。</p>
+<p>对于网络问题，使用ping命令计算mysqld所在的服务器与应用程序发出请求的机器之间的往返时间（RTT），从客户端向服务器发送大文件（1GB或更大），使用tcpdump观察进程，然后检查传输过程中是否发生错误。重复这个测试。我也从我的同事Marco Tusa那里找到了这个有用的方法：  检查网络连接的有效方法。</p>
+<p>对于网络问题，使用ping来计算mysqld所在的机器与应用程序发出请求的机器之间的往返时间（RTT）。向客户机和服务器机器发送大文件（1GB或更多），使用tcpdump观察进程，然后检查传输过程中是否发生错误。重复这个测试几次。我也从我的同事Marco Tusa那里找到了这个有用的方法：检查网络连接的有效方法。</p>
+<p>我能想到的另一个想法是在每N秒后捕获一次netstat -s输出和一个时间戳（例如，10秒钟，这样您就可以将BEFORE和AFTER中断连接错误的netstat -s输出与MySQL错误日志相关联） 。通过中断连接错误的时间戳，您可以将它与根据netstat时间戳记捕获的netstat示例进行共同关联，并观察在netstat -s的TcpExt部分下增加了哪些错误计数器。</p>
+<p>除此之外，还应该检查位于客户端和服务器之间的网络基础架构，从代理（proxies），负载平衡器和防火墙那些可能导致问题的方面入手。</p>
+<p>结论：</p>
+<p>我试图涵盖通信失败错误（communication failure errors），以及如何识别和修复可能的连接中断问题。考虑到以太网，集线器，交换机，电缆等故障也会导致此问题。您必须更换硬件才能正确诊断这些问题。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mysql/" rel="tag"># mysql</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/26/k8s/deploy/我的minikube/" rel="next" title="我的minikube">
+                <i class="fa fa-chevron-left"></i> 我的minikube
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/03/28/docker/docker-compose.yml 语法说明/" rel="prev" title="docker-compose.yml 语法说明">
+                docker-compose.yml 语法说明 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview sidebar-panel sidebar-panel-active">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

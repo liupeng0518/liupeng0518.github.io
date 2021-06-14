@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="linux,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="退出状态码 0-255 之间 0 表示正常退出 外界中断将程序退出的时候状态码区间在 129-255，(操作系统给程序发送中断信号，比如 kill -9 是 SIGKILL，ctrl+c 是 SIGINT) 一般程序自身原因导致的异常退出状态区间在 1-128 (这只是一般约定，程序如果一定要用129-255的状态码也是可以的)  假如程序指定的退出状态码时不在 0-255 之间，例如: exit">
+<meta name="keywords" content="linux">
+<meta property="og:type" content="article">
+<meta property="og:title" content="error code">
+<meta property="og:url" content="http://liupeng0518.github.io/2018/12/10/docker/troubleshooting/error code/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="退出状态码 0-255 之间 0 表示正常退出 外界中断将程序退出的时候状态码区间在 129-255，(操作系统给程序发送中断信号，比如 kill -9 是 SIGKILL，ctrl+c 是 SIGINT) 一般程序自身原因导致的异常退出状态区间在 1-128 (这只是一般约定，程序如果一定要用129-255的状态码也是可以的)  假如程序指定的退出状态码时不在 0-255 之间，例如: exit">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.956Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="error code">
+<meta name="twitter:description" content="退出状态码 0-255 之间 0 表示正常退出 外界中断将程序退出的时候状态码区间在 129-255，(操作系统给程序发送中断信号，比如 kill -9 是 SIGKILL，ctrl+c 是 SIGINT) 一般程序自身原因导致的异常退出状态区间在 1-128 (这只是一般约定，程序如果一定要用129-255的状态码也是可以的)  假如程序指定的退出状态码时不在 0-255 之间，例如: exit">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2018/12/10/docker/troubleshooting/error code/">
+
+
+
+
+
+  <title>error code | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2018/12/10/docker/troubleshooting/error code/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">error code</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-10T09:47:19+00:00">
+                2018-12-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index">
+                    <span itemprop="name">docker</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="退出状态码"><a href="#退出状态码" class="headerlink" title="退出状态码"></a>退出状态码</h1><ul>
+<li>0-255 之间</li>
+<li>0 表示正常退出</li>
+<li>外界中断将程序退出的时候状态码区间在 129-255，(操作系统给程序发送中断信号，比如 kill -9 是 SIGKILL，ctrl+c 是 SIGINT)</li>
+<li>一般程序自身原因导致的异常退出状态区间在 1-128 (这只是一般约定，程序如果一定要用129-255的状态码也是可以的)</li>
+</ul>
+<p>假如程序指定的退出状态码时不在 0-255 之间，例如: exit(-1)，这时会自动做一个转换，最终呈现的状态码还是会在 0-255 之间。我们把状态码记为 code</p>
+<p>当指定的退出时状态码为负数，那么转换公式如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">256 - (|code| % 256)</span><br></pre></td></tr></table></figure></p>
+<p>当指定的退出时状态码为正数，那么转换公式如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">code % 256</span><br></pre></td></tr></table></figure></p>
+<h1 id="常见异常状态码"><a href="#常见异常状态码" class="headerlink" title="常见异常状态码"></a>常见异常状态码</h1><ul>
+<li>137</li>
+</ul>
+<p>此状态码一般是因为 pod 中容器内存达到了它的资源限制(resources.limits)，一般是内存溢出(OOM)，CPU达到限制只需要不分时间片给程序就可以。因为限制资源是通过 linux 的 cgroup 实现的，所以 cgroup 会将此容器强制杀掉，类似于 kill -9</p>
+<p>还可能是宿主机本身资源不够用了(OOM)，内核会选取一些进程杀掉来释放内存</p>
+<p>不管是 cgroup 限制杀掉进程还是因为节点机器本身资源不够导致进程死掉，都可以从系统日志中找到记录:</p>
+<p>ubuntu 的系统日志在 /var/log/syslog，centos 的系统日志在 /var/log/messages，都可以用 journalctl -k 来查看系统日志</p>
+<ul>
+<li>1 和 255</li>
+</ul>
+<p>这种可能是一般错误，具体错误原因只能看容器日志，因为很多程序员写异常退出时习惯用 exit(1) 或 exit(-1)，-1 会根据转换规则转成 255</p>
+<h2 id="状态码参考"><a href="#状态码参考" class="headerlink" title="状态码参考"></a>状态码参考</h2><p>这里罗列了一些状态码的含义：<a href="http://tldp.org/LDP/abs/html/exitcodes.html" target="_blank" rel="noopener">Appendix E. Exit Codes With Special Meanings</a></p>
+<h1 id="Linux-标准中断信号"><a href="#Linux-标准中断信号" class="headerlink" title="Linux 标准中断信号"></a>Linux 标准中断信号</h1><p>Linux 程序被外界中断时会发送中断信号，程序退出时的状态码就是中断信号值加上 128 得到的，比如 SIGKILL 的中断信号值为 9，那么程序退出状态码就为 9+128=137。以下是标准信号值参考：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">Signal     Value     Action   Comment</span><br><span class="line">──────────────────────────────────────────────────────────────────────</span><br><span class="line">SIGHUP        1       Term    Hangup detected on controlling terminal</span><br><span class="line">                                     or death of controlling process</span><br><span class="line">SIGINT        2       Term    Interrupt from keyboard</span><br><span class="line">SIGQUIT       3       Core    Quit from keyboard</span><br><span class="line">SIGILL        4       Core    Illegal Instruction</span><br><span class="line">SIGABRT       6       Core    Abort signal from abort(3)</span><br><span class="line">SIGFPE        8       Core    Floating-point exception</span><br><span class="line">SIGKILL       9       Term    Kill signal</span><br><span class="line">SIGSEGV      11       Core    Invalid memory reference</span><br><span class="line">SIGPIPE      13       Term    Broken pipe: write to pipe with no</span><br><span class="line">                                     readers; see pipe(7)</span><br><span class="line">SIGALRM      14       Term    Timer signal from alarm(2)</span><br><span class="line">SIGTERM      15       Term    Termination signal</span><br><span class="line">SIGUSR1   30,10,16    Term    User-defined signal 1</span><br><span class="line">SIGUSR2   31,12,17    Term    User-defined signal 2</span><br><span class="line">SIGCHLD   20,17,18    Ign     Child stopped or terminated</span><br><span class="line">SIGCONT   19,18,25    Cont    Continue if stopped</span><br><span class="line">SIGSTOP   17,19,23    Stop    Stop process</span><br><span class="line">SIGTSTP   18,20,24    Stop    Stop typed at terminal</span><br><span class="line">SIGTTIN   21,21,26    Stop    Terminal input for background process</span><br><span class="line">SIGTTOU   22,22,27    Stop    Terminal output for background process</span><br></pre></td></tr></table></figure></p>
+<h1 id="C-C-退出状态码"><a href="#C-C-退出状态码" class="headerlink" title="C/C++ 退出状态码"></a>C/C++ 退出状态码</h1><p>/usr/include/sysexits.h 试图将退出状态码标准化(仅限 C/C++):<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">#define EX_OK           0       /* successful termination */</span><br><span class="line"></span><br><span class="line">#define EX__BASE        64      /* base value for error messages */</span><br><span class="line"></span><br><span class="line">#define EX_USAGE        64      /* command line usage error */</span><br><span class="line">#define EX_DATAERR      65      /* data format error */</span><br><span class="line">#define EX_NOINPUT      66      /* cannot open input */</span><br><span class="line">#define EX_NOUSER       67      /* addressee unknown */</span><br><span class="line">#define EX_NOHOST       68      /* host name unknown */</span><br><span class="line">#define EX_UNAVAILABLE  69      /* service unavailable */</span><br><span class="line">#define EX_SOFTWARE     70      /* internal software error */</span><br><span class="line">#define EX_OSERR        71      /* system error (e.g., can&apos;t fork) */</span><br><span class="line">#define EX_OSFILE       72      /* critical OS file missing */</span><br><span class="line">#define EX_CANTCREAT    73      /* can&apos;t create (user) output file */</span><br><span class="line">#define EX_IOERR        74      /* input/output error */</span><br><span class="line">#define EX_TEMPFAIL     75      /* temp failure; user is invited to retry */</span><br><span class="line">#define EX_PROTOCOL     76      /* remote error in protocol */</span><br><span class="line">#define EX_NOPERM       77      /* permission denied */</span><br><span class="line">#define EX_CONFIG       78      /* configuration error */</span><br><span class="line"></span><br><span class="line">#define EX__MAX 78      /* maximum listed value */</span><br></pre></td></tr></table></figure></p>
+<p>转载：<a href="https://imroc.io/posts/kubernetes/analysis-exitcode/" target="_blank" rel="noopener">https://imroc.io/posts/kubernetes/analysis-exitcode/</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/11/11/linux/虚拟化/mavtap/" rel="next" title="What is MacVTap?">
+                <i class="fa fa-chevron-left"></i> What is MacVTap?
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/23/k8s/资源管理/[转]kubernetes_资源管理概述/" rel="prev" title="\[转\]kubernetes 资源管理概述">
+                \[转\]kubernetes 资源管理概述 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#退出状态码"><span class="nav-number">1.</span> <span class="nav-text">退出状态码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#常见异常状态码"><span class="nav-number">2.</span> <span class="nav-text">常见异常状态码</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#状态码参考"><span class="nav-number">2.1.</span> <span class="nav-text">状态码参考</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Linux-标准中断信号"><span class="nav-number">3.</span> <span class="nav-text">Linux 标准中断信号</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#C-C-退出状态码"><span class="nav-number">4.</span> <span class="nav-text">C/C++ 退出状态码</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="docker,registry,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="原文: https://github.com/cnadeau/blogs/tree/master/docker-registry  Private Docker Registry Part 1: basic local example不使用任何认证信息 这里部署一个无需任何验证的仓库, docker-compose.yml1234567891011121314151617181920212223">
+<meta name="keywords" content="docker,registry">
+<meta property="og:type" content="article">
+<meta property="og:title" content="搭建registry仓库">
+<meta property="og:url" content="http://liupeng0518.github.io/2018/12/24/k8s/registry/registryv2/搭建registry仓库/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="原文: https://github.com/cnadeau/blogs/tree/master/docker-registry  Private Docker Registry Part 1: basic local example不使用任何认证信息 这里部署一个无需任何验证的仓库, docker-compose.yml1234567891011121314151617181920212223">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="搭建registry仓库">
+<meta name="twitter:description" content="原文: https://github.com/cnadeau/blogs/tree/master/docker-registry  Private Docker Registry Part 1: basic local example不使用任何认证信息 这里部署一个无需任何验证的仓库, docker-compose.yml1234567891011121314151617181920212223">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2018/12/24/k8s/registry/registryv2/搭建registry仓库/">
+
+
+
+
+
+  <title>搭建registry仓库 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2018/12/24/k8s/registry/registryv2/搭建registry仓库/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">搭建registry仓库</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-24T09:47:19+00:00">
+                2018-12-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index">
+                    <span itemprop="name">docker</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>原文: <a href="https://github.com/cnadeau/blogs/tree/master/docker-registry" target="_blank" rel="noopener">https://github.com/cnadeau/blogs/tree/master/docker-registry</a></p>
+</blockquote>
+<h1 id="Private-Docker-Registry-Part-1-basic-local-example"><a href="#Private-Docker-Registry-Part-1-basic-local-example" class="headerlink" title="Private Docker Registry Part 1: basic local example"></a>Private Docker Registry Part 1: basic local example</h1><p>不使用任何认证信息</p>
+<p>这里部署一个无需任何验证的仓库, docker-compose.yml<br><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">'2'</span></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">haproxy:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">dockercloud/haproxy:1.6.2</span></span><br><span class="line">    <span class="attr">links:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">registry</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">registry-ui</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">'80:80'</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">'443:443'</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">'5000:5000'</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">always</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/var/run/docker.sock:/var/run/docker.sock</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">registry:</span></span><br><span class="line">    <span class="attr">build:</span> <span class="string">./registry</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">always</span></span><br><span class="line">    <span class="attr">expose:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">5000</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="attr">TCP_PORTS:</span> <span class="string">'5000'</span></span><br><span class="line">      <span class="attr">VIRTUAL_HOST:</span> <span class="string">'*:5000, https://*:5000'</span></span><br><span class="line">      <span class="attr">FORCE_SSL:</span> <span class="string">'true'</span></span><br><span class="line">      <span class="attr">REGISTRY_STORAGE_DELETE_ENABLED:</span> <span class="string">'true'</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/tmp/local_registry_backup:/var/lib/registry</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">registry-ui:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">konradkleine/docker-registry-frontend:v2</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">always</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="attr">VIRTUAL_HOST:</span> <span class="string">'*, https://*'</span></span><br><span class="line">      <span class="attr">ENV_DOCKER_REGISTRY_HOST:</span> <span class="string">'registry'</span></span><br><span class="line">      <span class="attr">ENV_DOCKER_REGISTRY_PORT:</span> <span class="number">5000</span></span><br><span class="line">    <span class="attr">links:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">registry</span></span><br><span class="line">    <span class="attr">expose:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">80</span></span><br></pre></td></tr></table></figure></p>
+<p>这里使用了自己构建的docker registry image：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">➜  registry tree</span><br><span class="line">.</span><br><span class="line">├── custom-entrypoint.sh</span><br><span class="line">└── Dockerfile</span><br></pre></td></tr></table></figure></p>
+<p>Dockerfile<br><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">FROM</span> <span class="string">registry:2.5.1</span></span><br><span class="line"></span><br><span class="line"><span class="string">COPY</span> <span class="string">custom-entrypoint.sh</span> <span class="string">/entrypoint.sh</span></span><br><span class="line"></span><br><span class="line"><span class="string">RUN</span> <span class="string">chmod</span> <span class="string">+x</span> <span class="string">/entrypoint.sh</span></span><br></pre></td></tr></table></figure></p>
+<p><code>entrypoint.sh</code><br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line"><span class="built_in">set</span> -e</span><br><span class="line"></span><br><span class="line"><span class="comment"># <span class="doctag">NOTE:</span> Bring the actual docker-entrypoint.sh code here to make sure the TLS certificate exists before starting the registry</span></span><br><span class="line"><span class="comment"># code from: https://github.com/docker/distribution-library-image/blob/4339e1083299550aeb5915e0d5a5238d159872da/Dockerfile</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Wait for HAproxy to start before updating certificates on startup.</span></span><br><span class="line"><span class="keyword">while</span> [ ! -f <span class="variable">$&#123;REGISTRY_HTTP_TLS_CERTIFICATE&#125;</span> ];</span><br><span class="line"><span class="keyword">do</span></span><br><span class="line">  <span class="built_in">echo</span> <span class="string">"SSL certificate from letsencrypt not received, waiting 5 second"</span>;</span><br><span class="line">  sleep 5;</span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">case</span> <span class="string">"<span class="variable">$1</span>"</span> <span class="keyword">in</span></span><br><span class="line">    *.yaml|*.yml) <span class="built_in">set</span> -- registry serve <span class="string">"<span class="variable">$@</span>"</span> ;;</span><br><span class="line">    serve|garbage-collect|<span class="built_in">help</span>|-*) <span class="built_in">set</span> -- registry <span class="string">"<span class="variable">$@</span>"</span> ;;</span><br><span class="line"><span class="keyword">esac</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">exec</span> <span class="string">"<span class="variable">$@</span>"</span></span><br></pre></td></tr></table></figure></p>
+<p>启动：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker-compose up -d</span><br></pre></td></tr></table></figure></p>
+<p>仓库地址访问: 127.0.0.1:5000<br>UI访问：127.0.0.1:80</p>
+<p>使用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker tag alpine  127.0.0.1:5000/alpine</span><br><span class="line">docker push 127.0.0.1:5000/alpine</span><br></pre></td></tr></table></figure>
+<p>这时可以登录UI查看仓库里的镜像信息。</p>
+<h1 id="Private-Docker-Registry-Part-2-let’s-add-basic-authentication"><a href="#Private-Docker-Registry-Part-2-let’s-add-basic-authentication" class="headerlink" title="Private Docker Registry Part 2: let’s add basic authentication"></a>Private Docker Registry Part 2: let’s add basic authentication</h1><p>添加基本认证信息 htpasswd方式</p>
+<p>docker-compose.auth.yml<br><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">'2'</span></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">registry:</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="attr">REGISTRY_AUTH:</span> <span class="string">'htpasswd'</span></span><br><span class="line">      <span class="attr">REGISTRY_AUTH_HTPASSWD_REALM:</span> <span class="string">'YOUR_DOCKER_REGISTRY_REALM'</span></span><br><span class="line">      <span class="attr">REGISTRY_AUTH_HTPASSWD_PATH:</span> <span class="string">'/httpasswd_storage/htpasswd'</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">~/htpasswd_backup:/httpasswd_storage</span></span><br></pre></td></tr></table></figure></p>
+<p>这里覆盖了几个变量信息：<br>REGISTRY_AUTH=htpasswd : sets the authentication method to htpasswd (basic auth)<br>REGISTRY_AUTH_HTPASSWD_REALM: “YOUR REALM” : the Realm for your docker registry<br>REGISTRY_AUTH_HTPASSWD_PATH: ‘/httpasswd_storage/htpasswd’ : the full path to the htpasswd files containing your user:pass associations. This file will be shared between the host running your service and the service itself using the volumes definition</p>
+<p>生成 htpasswd file</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#Create the htpasswd_backup</span></span><br><span class="line">mkdir -p ~/htpasswd_backup</span><br><span class="line">docker run --rm --entrypoint htpasswd registry:2 -Bbn &lt;username&gt; <span class="string">"&lt;password&gt;"</span> &gt; ~/htpasswd_backup/htpasswd</span><br></pre></td></tr></table></figure>
+<p>接下来使用：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># login</span><br><span class="line">docker login -u sam localhost:5000</span><br><span class="line"></span><br><span class="line">docker pull localhost:5000/alpine</span><br></pre></td></tr></table></figure>
+<p>当我们登录web UI的时候 也需要 输入用户名密码。</p>
+<h1 id="Private-Docker-Registry-Part-3-let’s-use-Azure-Storage"><a href="#Private-Docker-Registry-Part-3-let’s-use-Azure-Storage" class="headerlink" title="Private Docker Registry Part 3: let’s use Azure Storage"></a>Private Docker Registry Part 3: let’s use Azure Storage</h1><p>这一部分主要讲了使用外部存储持久化镜像信息，目前没有Azure，我们可以使用其他存储代替即可。<br>略</p>
+<h1 id="Private-Docker-Registry-Part-4-let’s-secure-the-registry"><a href="#Private-Docker-Registry-Part-4-let’s-secure-the-registry" class="headerlink" title="Private Docker Registry Part 4: let’s secure the registry"></a>Private Docker Registry Part 4: let’s secure the registry</h1><p>启用SSL</p>
+<p>docker-compose.ssl.yml<br><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">'2'</span></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">haproxy:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">m21lab/haproxy:1.6.2</span></span><br><span class="line">    <span class="attr">links:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">letsencrypt</span></span><br><span class="line">    <span class="attr">volumes_from:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">letsencrypt</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">letsencrypt:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">m21lab/letsencrypt:1.0</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="attr">DOMAINS:</span> <span class="string">'YOUR_DOMAIN'</span></span><br><span class="line">      <span class="attr">EMAIL:</span> <span class="string">'RECOVERYEMAIL@YOUR_DOMAIN'</span></span><br><span class="line">      <span class="attr">OPTIONS:</span> <span class="string">'--staging'</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">registry:</span></span><br><span class="line">    <span class="attr">volumes_from:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">letsencrypt:ro</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="attr">REGISTRY_HTTP_SECRET:</span> <span class="string">"your-http-secret"</span></span><br><span class="line">      <span class="attr">REGISTRY_HTTP_TLS_CERTIFICATE:</span> <span class="string">/etc/letsencrypt/live/LETSENCRYPT_DOMAIN_ENV_VAR/fullchain.pem</span></span><br><span class="line">      <span class="attr">REGISTRY_HTTP_TLS_KEY:</span> <span class="string">/etc/letsencrypt/live/LETSENCRYPT_DOMAIN_ENV_VAR/privkey.pem</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">registry-ui:</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="attr">FORCE_SSL:</span> <span class="string">'true'</span></span><br><span class="line">      <span class="attr">ENV_REGISTRY_PROXY_FQDN:</span> <span class="string">'LETSENCRYPT_DOMAIN_ENV_VAR'</span></span><br><span class="line">      <span class="attr">ENV_DOCKER_REGISTRY_USE_SSL:</span> <span class="number">1</span></span><br></pre></td></tr></table></figure></p>
+<p>Service Overrides<br>HAProxy</p>
+<ul>
+<li><p>使用不同的image处理SSL流量。</p>
+</li>
+<li><p>链接到新的letsencrypt服务 跳转http请求</p>
+</li>
+<li>使用 volumes_from letsenrypt 服务读取收到的SSL证书并动态加载</li>
+</ul>
+<p>Let’s Encrypt<br>此服务用于为托管注册表的域生成有效的CA签名SSL证书。<br><a href="https://medium.com/@cnadeau_/lets-encrypt-and-haproxy-withdocker-29bdebb6d026" target="_blank" rel="noopener">https://medium.com/@cnadeau_/lets-encrypt-and-haproxy-withdocker-29bdebb6d026</a></p>
+<p>Registry</p>
+<p>This service is the docker registry. A lot of configuration was required:</p>
+<p>Uses volumes_from letsenrypt service to read the received SSL certificates and dynamically load them<br>Set registry service specific environment variables:<br>REGISTRY_HTTP_SECRET=secret: A randomly generated secret used to sign state that may be stored. More information about it here<br>REGISTRY_HTTP_TLS_CERTIFICATE=public key<br>REGISTRY_HTTP_TLS_KEY=private key:<br> Those must be mapped to the letsencrypt service volume</p>
+<p>启动<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker-compose -f docker-compose.yml \</span><br><span class="line">               -f docker-compose.auth.yml \</span><br><span class="line">               -f docker-compose.azure.yml \</span><br><span class="line">               -f docker-compose.ssl.yml \</span><br><span class="line">               up -d</span><br></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/docker/" rel="tag"># docker</a>
+          
+            <a href="/tags/registry/" rel="tag"># registry</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/24/k8s/deploy/kubeadm部署1.11.x_HA集群/" rel="next" title="kubeadm部署1.11.x_HA集群">
+                <i class="fa fa-chevron-left"></i> kubeadm部署1.11.x_HA集群
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/24/k8s/概念/addon-manager/" rel="prev" title="Kubernetes addon-manager">
+                Kubernetes addon-manager <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Private-Docker-Registry-Part-1-basic-local-example"><span class="nav-number">1.</span> <span class="nav-text">Private Docker Registry Part 1: basic local example</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Private-Docker-Registry-Part-2-let’s-add-basic-authentication"><span class="nav-number">2.</span> <span class="nav-text">Private Docker Registry Part 2: let’s add basic authentication</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Private-Docker-Registry-Part-3-let’s-use-Azure-Storage"><span class="nav-number">3.</span> <span class="nav-text">Private Docker Registry Part 3: let’s use Azure Storage</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Private-Docker-Registry-Part-4-let’s-secure-the-registry"><span class="nav-number">4.</span> <span class="nav-text">Private Docker Registry Part 4: let’s secure the registry</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

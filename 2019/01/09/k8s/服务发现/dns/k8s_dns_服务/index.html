@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="k8s,dns,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="kubednscoredns官网：https://coredns.io 1.11后CoreDNS 已取代 (Kube DNS)[https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/dns] 作为集群服务发现元件,由于 Kubernetes 需要让 Pod 与 Pod 之间能夠互相通信,然而要能够通信需要知道彼此的">
+<meta name="keywords" content="k8s,dns">
+<meta property="og:type" content="article">
+<meta property="og:title" content="k8s dns 服务">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/01/09/k8s/服务发现/dns/k8s_dns_服务/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="kubednscoredns官网：https://coredns.io 1.11后CoreDNS 已取代 (Kube DNS)[https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/dns] 作为集群服务发现元件,由于 Kubernetes 需要让 Pod 与 Pod 之间能夠互相通信,然而要能够通信需要知道彼此的">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="k8s dns 服务">
+<meta name="twitter:description" content="kubednscoredns官网：https://coredns.io 1.11后CoreDNS 已取代 (Kube DNS)[https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/dns] 作为集群服务发现元件,由于 Kubernetes 需要让 Pod 与 Pod 之间能夠互相通信,然而要能够通信需要知道彼此的">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/01/09/k8s/服务发现/dns/k8s_dns_服务/">
+
+
+
+
+
+  <title>k8s dns 服务 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/01/09/k8s/服务发现/dns/k8s_dns_服务/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">k8s dns 服务</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-09T15:47:19+00:00">
+                2019-01-09
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="kubedns"><a href="#kubedns" class="headerlink" title="kubedns"></a>kubedns</h1><h1 id="coredns"><a href="#coredns" class="headerlink" title="coredns"></a>coredns</h1><p>官网：<a href="https://coredns.io" target="_blank" rel="noopener">https://coredns.io</a></p>
+<p>1.11后CoreDNS 已取代 (Kube DNS)[<a href="https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/dns]" target="_blank" rel="noopener">https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/dns]</a> 作为集群服务发现元件,由于 Kubernetes 需要让 Pod 与 Pod 之间能夠互相通信,然而要能够通信需要知道彼此的 IP 才行,而这种做法通常是通过 Kubernetes API 来获取,但是 Pod IP 会因为生命周期变化而改变,因此这种做法无法弹性使用,且还会增加 API Server 负担,基于此问题 Kubernetes 提供了 DNS 服务来作为查询,让 Pod 能夠以 Service 名称作为域名来查询 IP 位址,因此使用者就再不需要关心实际 Pod IP,而 DNS 也会根据 Pod 变化更新资源记录(Record resources)。</p>
+<p>CoreDNS 是由 CNCF 维护的开源 DNS 方案,该方案前身是 SkyDNS,其采用了 Caddy 的一部分来开发伺服器框架,使其能够建立一套快速灵活的 DNS,而 CoreDNS 每个功能都可以被当作成一個插件的中介软体,如 Log、Cache、Kubernetes 等功能,甚至能够将源记录存储在 Redis、Etcd 中。</p>
+<p>这里节点使用的是hostname,所以建议把hosts关系写到Coredns的解析里<br>写成下面这种格式也就是使用(Coredns的hosts插件)[<a href="https://coredns.io/plugins/hosts/]" target="_blank" rel="noopener">https://coredns.io/plugins/hosts/]</a><br><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="attr">data:</span></span><br><span class="line">  <span class="attr">Corefile:</span> <span class="string">|</span></span><br><span class="line">    <span class="string">.:53</span> <span class="string">&#123;</span></span><br><span class="line">        <span class="string">errors</span></span><br><span class="line">        <span class="string">health</span></span><br><span class="line">        <span class="string">hosts</span> <span class="string">&#123;</span></span><br><span class="line">          <span class="number">10.7</span><span class="number">.12</span><span class="number">.202</span> <span class="string">k8s-m2</span></span><br><span class="line">          <span class="number">10.7</span><span class="number">.12</span><span class="number">.203</span> <span class="string">k8s-m3</span></span><br><span class="line">          <span class="number">10.7</span><span class="number">.12</span><span class="number">.201</span> <span class="string">k8s-m1</span></span><br><span class="line">          <span class="number">10.7</span><span class="number">.12</span><span class="number">.205</span> <span class="string">k8s-n2</span></span><br><span class="line">          <span class="number">10.7</span><span class="number">.12</span><span class="number">.204</span> <span class="string">k8s-n1</span></span><br><span class="line">          <span class="string">fallthrough</span></span><br><span class="line">        <span class="string">&#125;</span></span><br><span class="line">        <span class="string">kubernetes</span> <span class="string">cluster.local</span> <span class="string">in-addr.arpa</span> <span class="string">ip6.arpa</span> <span class="string">&#123;</span></span><br><span class="line">          <span class="string">pods</span> <span class="string">insecure</span></span><br><span class="line">          <span class="string">upstream</span></span><br><span class="line">          <span class="string">fallthrough</span> <span class="string">in-addr.arpa</span> <span class="string">ip6.arpa</span></span><br><span class="line">        <span class="string">&#125;</span></span><br><span class="line">        <span class="string">prometheus</span> <span class="string">:9153</span></span><br><span class="line">        <span class="string">proxy</span> <span class="string">.</span> <span class="string">/etc/resolv.conf</span></span><br><span class="line">        <span class="string">cache</span> <span class="number">30</span></span><br><span class="line">        <span class="string">reload</span></span><br><span class="line">        <span class="string">loadbalance</span></span><br><span class="line">        <span class="string">log</span></span><br><span class="line">    <span class="string">&#125;</span></span><br></pre></td></tr></table></figure></p>
+<p>如果后期增加类似解析记录的话可以改cm后(注意cm是yaml格式写的,所以不要使用tab必须用空格)用kill信号让coredns去reload,因为主进程是前台也就是PID为1,找到对应的pod执行即可,也可以利用deploy的更新机制去伪更新实现重启</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl exec coredns-xxxxxx -- kill -SIGUSR1 1</span><br></pre></td></tr></table></figure>
+<p>在k8s-m1通过 kubeclt 执行下面命令來创建,并检查是否部署成功:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f addons/coredns/coredns.yml</span><br><span class="line"># 下面是输出</span><br><span class="line">serviceaccount/coredns created</span><br><span class="line">clusterrole.rbac.authorization.k8s.io/system:coredns created</span><br><span class="line">clusterrolebinding.rbac.authorization.k8s.io/system:coredns created</span><br><span class="line">configmap/coredns created</span><br><span class="line">deployment.extensions/coredns created</span><br><span class="line">service/kube-dns created</span><br><span class="line"></span><br><span class="line">$ kubectl -n kube-system get po -l k8s-app=kube-dns</span><br><span class="line">NAMESPACE     NAME                              READY     STATUS              RESTARTS   AGE</span><br><span class="line">kube-system   coredns-6975654877-jjqkg          1/1       Running   0          1m</span><br><span class="line">kube-system   coredns-6975654877-ztqjh          1/1       Running   0          1m</span><br></pre></td></tr></table></figure></p>
+<p>完成后,通过检查节点是否不再是NotReady,以及 Pod 是否不再是Pending：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">$ kubectl get nodes</span><br><span class="line">NAME      STATUS     ROLES     AGE       VERSION</span><br><span class="line">k8s-m1    Ready      master    17m       v1.11.1</span><br><span class="line">k8s-m2    Ready      master    16m       v1.11.1</span><br><span class="line">k8s-m3    Ready      master    16m       v1.11.1</span><br><span class="line">k8s-n1    Ready      node      6m        v1.11.1</span><br></pre></td></tr></table></figure></p>
+<p>官方kubedns 和coredns切换 脚本：<br><a href="https://github.com/coredns/deployment/tree/master/kubernetes" target="_blank" rel="noopener">https://github.com/coredns/deployment/tree/master/kubernetes</a></p>
+<p>k8s 提供的yaml：<br><a href="https://github.com/kubernetes/kubernetes/tree/release-1.12/cluster/addons/dns/coredns" target="_blank" rel="noopener">https://github.com/kubernetes/kubernetes/tree/release-1.12/cluster/addons/dns/coredns</a></p>
+<p>附yaml:</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ServiceAccount</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">coredns</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">kube-system</span></span><br><span class="line">  <span class="attr">labels:</span></span><br><span class="line">      <span class="attr">kubernetes.io/cluster-service:</span> <span class="string">"true"</span></span><br><span class="line">      <span class="attr">addonmanager.kubernetes.io/mode:</span> <span class="string">Reconcile</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">rbac.authorization.k8s.io/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ClusterRole</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">labels:</span></span><br><span class="line">    <span class="attr">kubernetes.io/bootstrapping:</span> <span class="string">rbac-defaults</span></span><br><span class="line">    <span class="attr">addonmanager.kubernetes.io/mode:</span> <span class="string">Reconcile</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">system:coredns</span></span><br><span class="line"><span class="attr">rules:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">apiGroups:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">""</span></span><br><span class="line">  <span class="attr">resources:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">endpoints</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">services</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">pods</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">namespaces</span></span><br><span class="line">  <span class="attr">verbs:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">list</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">watch</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">rbac.authorization.k8s.io/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ClusterRoleBinding</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">annotations:</span></span><br><span class="line">    <span class="attr">rbac.authorization.kubernetes.io/autoupdate:</span> <span class="string">"true"</span></span><br><span class="line">  <span class="attr">labels:</span></span><br><span class="line">    <span class="attr">kubernetes.io/bootstrapping:</span> <span class="string">rbac-defaults</span></span><br><span class="line">    <span class="attr">addonmanager.kubernetes.io/mode:</span> <span class="string">EnsureExists</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">system:coredns</span></span><br><span class="line"><span class="attr">roleRef:</span></span><br><span class="line">  <span class="attr">apiGroup:</span> <span class="string">rbac.authorization.k8s.io</span></span><br><span class="line">  <span class="attr">kind:</span> <span class="string">ClusterRole</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">system:coredns</span></span><br><span class="line"><span class="attr">subjects:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">kind:</span> <span class="string">ServiceAccount</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">coredns</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">kube-system</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ConfigMap</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">coredns</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">kube-system</span></span><br><span class="line">  <span class="attr">labels:</span></span><br><span class="line">      <span class="attr">addonmanager.kubernetes.io/mode:</span> <span class="string">EnsureExists</span></span><br><span class="line"><span class="attr">data:</span></span><br><span class="line">  <span class="attr">Corefile:</span> <span class="string">|</span></span><br><span class="line">    <span class="string">.:53</span> <span class="string">&#123;</span></span><br><span class="line">        <span class="string">errors</span></span><br><span class="line">        <span class="string">health</span></span><br><span class="line">        <span class="string">kubernetes</span> <span class="string">__PILLAR__DNS__DOMAIN__</span> <span class="string">in-addr.arpa</span> <span class="string">ip6.arpa</span> <span class="string">&#123;</span></span><br><span class="line">            <span class="string">pods</span> <span class="string">insecure</span></span><br><span class="line">            <span class="string">upstream</span></span><br><span class="line">            <span class="string">fallthrough</span> <span class="string">in-addr.arpa</span> <span class="string">ip6.arpa</span></span><br><span class="line">        <span class="string">&#125;</span></span><br><span class="line">        <span class="string">prometheus</span> <span class="string">:9153</span></span><br><span class="line">        <span class="string">proxy</span> <span class="string">.</span> <span class="string">/etc/resolv.conf</span></span><br><span class="line">        <span class="string">cache</span> <span class="number">30</span></span><br><span class="line">        <span class="string">loop</span></span><br><span class="line">        <span class="string">reload</span></span><br><span class="line">        <span class="string">loadbalance</span></span><br><span class="line">    <span class="string">&#125;</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">extensions/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Deployment</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">coredns</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">kube-system</span></span><br><span class="line">  <span class="attr">labels:</span></span><br><span class="line">    <span class="attr">k8s-app:</span> <span class="string">kube-dns</span></span><br><span class="line">    <span class="attr">kubernetes.io/cluster-service:</span> <span class="string">"true"</span></span><br><span class="line">    <span class="attr">addonmanager.kubernetes.io/mode:</span> <span class="string">Reconcile</span></span><br><span class="line">    <span class="attr">kubernetes.io/name:</span> <span class="string">"CoreDNS"</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="comment"># replicas: not specified here:</span></span><br><span class="line">  <span class="comment"># 1. In order to make Addon Manager do not reconcile this replicas parameter.</span></span><br><span class="line">  <span class="comment"># 2. Default is 1.</span></span><br><span class="line">  <span class="comment"># 3. Will be tuned in real time if DNS horizontal auto-scaling is turned on.</span></span><br><span class="line">  <span class="attr">strategy:</span></span><br><span class="line">    <span class="attr">type:</span> <span class="string">RollingUpdate</span></span><br><span class="line">    <span class="attr">rollingUpdate:</span></span><br><span class="line">      <span class="attr">maxUnavailable:</span> <span class="number">1</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">matchLabels:</span></span><br><span class="line">      <span class="attr">k8s-app:</span> <span class="string">kube-dns</span></span><br><span class="line">  <span class="attr">template:</span></span><br><span class="line">    <span class="attr">metadata:</span></span><br><span class="line">      <span class="attr">labels:</span></span><br><span class="line">        <span class="attr">k8s-app:</span> <span class="string">kube-dns</span></span><br><span class="line">      <span class="attr">annotations:</span></span><br><span class="line">        <span class="attr">seccomp.security.alpha.kubernetes.io/pod:</span> <span class="string">'docker/default'</span></span><br><span class="line">    <span class="attr">spec:</span></span><br><span class="line">      <span class="attr">serviceAccountName:</span> <span class="string">coredns</span></span><br><span class="line">      <span class="attr">tolerations:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">key:</span> <span class="string">node-role.kubernetes.io/master</span></span><br><span class="line">          <span class="attr">effect:</span> <span class="string">NoSchedule</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">key:</span> <span class="string">"CriticalAddonsOnly"</span></span><br><span class="line">          <span class="attr">operator:</span> <span class="string">"Exists"</span></span><br><span class="line">      <span class="attr">containers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">coredns</span></span><br><span class="line">        <span class="attr">image:</span> <span class="string">k8s.gcr.io/coredns:1.2.2</span></span><br><span class="line">        <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">        <span class="attr">resources:</span></span><br><span class="line">          <span class="attr">limits:</span></span><br><span class="line">            <span class="attr">memory:</span> <span class="string">170Mi</span></span><br><span class="line">          <span class="attr">requests:</span></span><br><span class="line">            <span class="attr">cpu:</span> <span class="string">100m</span></span><br><span class="line">            <span class="attr">memory:</span> <span class="string">70Mi</span></span><br><span class="line">        <span class="attr">args:</span> <span class="string">[</span> <span class="string">"-conf"</span><span class="string">,</span> <span class="string">"/etc/coredns/Corefile"</span> <span class="string">]</span></span><br><span class="line">        <span class="attr">volumeMounts:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">config-volume</span></span><br><span class="line">          <span class="attr">mountPath:</span> <span class="string">/etc/coredns</span></span><br><span class="line">          <span class="attr">readOnly:</span> <span class="literal">true</span></span><br><span class="line">        <span class="attr">ports:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">containerPort:</span> <span class="number">53</span></span><br><span class="line">          <span class="attr">name:</span> <span class="string">dns</span></span><br><span class="line">          <span class="attr">protocol:</span> <span class="string">UDP</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">containerPort:</span> <span class="number">53</span></span><br><span class="line">          <span class="attr">name:</span> <span class="string">dns-tcp</span></span><br><span class="line">          <span class="attr">protocol:</span> <span class="string">TCP</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">containerPort:</span> <span class="number">9153</span></span><br><span class="line">          <span class="attr">name:</span> <span class="string">metrics</span></span><br><span class="line">          <span class="attr">protocol:</span> <span class="string">TCP</span></span><br><span class="line">        <span class="attr">livenessProbe:</span></span><br><span class="line">          <span class="attr">httpGet:</span></span><br><span class="line">            <span class="attr">path:</span> <span class="string">/health</span></span><br><span class="line">            <span class="attr">port:</span> <span class="number">8080</span></span><br><span class="line">            <span class="attr">scheme:</span> <span class="string">HTTP</span></span><br><span class="line">          <span class="attr">initialDelaySeconds:</span> <span class="number">60</span></span><br><span class="line">          <span class="attr">timeoutSeconds:</span> <span class="number">5</span></span><br><span class="line">          <span class="attr">successThreshold:</span> <span class="number">1</span></span><br><span class="line">          <span class="attr">failureThreshold:</span> <span class="number">5</span></span><br><span class="line">        <span class="attr">securityContext:</span></span><br><span class="line">          <span class="attr">allowPrivilegeEscalation:</span> <span class="literal">false</span></span><br><span class="line">          <span class="attr">capabilities:</span></span><br><span class="line">            <span class="attr">add:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">NET_BIND_SERVICE</span></span><br><span class="line">            <span class="attr">drop:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">all</span></span><br><span class="line">          <span class="attr">readOnlyRootFilesystem:</span> <span class="literal">true</span></span><br><span class="line">      <span class="attr">dnsPolicy:</span> <span class="string">Default</span></span><br><span class="line">      <span class="attr">volumes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">config-volume</span></span><br><span class="line">          <span class="attr">configMap:</span></span><br><span class="line">            <span class="attr">name:</span> <span class="string">coredns</span></span><br><span class="line">            <span class="attr">items:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="attr">key:</span> <span class="string">Corefile</span></span><br><span class="line">              <span class="attr">path:</span> <span class="string">Corefile</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Service</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">kube-dns</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">kube-system</span></span><br><span class="line">  <span class="attr">annotations:</span></span><br><span class="line">    <span class="attr">prometheus.io/port:</span> <span class="string">"9153"</span></span><br><span class="line">    <span class="attr">prometheus.io/scrape:</span> <span class="string">"true"</span></span><br><span class="line">  <span class="attr">labels:</span></span><br><span class="line">    <span class="attr">k8s-app:</span> <span class="string">kube-dns</span></span><br><span class="line">    <span class="attr">kubernetes.io/cluster-service:</span> <span class="string">"true"</span></span><br><span class="line">    <span class="attr">addonmanager.kubernetes.io/mode:</span> <span class="string">Reconcile</span></span><br><span class="line">    <span class="attr">kubernetes.io/name:</span> <span class="string">"CoreDNS"</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">k8s-app:</span> <span class="string">kube-dns</span></span><br><span class="line">  <span class="attr">clusterIP:</span> <span class="string">__PILLAR__DNS__SERVER__</span></span><br><span class="line">  <span class="attr">ports:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">dns</span></span><br><span class="line">    <span class="attr">port:</span> <span class="number">53</span></span><br><span class="line">    <span class="attr">protocol:</span> <span class="string">UDP</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">dns-tcp</span></span><br><span class="line">    <span class="attr">port:</span> <span class="number">53</span></span><br><span class="line">    <span class="attr">protocol:</span> <span class="string">TCP</span></span><br></pre></td></tr></table></figure>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/dns/" rel="tag"># dns</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/09/okd/troubleshooting/delete_serviceinstance/" rel="next" title="openshift delete serviceinstance">
+                <i class="fa fa-chevron-left"></i> openshift delete serviceinstance
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/01/09/k8s/服务发现/dns/external-dns/" rel="prev" title="k8s external-dns">
+                k8s external-dns <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#kubedns"><span class="nav-number">1.</span> <span class="nav-text">kubedns</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#coredns"><span class="nav-number">2.</span> <span class="nav-text">coredns</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

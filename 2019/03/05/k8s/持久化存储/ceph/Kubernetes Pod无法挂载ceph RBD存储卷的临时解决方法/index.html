@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="ceph,k8s,PersistentVolume,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="转载: Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法.md 一、问题起因 问题始于昨天升级一个stateful service的操作。该service下的Pod挂载了使用ceph RBD提供的一个Persistent Volume。该Pod是用普通deployment部署的，并没有使用处于alpha状态的PetSet。改动仅仅是image的版本发生了变化。我执行的操作如">
+<meta name="keywords" content="ceph,k8s,PersistentVolume">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/03/05/k8s/持久化存储/ceph/Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="转载: Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法.md 一、问题起因 问题始于昨天升级一个stateful service的操作。该service下的Pod挂载了使用ceph RBD提供的一个Persistent Volume。该Pod是用普通deployment部署的，并没有使用处于alpha状态的PetSet。改动仅仅是image的版本发生了变化。我执行的操作如">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法">
+<meta name="twitter:description" content="转载: Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法.md 一、问题起因 问题始于昨天升级一个stateful service的操作。该service下的Pod挂载了使用ceph RBD提供的一个Persistent Volume。该Pod是用普通deployment部署的，并没有使用处于alpha状态的PetSet。改动仅仅是image的版本发生了变化。我执行的操作如">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/03/05/k8s/持久化存储/ceph/Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法/">
+
+
+
+
+
+  <title>Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/03/05/k8s/持久化存储/ceph/Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-05T09:47:19+00:00">
+                2019-03-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>转载: <a href="https://tonybai.com/2017/02/17/temp-fix-for-pod-unable-mount-cephrbd-volume/" target="_blank" rel="noopener">Kubernetes Pod无法挂载ceph RBD存储卷的临时解决方法.md</a></p>
+<p>一、问题起因</p>
+<p>问题始于昨天升级一个stateful service的操作。该service下的Pod挂载了使用ceph RBD提供的一个Persistent Volume。该Pod是用普通deployment部署的，并没有使用处于alpha状态的PetSet。改动仅仅是image的版本发生了变化。我执行的操作如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># kubectl apply -f index-api.yaml</span><br></pre></td></tr></table></figure></p>
+<p>操作是成功的。但命令执行后，再次查看index-api这个Pod的状态，该Pod的状态长期处于：“ContainerCreating”，显然Pod没能重启成功。</p>
+<p>进一步通过describe pod 检视events，发现如下Warning:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">events:</span><br><span class="line">  FirstSeen    LastSeen    Count    From            SubobjectPath    Type        Reason        Message</span><br><span class="line">  ---------    --------    -----    ----            -------------    --------    ------        -------</span><br><span class="line">  2m        2m        1    &#123;default-scheduler &#125;            Normal        Scheduled    Successfully assigned index-api-3362878852-9tm9j to 10.46.181.146</span><br><span class="line">  11s        11s        1    &#123;kubelet 10.46.181.146&#125;            Warning        FailedMount    Unable to mount volumes for pod &quot;index-api-3362878852-9tm9j_default(ad89c829-f40b-11e6-ad11-00163e1625a9)&quot;: timeout expired waiting for volumes to attach/mount for pod &quot;index-api-3362878852-9tm9j&quot;/&quot;default&quot;. list of unattached/unmounted volumes=[index-api-pv]</span><br><span class="line">  11s        11s        1    &#123;kubelet 10.46.181.146&#125;            Warning        FailedSync    Error syncing pod, skipping: timeout expired waiting for volumes to attach/mount for pod &quot;index-api-3362878852-9tm9j&quot;/&quot;default&quot;. list of unattached/unmounted volumes=[index-api-pv]</span><br></pre></td></tr></table></figure></p>
+<p>index-api这个Pod尝试挂载index-api-pv这个pv超时，并失败。</p>
+<p>二、问题探索和临时解决</p>
+<p>首先查看问题pod所在Node(10.46.181.146)上的kubelet日志，kubelet负责与本地的docker engine以及其他本地服务交互：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">... ...</span><br><span class="line">I0216 13:59:27.380007    1159 reconciler.go:294] MountVolume operation started for volume &quot;kubernetes.io/rbd/7e6c415a-f40c-11e6-ad11-00163e1625a9-index-api-pv&quot; (spec.Name: &quot;index-api-pv&quot;) to pod &quot;7e6c415a-f40c-11e6-ad11-00163e1625a9&quot; (UID: &quot;7e6c415a-f40c-11e6-ad11-00163e1625a9&quot;).</span><br><span class="line">E0216 13:59:27.393946    1159 disk_manager.go:56] failed to attach disk</span><br><span class="line">E0216 13:59:27.394013    1159 rbd.go:228] rbd: failed to setup mount /var/lib/kubelet/pods/7e6c415a-f40c-11e6-ad11-00163e1625a9/volumes/kubernetes.io~rbd/index-api-pv rbd: image index-api-image is locked by other nodes</span><br><span class="line">E0216 13:59:27.394121    1159 nestedpendingoperations.go:254] Operation for &quot;\&quot;kubernetes.io/rbd/7e6c415a-f40c-11e6-ad11-00163e1625a9-index-api-pv\&quot; (\&quot;7e6c415a-f40c-11e6-ad11-00163e1625a9\&quot;)&quot; failed. No retries permitted until 2017-02-16 14:01:27.394076217 +0800 CST (durationBeforeRetry 2m0s). Error: MountVolume.SetUp failed for volume &quot;kubernetes.io/rbd/7e6c415a-f40c-11e6-ad11-00163e1625a9-index-api-pv&quot; (spec.Name: &quot;index-api-pv&quot;) pod &quot;7e6c415a-f40c-11e6-ad11-00163e1625a9&quot; (UID: &quot;7e6c415a-f40c-11e6-ad11-00163e1625a9&quot;) with: rbd: image index-api-image is locked by other nodes</span><br><span class="line">E0216 13:59:32.695919    1159 kubelet.go:1958] Unable to mount volumes for pod &quot;index-api-3362878852-pzxm8_default(7e6c415a-f40c-11e6-ad11-00163e1625a9)&quot;: timeout expired waiting for volumes to attach/mount for pod &quot;index-api-3362878852-pzxm8&quot;/&quot;default&quot;. list of unattached/unmounted volumes=[index-api-pv]; skipping pod</span><br><span class="line">E0216 13:59:32.696223    1159 pod_workers.go:183] Error syncing pod 7e6c415a-f40c-11e6-ad11-00163e1625a9, skipping: timeout expired waiting for volumes to attach/mount for pod &quot;index-api-3362878852-pzxm8&quot;/&quot;default&quot;. list of unattached/unmounted volumes=[index-api-pv]</span><br><span class="line">... ...</span><br></pre></td></tr></table></figure></p>
+<p>通过kubelet的日志我们可以看出调度到10.46.181.146这个Node上的index-api pod之所以无法挂载ceph RBD volume，是因为index-api-image已经被其他node锁住。</p>
+<p>我的这个小集群一共就只有两个Node(10.46.181.146和10.47.136.60)，那锁住index-api-image的就是10.47.136.60这个node了。我们查看一下平台上pv和pvc的状态：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># kubectl get pv</span><br><span class="line">NAME           CAPACITY   ACCESSMODES   RECLAIMPOLICY   STATUS    CLAIM                   REASON    AGE</span><br><span class="line">ceph-pv        1Gi        RWO           Recycle         Bound     default/ceph-claim                101d</span><br><span class="line">index-api-pv   2Gi        RWO           Recycle         Bound     default/index-api-pvc             49d</span><br><span class="line"></span><br><span class="line"># kubectl get pvc</span><br><span class="line">NAME            STATUS    VOLUME         CAPACITY   ACCESSMODES   AGE</span><br><span class="line">ceph-claim      Bound     ceph-pv        1Gi        RWO           101d</span><br><span class="line">index-api-pvc   Bound     index-api-pv   2Gi        RWO           49d</span><br></pre></td></tr></table></figure></p>
+<p>index-api-pv和index-api-pvc的状态都是正常的，从这里看不出lock的情况。无奈我只能从ceph这个层面去查问题了！</p>
+<p>index-api-image在mioss pool下面，我们利用ceph的rbd cli工具查看一下其状态：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># rbd ls mioss</span><br><span class="line">index-api-image</span><br><span class="line"></span><br><span class="line"># rbd info mioss/index-api-image</span><br><span class="line">rbd image &apos;index-api-image&apos;:</span><br><span class="line">    size 2048 MB in 512 objects</span><br><span class="line">    order 22 (4096 kB objects)</span><br><span class="line">    block_name_prefix: rb.0.5e36.1befd79f</span><br><span class="line">    format: 1</span><br><span class="line"></span><br><span class="line"># rbd disk-usage mioss/index-api-image</span><br><span class="line">warning: fast-diff map is not enabled for index-api-image. operation may be slow.</span><br><span class="line">NAME            PROVISIONED USED</span><br><span class="line">index-api-image       2048M 168M</span><br><span class="line">index-api-image状态ok。</span><br></pre></td></tr></table></figure></p>
+<p>如果你在执行rbd时，出现下面错误：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># rbd</span><br><span class="line">rbd: error while loading shared libraries: /usr/lib/x86_64-linux-gnu/libicudata.so.52: invalid ELF header</span><br></pre></td></tr></table></figure></p>
+<p>可以通过重装libicu52这个包(这里演示的是基于ubuntu 14.04 amd64的版本)来解决：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># wget -c http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu52_52.1-3ubuntu0.4_amd64.deb</span><br><span class="line"># dpkg -i ./libicu52_52.1-3ubuntu0.4_amd64.deb</span><br></pre></td></tr></table></figure></p>
+<p>回归正题！</p>
+<p>经查manual发现，rbd提供了lock相关子命令可以查看image的lock list：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># rbd lock list  mioss/index-api-image</span><br><span class="line">There is 1 exclusive lock on this image.</span><br><span class="line">Locker       ID                       Address</span><br><span class="line">client.24128 kubelet_lock_magic_node1 10.47.136.60:0/1864102866</span><br></pre></td></tr></table></figure></p>
+<p>真凶找到！我们看到位于10.47.136.60 node上有一个locker将该image锁住。我尝试重启10.47.136.60上的kubelet，发现重启后，lock依旧。</p>
+<p>怎么取消这个锁呢？rbd不光提供了lock list命令，还提供了lock remove命令：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">lock remove (lock rm)       Release a lock on an image</span><br><span class="line"></span><br><span class="line">usage:</span><br><span class="line">      lock remove image-spec lock-id locker</span><br><span class="line">              Release a lock on an image. The lock id and locker are as output by lock ls.</span><br></pre></td></tr></table></figure></p>
+<p>开始解锁：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># rbd lock remove  mioss/index-api-image   kubelet_lock_magic_node1 client.24128</span><br></pre></td></tr></table></figure></p>
+<p>解锁成功后，delete掉那个处于ContainerCreating的Pod，然后index-api pod就启动成功了：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">NAMESPACE                    NAME                                    READY     STATUS    RESTARTS   AGE       IP             NODE            LABELS</span><br><span class="line">default                      index-api-3362878852-m6k0j              1/1       Running   0          10s       172.16.57.7    10.46.181.146   app=index-api,pod-template-hash=3362878852</span><br></pre></td></tr></table></figure></p>
+<p>三、问题简要分析</p>
+<p>从问题现象来看，起因是由于index-api pod被从10.47.136.60这个node调度到 10.46.181.146这个node上而导致的。但是为什么image的lock没有释放的确怪异，因为我的index-api是捕捉pod退回信号，支持优雅退出的：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"># kubectl delete -f index-api-deployment.yaml</span><br><span class="line">deployment &quot;index-api&quot; deleted</span><br><span class="line"></span><br><span class="line">2017/02/16 08:41:27 1 Received SIGTERM.</span><br><span class="line">2017/02/16 08:41:27 1 [::]:30080 Listener closed.</span><br><span class="line">2017/02/16 08:41:27 1 Waiting for connections to finish...</span><br><span class="line">2017/02/16 08:41:27 [C] [asm_amd64.s:2086] ListenAndServe:  accept tcp [::]:30080: use of closed network connection 1</span><br><span class="line">2017/02/16 08:41:27 [I] [engine.go:109] engine[mioss1(online)]: mioss1-29583fe44a637eabe4f865bc59bde44fa307e38e exit!</span><br><span class="line">2017/02/16 08:41:27 [I] [engine.go:109] engine[wx81f621e486239f6b(online)]: wx81f621e486239f6b-58b5643015a5f337931aaa4a5f4db1b35ac784bb exit!</span><br><span class="line">2017/02/16 08:41:27 [I] [engine.go:109] engine[wxa4d49c280cefd38c(online)]: wxa4d49c280cefd38c-f38959408617862ed69dab9ad04403cee9564353 exit!</span><br><span class="line">2017/02/16 08:41:27 [D] [enginemgr.go:310] Search Engines exit ok</span><br></pre></td></tr></table></figure></p>
+<p>因此，初步猜测：这里很可能是kubernetes在监视和处理pod退出时，对于存储插件的状态处理存在一些bug，至于具体什么问题，还不得而知。</p>
+<p>四、小结</p>
+<p>对于像index-api service这样的stateful服务来说，使用普通deployment显然不能满足要求。Kubernetes在[1.3.0, 1.5.0)版本区间提供了处于alpha状态的PetSet controller，在1.5.0版本后，PetSet被改名为StatefulSet。与普通Pod不同，PetSet下面的每个Pet都有严格的身份属性，并根据身份属性绑定一定资源，并且不会像普通Pod那样被Kubernetes随意调度到任意Node上。</p>
+<p>像index-api-service索引服务这样的一个实例绑定一个cephRBD pv的应用，特别适合使用PetSet或StatefulSet，不过我这里尚未测试用上PetSet后是否还会出现无法挂载rbd卷的问题。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ceph/" rel="tag"># ceph</a>
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/PersistentVolume/" rel="tag"># PersistentVolume</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/05/k8s/持久化存储/kubernetes支持local volume/" rel="next" title="kubernetes支持local volume">
+                <i class="fa fa-chevron-left"></i> kubernetes支持local volume
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/03/05/cicd/mvn/" rel="prev" title="mvn">
+                mvn <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview sidebar-panel sidebar-panel-active">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

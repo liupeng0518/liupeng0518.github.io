@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="k8s,PersistentVolume,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="本文由 简悦 SimpRead 转码， 原文地址 https://www.kubernetes.org.cn/4069.html  # 1 、持久化存储卷和声明介绍PersistentVolume（PV）用于为用户和管理员提供如何提供和消费存储的 API，PV 由管理员在集群中提供的存储。它就像 Node 一样是集群中的一种资源。PersistentVolume 也是和存储卷一样的一种插件，但其">
+<meta name="keywords" content="k8s,PersistentVolume">
+<meta property="og:type" content="article">
+<meta property="og:title" content="持久化存储卷 PersistentVolume">
+<meta property="og:url" content="http://liupeng0518.github.io/2018/12/29/k8s/持久化存储/PersistentVolume/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="本文由 简悦 SimpRead 转码， 原文地址 https://www.kubernetes.org.cn/4069.html  # 1 、持久化存储卷和声明介绍PersistentVolume（PV）用于为用户和管理员提供如何提供和消费存储的 API，PV 由管理员在集群中提供的存储。它就像 Node 一样是集群中的一种资源。PersistentVolume 也是和存储卷一样的一种插件，但其">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://raw.githubusercontent.com/liupeng0518/e-book/master/k8s/.images/static_provisioning.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/liupeng0518/e-book/master/k8s/.images/Dynamic_provisioning.png">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="持久化存储卷 PersistentVolume">
+<meta name="twitter:description" content="本文由 简悦 SimpRead 转码， 原文地址 https://www.kubernetes.org.cn/4069.html  # 1 、持久化存储卷和声明介绍PersistentVolume（PV）用于为用户和管理员提供如何提供和消费存储的 API，PV 由管理员在集群中提供的存储。它就像 Node 一样是集群中的一种资源。PersistentVolume 也是和存储卷一样的一种插件，但其">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/liupeng0518/e-book/master/k8s/.images/static_provisioning.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2018/12/29/k8s/持久化存储/PersistentVolume/">
+
+
+
+
+
+  <title>持久化存储卷 PersistentVolume | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2018/12/29/k8s/持久化存储/PersistentVolume/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">持久化存储卷 PersistentVolume</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-29T09:47:19+00:00">
+                2018-12-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>本文由 <a href="http://ksria.com/simpread/" target="_blank" rel="noopener">简悦 SimpRead</a> 转码， 原文地址 <a href="https://www.kubernetes.org.cn/4069.html" target="_blank" rel="noopener">https://www.kubernetes.org.cn/4069.html</a></p>
+</blockquote>
+<article class="article-content"><br><br># <strong>1</strong> <strong>、持久化存储卷和声明介绍</strong><br><br>PersistentVolume（PV）用于为用户和管理员提供如何提供和消费存储的 API，PV 由管理员在集群中提供的存储。它就像 Node 一样是集群中的一种资源。PersistentVolume 也是和存储卷一样的一种插件，但其有着自己独立的生命周期。PersistentVolumeClaim (PVC) 是用户对存储的请求，类似于 Pod 消费 Node 资源，PVC 消费 PV 资源。Pod 能够请求特定的资源 (CPU 和内存)，声明请求特定的存储大小和访问模式。PV 是一个系统的资源，因此没有所属的命名空间。<br><br># <strong>2</strong> <strong>、持久化存储卷**</strong>和声明<strong>**的生命周期</strong><br><br>在 Kubernetes 集群中，PV 作为存储资源存在。PVC 是对 PV 资源的请求和使用，也是对 PV 存储资源的” 提取证”，而 Pod 通过 PVC 来使用 PV。PV 和 PVC 之间的交互过程有着自己的生命周期，这个生命周期分为 5 个阶段：<br><br><em>   <strong>供应 (Provisioning)</strong>：即 PV 的创建，可以直接创建 PV（静态方式），也可以使用 StorageClass 动态创建
+</em>   <strong>绑定（Binding）</strong>：将 PV 分配给 PVC<br><em>   <strong>使用（Using）</strong>：Pod 通过 PVC 使用该 Volume
+</em>   <strong>释放（Releasing）</strong>：Pod 释放 Volume 并删除 PVC<br><em>   <strong>回收（Reclaiming）</strong>：回收 PV，可以保留 PV 以便下次使用，也可以直接从云存储中删除<br><br>根据上述的 5 个阶段，存储卷的存在下面的 4 种状态：
+
+</em>   <strong>Available</strong>：可用状态，处于此状态表明 PV 以及准备就绪了，可以被 PVC 使用了。<br><em>   <strong>Bound</strong>：绑定状态，表明 PV 已被分配给了 PVC。
+</em>   <strong>Released</strong>：释放状态，表明 PVC 解绑 PV，但还未执行回收策略。<br><em>   <strong>Failed</strong>：错误状态，表明 PV 发生错误。<br><br>## <strong>2.1</strong> <strong>供应（**</strong>Provisioning<strong>**）</strong><br><br>供应是为集群提供可用的存储卷，在 Kubernetes 中有两种持久化存储卷的提供方式：静态或者动态。<br><br>### <strong>2.1.1</strong> <strong>静态</strong> <strong>(Static)</strong><br><br>PV 是由 Kubernetes 的集群管理员创建的，PV 代表真实的存储，PV 提供的这些存储对于集群中所有的用户都是可用的。它们存在于 Kubernetes API 中，并可被 Pod 作为真实存储使用。在静态供应的情况下，由集群管理员预先创建 PV，开发者创建 PVC 和 Pod，Pod 通过 PVC 使用 PV 提供的存储。静态供应方式的过程如下图所示：<br><br><img src="https://raw.githubusercontent.com/liupeng0518/e-book/master/k8s/.images/static_provisioning.png" alt><br><br>### <strong>2.1.2</strong> <strong>动态（**</strong>Dynamic<strong>**）</strong><br><br>对于动态的提供方式，当管理员创建的静态 PV 都不能够匹配用户的 PVC 时，集群会尝试自动为 PVC 提供一个存储卷，这种提供方式基于 StorageClass。在动态提供方向，PVC 需要请求一个存储类，但此存储类必须有管理员预先创建和配置。集群管理员需要在 API Server 中启用 DefaultStorageClass 的接入控制器。动态供应过程如下图所示：<br><br><img src="https://raw.githubusercontent.com/liupeng0518/e-book/master/k8s/.images/Dynamic_provisioning.png" alt><br><br>## <strong>2.2</strong> <strong>绑定</strong><br><br>在 Kubernetes 中，会动态的将 PVC 与可用的 PV 的进行绑定。在 kubernetes 的 Master 中有一个控制回路，它将监控新的 PVC，并为其查找匹配的 PV（如果有），并把 PVC 和 PV 绑定在一起。如果一个 PV 曾经动态供给到了一个新的 PVC，那么这个回路会一直绑定这个 PV 和 PVC。另外，用户总是能得到它们所要求的存储，但是 volume 可能超过它们的请求。一旦绑定了，PVC 绑定就是专属的，无论它们的绑定模式是什么。<br><br>如果没有匹配的 PV，那么 PVC 会无限期的处于未绑定状态，一旦存在匹配的 PV，PVC 绑定此 PV。比如，就算集群中存在很多的 50G 的 PV，需要 100G 容量的 PVC 也不会匹配满足需求的 PV。直到集群中有 100G 的 PV 时，PVC 才会被绑定。PVC 基于下面的条件绑定 PV，如果下面的条件同时存在，则选择符合所有要求的 PV 进行绑定:<br><br>1）如果 PVC 指定了存储类，则只会绑定指定了同样存储类的 PV；<br><br>2）如果 PVC 设置了选择器，则选择器去匹配符合的 PV;<br><br>3）如果没有指定存储类和设置选取器，PVC 会根据存储空间容量大小和访问模式匹配符合的 PV。<br><br>## <strong>2.3</strong> <strong>使用</strong><br><br>Pod 把 PVC 作为卷来使用，Kubernetes 集群会通过 PVC 查找绑定的 PV，并将其挂接至 Pod。对于支持多种访问方式的卷，用户在使用 PVC 作为卷时，可以指定需要的访问方式。一旦用户拥有了一个已经绑定的 PVC，被绑定的 PV 就归该用户所有。用户能够通过在 Pod 的存储卷中包含的 PVC，从而访问所占有的 PV。<br><br>## <strong>2.４ 释放</strong><br><br>当用户完成对卷的使用时，就可以利用 API 删除 PVC 对象了，而且还可以重新申请。删除 PVC 后，对应的持久化存储卷被视为 “被释放”，但这时还不能给其他的 PVC 使用。之前的 PVC 数据还保存在卷中，要根据策略来进行后续处理。<br><br>## <strong>2.5 回收</strong><br><br>PV 的回收策略向集群阐述了在 PVC 释放卷时，应如何进行后续工作。目前可以采用三种策略：<strong>保留，回收</strong>或者<strong>删除</strong>。保留策略允许重新申请这一资源。在 PVC 能够支持的情况下，删除策略会同时删除卷以及 AWS EBS/GCE PD 或者 Cinder 卷中的存储内容。如果插件能够支持，回收策略会执行基础的擦除操作（rm -rf /thevolume/</em>），这一卷就能被重新申请了。<br><br>### <strong>2.5.1</strong> <strong>保留</strong><br><br>保留回收策略允许手工回收资源。当 PVC 被删除，PV 将仍然存储，存储卷被认为处于已释放的状态。但是，它对于其他的 PVC 是不可用的，因为以前的数据仍然保留在数据中。管理员能够通过下面的步骤手工回收存储卷：<br><br>1）删除 PV：在 PV 被删除后，在外部设施中相关的存储资产仍然还在；<br><br>2）手工删除遗留在外部存储中的数据；<br><br>3）手工删除存储资产，如果需要重用这些存储资产，则需要创建新的 PV。<br><br>### <strong>2.5.2</strong> <strong>循环</strong><br><br>警告：此策略将会被遗弃。建议后续使用动态供应的模式。<br><br>循环回收会在存储卷上执行基本擦除命令：rm -rf /thevolume/<em>，使数据对于新的ＰＶＣ可用。<br><br>### <strong>2.5.3 **</strong>删除<strong><br><br>对于支持删除回收策略的存储卷插件，删除即会从 Kubernetes 中移除 PV，也会从相关的外部设施中删除存储资产，例如 AWS EBS, GCE PD, Azure Disk 或者 Cinder 存储卷。<br><br># </strong>3、持久化存储卷**<br><br>在 Kubernetes 中，PV 通过各种插件进行实现，当前支持下面这些类型的插件：
+
+</em>   GCEPersistentDisk<br><em>   AWSElasticBlockStore
+</em>   AzureFile<br><em>   AzureDisk
+</em>   FC (Fibre Channel)<br><em>   FlexVolume
+</em>   Flocker<br><em>   NFS
+</em>   iSCSI<br><em>   RBD (Ceph Block Device)
+</em>   CephFS<br><em>   Cinder (OpenStack block storage)
+</em>   Glusterfs<br><em>   VsphereVolume
+</em>   Quobyte Volumes<br><em>   HostPath (Single node testing only – local storage is not supported in any way and WILL NOT WORK in a multi-node cluster)
+</em>   VMware Photon<br><em>   Portworx Volumes
+</em>   ScaleIO Volumes<br><em>   StorageOS<br><br>持久化存储卷的可以通过 YAML 配置文件进行，并指定使用哪个插件类型，下面是一个持久化存储卷的 YAML 配置文件。在此配置文件中要求提供 5Gi 的存储空间，存储模式为 <em>Filesystem ，</em>访问模式是 <em>ReadWriteOnce</em>，通过 Recycle 回收策略进行持久化存储卷的回收，指定存储类为 slow，使用 nfs 的插件类型。需要注意的是，nfs 服务需要提供存在。<br><br><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">apiVersion:v1</span></span><br><span class="line"><span class="string">kind:PersistentVolume</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="string">name:pv0003</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">capacity:</span> <span class="comment">#容量</span></span><br><span class="line">     <span class="string">storage:5Gi</span></span><br><span class="line">  <span class="string">volumeMode:Filesystem</span> <span class="comment">#存储卷模式</span></span><br><span class="line">  <span class="attr">accessModes:</span> <span class="comment">#访问模式</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">ReadWriteOnce</span></span><br><span class="line">  <span class="string">persistentVolumeReclaimPolicy:Recycle</span> <span class="comment">#持久化卷回收策略</span></span><br><span class="line">  <span class="string">storageClassName:slow</span> <span class="comment">#存储类</span></span><br><span class="line">  <span class="attr">mountOptions:</span> <span class="comment">#挂接选项</span></span><br><span class="line">   <span class="bullet">-</span> <span class="string">hard</span></span><br><span class="line">   <span class="bullet">-</span> <span class="string">nfsvers=4.1</span></span><br><span class="line">  <span class="attr">nfs:</span></span><br><span class="line">     <span class="string">path:/tmp</span></span><br><span class="line">     <span class="string">server:172.17.0.2</span></span><br></pre></td></tr></table></figure><br><br>## <strong>3.1</strong> <strong>容量（**</strong>Capacity<strong>**）</strong><br><br>一般来说，PV 会指定存储容量。这里通过使用 PV 的 capcity 属性进行设置。目前，capcity 属性仅有 storage（存储大小）这唯一一个资源需要被设置。<br><br>## <strong>3.2</strong> <strong>存储卷模式（**</strong>Volume Mode<strong>**）</strong><br><br>在 kubernetes v1.9 之前的版本，存储卷模式的默认值为 filesystem，不需要指定。在 v1.9 版本，用户可以指定 volumeMode 的值，除了支持文件系统外（file system）也支持块设备（raw block devices）。volumeMode 是一个可选的参数，如果不进行设定，则默认为 Filesystem。<br><br>## <strong>3.3</strong> <strong>访问模式（**</strong>Access Modes<strong>**）</strong><br><br>只要资源提供者支持，持久卷能够通过任何方式加载到主机上。每种存储都会有不同的能力，每个 PV 的访问模式也会被设置成为该卷所支持的特定模式。例如 NFS 能够支持多个读写客户端，但某个 NFS PV 可能会在服务器上以只读方式使用。每个 PV 都有自己的一系列的访问模式，这些访问模式取决于 PV 的能力。<br><br>访问模式的可选范围如下：
+
+</em>   ReadWriteOnce：该卷能够以<strong>读写模式</strong>被加载到一个节点上。<br><em>   ReadOnlyMany：该卷能够以只读模式加载到多个节点上。
+</em>   ReadWriteMany：该卷能够以读写模式被多个节点同时加载。<br><br>在 CLI 下，访问模式缩写为：<br><br><em>   RWO：ReadWriteOnce
+</em>   ROX：ReadOnlyMany<br><em>   RWX：ReadWriteMany<br><br>一个卷不论支持多少种访问模式，同时只能以一种访问模式加载。例如一个 GCEPersistentDisk 既能支持 ReadWriteOnce，也能支持 ReadOnlyMany。<br><br><br><br><br>| 存储卷插件           | ReadWriteOnce | ReadOnlyMany | ReadWriteMany                      |<br>| ——————– | ————- | ———— | ———————————- |<br>| AWSElasticBlockStore | ✓             | –            | –                                  |<br>| AzureFile            | ✓             | ✓            | ✓                                  |<br>| AzureDisk            | ✓             | –            | –                                  |<br>| CephFS               | ✓             | ✓            | ✓                                  |<br>| Cinder               | ✓             | –            | –                                  |<br>| FC                   | ✓             | ✓            | –                                  |<br>| FlexVolume           | ✓             | ✓            | –                                  |<br>| Flocker              | ✓             | –            | –                                  |<br>| GCEPersistentDisk    | ✓             | ✓            | –                                  |<br>| Glusterfs            | ✓             | ✓            | ✓                                  |<br>| HostPath             | ✓             | –            | –                                  |<br>| iSCSI                | ✓             | ✓            | –                                  |<br>| PhotonPersistentDisk | ✓             | –            | –                                  |<br>| Quobyte              | ✓             | ✓            | ✓                                  |<br>| NFS                  | ✓             | ✓            | ✓                                  |<br>| RBD                  | ✓             | ✓            | –                                  |<br>| VsphereVolume        | ✓             | –            | – (works when pods are collocated) |<br>| PortworxVolume       | ✓             | –            | ✓                                  |<br>| ScaleIO              | ✓             | ✓            | –                                  |<br>| StorageOS            | ✓             | –            | –                                  |<br><br><br><br><br><br>## <strong>3.4</strong> <strong>类（**</strong>Class<strong>**）</strong><br><br>在 PV 中可以指定存储类，通过设置 storageClassName 字段进行设置。如果设置了存储类，则此 PV 只能被绑定到也指定了此存储类的 PVC。在以前的版本中，使用注释 volume.beta.kubernetes.io/storage-class 字段来指定存储类，而不是 storageClassName 字段来指定存储类。 此注释仍然可用，但是，在将来的版本中将会被废弃。<br><br>## <strong>3.5</strong> <strong>回收策略</strong><br><br>当前的回收策略可选值包括：
+
+</em>   Retain - 持久化卷被释放后，需要手工进行回收操作。<br><em>   Recycle - 基础擦除（“rm-rf /thevolume/</em>”）<br><em>   Delete - 相关的存储资产，例如 AWSEBS 或 GCE PD 卷一并删除。<br><br>目前，只有 NFS 和 HostPath 支持 Recycle 策略，AWSEBS、GCE PD 支持 Delete 策略。<br><br>## <strong>3.6</strong> <strong>挂接选项（**</strong>Mount Options<strong>**）</strong><br><br>当持久化卷被挂接至 Pod 上时，管理员能够指定额外的挂接选项。但不是所有的持久化卷类型都支持挂接选项，下面的存储卷类型支持挂接选项：
+
+</em>   GCEPersistentDisk<br><em>   AWSElasticBlockStore
+</em>   AzureFile<br><em>   AzureDisk
+</em>   NFS<br><em>   iSCSI
+</em>   RBD (Ceph Block Device)<br><em>   CephFS
+</em>   Cinder (OpenStack block storage)<br><em>   Glusterfs
+</em>   VsphereVolume<br><em>   Quobyte Volumes
+</em>   VMware Photon<br><br>挂接选项不会进行验证，因此如果如果设置不正确，则会失败。在以前的版本中，使用 volume.beta.kubernetes.io/mount-options 注释指定挂接选项，而不是使用 mountOptions 字段。此注释仍然可用，但是在将来的版本中将会被废弃。<br><br># <strong>4、持久化卷声明</strong><br><br>下面是一个名称为 myclaim 的 PVC YAML 配置文件，它的访问模式为 ReadWriteOnce，存储卷模式是 Filesystem，需要的存储空间大小为 8Gi，指定的存储类为 slow，并设置了标签选择器和匹配表达式。<br><br><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">PersistentVolumeClaim</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">myclaim</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">accessModes:</span> <span class="comment">#访问模式</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">ReadWriteOnce</span></span><br><span class="line">  <span class="attr">volumeMode:</span> <span class="string">Filesystem</span> <span class="comment">#存储卷模式</span></span><br><span class="line">  <span class="attr">resources:</span> <span class="comment">#资源</span></span><br><span class="line">    <span class="attr">requests:</span></span><br><span class="line">      <span class="attr">storage:</span> <span class="string">8Gi</span></span><br><span class="line">  <span class="attr">storageClassName:</span> <span class="string">slow</span> <span class="comment">#存储类</span></span><br><span class="line">  <span class="attr">selector:</span> <span class="comment">#选择器</span></span><br><span class="line">    <span class="attr">matchLabels:</span></span><br><span class="line">      <span class="attr">release:</span> <span class="string">"stable"</span></span><br><span class="line">    <span class="attr">matchExpressions:</span> <span class="comment">#匹配表达式</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&#123;key:</span> <span class="string">environment,</span> <span class="attr">operator:</span> <span class="string">In,</span> <span class="attr">values:</span> <span class="string">[dev]&#125;</span></span><br></pre></td></tr></table></figure><br><br>## <strong>4.1 </strong> <strong>选择器</strong><br><br>在 PVC 中，可以通过标签选择器来进一步的过滤 PV。仅仅与选择器匹配的 PV 才会被绑定到 PVC 中。选择器的组成如下：<br><br><em>   matchLabels： 只有存在与此处的标签一样的 PV 才会被 PVC 选中；
+</em>   matchExpressions ：匹配表达式由键、值和操作符组成，操作符包括 In, NotIn, Exists 和 DoesNotExist，只有符合表达式的 PV 才能被选择。<br><br>如果同时设置了 matchLabels 和 matchExpressions，则会进行求与，即只有同时满足上述匹配要求的 PV 才会被选择。<br><br>## <strong>4.2 存储</strong> <strong>类</strong><br><br>如果 PVC 使用 storageClassName 字段指定一个存储类，那么只有指定了同样的存储类的 PV 才能被绑定到 PVC 上。对于 PVC 来说，存储类并不是必须的。依赖于安装方法，可以在安装过程中使用 add-on 管理器将默认的 StorageClass 部署至 Kubernetes 集群中。当 PVC 指定了选择器，并且指定了 StorageClass，则在匹配 PV 时，取两者之间的与：即仅仅同时满足存储类和带有要求标签值的 PV 才能被匹配上。<br><br>## <strong>4.3 PVC</strong> <strong>作为存储卷</strong><br><br>Pod 通过使用 PVC 来访问存储，而 PVC 必须和使用它的 Pod 在同一个命名空间中。Pod 会同一个命名空间中选择一个合适的 PVC，并使用 PVC 为其获取存储卷，并将 PV 挂接到主机和 Pod 上。<br><br><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">kind:Pod</span></span><br><span class="line"><span class="string">apiVersion:v1</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="string">name:mypod</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">name:myfrontend</span></span><br><span class="line">    <span class="string">image:dockerfile/nginx</span></span><br><span class="line">     <span class="attr">volumeMounts:</span> <span class="comment">#挂接存储卷</span></span><br><span class="line">     <span class="bullet">-</span> <span class="string">mountPath:"/var/www/html"</span> <span class="comment">#挂接的路径</span></span><br><span class="line">       <span class="string">name:mypd</span> <span class="comment">#所要挂接的存储卷的名称</span></span><br><span class="line"> <span class="attr">volumes:</span> <span class="comment">#定义存储卷</span></span><br><span class="line"> <span class="bullet">-</span> <span class="string">name:mypd</span></span><br><span class="line">   <span class="attr">persistentVolumeClaim:</span> <span class="comment">#所使用的持久化存储卷声明</span></span><br><span class="line">     <span class="string">claimName:myclaim</span></span><br></pre></td></tr></table></figure><br><br># 参考资料<br><br>1.《Configure a Pod to Use a PersistentVolume for Storage》地址：<a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/" target="_blank" rel="noopener">https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/</a><br><br>2.《Persistent Volumes》地址：<a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/" target="_blank" rel="noopener">https://kubernetes.io/docs/concepts/storage/persistent-volumes/</a><br><br>3.《Persistent Storage》地址：<a href="https://github.com/kubernetes/community/blob/master/contributors/design-proposals/storage/persistent-storage.md" target="_blank" rel="noopener">https://github.com/kubernetes/community/blob/master/contributors/design-proposals/storage/persistent-storage.md</a><br><br>4.《PersistentVolume v1 core》地址：<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.10/#persistentvolume-v1-core" target="_blank" rel="noopener">https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.10/#persistentvolume-v1-core</a><br><br>作者简介：<br>季向远，北京神舟航天软件技术有限公司产品经理。本文版权归原作者所有。<br><br></article>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/PersistentVolume/" rel="tag"># PersistentVolume</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/29/k8s/持久化存储/ceph/kubernetes对接ceph/" rel="next" title="kubernetes对接ceph">
+                <i class="fa fa-chevron-left"></i> kubernetes对接ceph
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/29/k8s/Network/kubernetes各种port/" rel="prev" title="kubernetes各种port">
+                kubernetes各种port <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview sidebar-panel sidebar-panel-active">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

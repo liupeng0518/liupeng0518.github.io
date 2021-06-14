@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="ubuntu,debian,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="本文由 简悦 SimpRead 转码， 原文地址 https://www.cnblogs.com/silvermagic/p/7665841.html  方法一缓存 deb 包 123# apt install XXX# mkdir -p /usr/local/mydebs# find /var/cache/apt/archives/ -name *.deb | xargs -i mv &amp;#12">
+<meta name="keywords" content="ubuntu,debian">
+<meta property="og:type" content="article">
+<meta property="og:title" content="debian&#x2F;ubuntu离线仓库">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/01/18/linux/debian/ubuntu离线仓库/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="本文由 简悦 SimpRead 转码， 原文地址 https://www.cnblogs.com/silvermagic/p/7665841.html  方法一缓存 deb 包 123# apt install XXX# mkdir -p /usr/local/mydebs# find /var/cache/apt/archives/ -name *.deb | xargs -i mv &amp;#12">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.996Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="debian&#x2F;ubuntu离线仓库">
+<meta name="twitter:description" content="本文由 简悦 SimpRead 转码， 原文地址 https://www.cnblogs.com/silvermagic/p/7665841.html  方法一缓存 deb 包 123# apt install XXX# mkdir -p /usr/local/mydebs# find /var/cache/apt/archives/ -name *.deb | xargs -i mv &amp;#12">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/01/18/linux/debian/ubuntu离线仓库/">
+
+
+
+
+
+  <title>debian/ubuntu离线仓库 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/01/18/linux/debian/ubuntu离线仓库/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">debian/ubuntu离线仓库</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-18T09:47:19+00:00">
+                2019-01-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/debian/" itemprop="url" rel="index">
+                    <span itemprop="name">debian</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>本文由 <a href="http://ksria.com/simpread/" target="_blank" rel="noopener">简悦 SimpRead</a> 转码， 原文地址 <a href="https://www.cnblogs.com/silvermagic/p/7665841.html" target="_blank" rel="noopener">https://www.cnblogs.com/silvermagic/p/7665841.html</a></p>
+</blockquote>
+<h2 id="方法一"><a href="#方法一" class="headerlink" title="方法一"></a>方法一</h2><p>缓存 deb 包</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># apt install XXX</span><br><span class="line"># mkdir -p /usr/local/mydebs</span><br><span class="line"># find /var/cache/apt/archives/ -name *.deb | xargs -i mv &#123;&#125; /usr/local/mydebs/</span><br></pre></td></tr></table></figure>
+<p>搭建 repo 服务</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"># apt install nginx</span><br><span class="line"># rm -rf /etc/nginx/sites-enabled/default</span><br><span class="line"># vim /etc/nginx/sites-enabled/openstack-slushee.vhost</span><br><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    server_name openstack-slushee;</span><br><span class="line"></span><br><span class="line">    # Logging</span><br><span class="line">    access_log /var/log/nginx/openstack-slushee.access.log;</span><br><span class="line">    error_log /var/log/nginx/openstack-slushee.error.log;</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        root /var/www/repo/;</span><br><span class="line">        autoindex on;</span><br><span class="line">        expires 5h;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"># ln -s /usr/local/mydebs/ /var/www/repo</span><br><span class="line"># systemctl restart nginx</span><br></pre></td></tr></table></figure>
+<p>创建 GPG KEY</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">### 生成随机数</span><br><span class="line"># apt install rng-tools</span><br><span class="line"># rngd -r /dev/urandom</span><br><span class="line"></span><br><span class="line">### 创建密钥</span><br><span class="line"># gpg --gen-key</span><br><span class="line">gpg (GnuPG) 1.4.20; Copyright (C) 2015 Free Software Foundation, Inc.</span><br><span class="line">This is free software: you are free to change and redistribute it.</span><br><span class="line">There is NO WARRANTY, to the extent permitted by law.</span><br><span class="line"></span><br><span class="line">Please select what kind of key you want:</span><br><span class="line">   (1) RSA and RSA (default)</span><br><span class="line">   (2) DSA and Elgamal</span><br><span class="line">   (3) DSA (sign only)</span><br><span class="line">   (4) RSA (sign only)</span><br><span class="line">Your selection? 4</span><br><span class="line">RSA keys may be between 1024 and 4096 bits long.</span><br><span class="line">What keysize do you want? (2048) 1024</span><br><span class="line">Requested keysize is 1024 bits</span><br><span class="line">Please specify how long the key should be valid.</span><br><span class="line">         0 = key does not expire</span><br><span class="line">      &lt;n&gt;  = key expires in n days</span><br><span class="line">      &lt;n&gt;w = key expires in n weeks</span><br><span class="line">      &lt;n&gt;m = key expires in n months</span><br><span class="line">      &lt;n&gt;y = key expires in n years</span><br><span class="line">Key is valid for? (0)</span><br><span class="line">Key does not expire at all</span><br><span class="line">Is this correct? (y/N) y</span><br><span class="line"></span><br><span class="line">You need a user ID to identify your key; the software constructs the user ID</span><br><span class="line">from the Real Name, Comment and Email Address in this form:</span><br><span class="line">    &quot;Heinrich Heine (Der Dichter) &lt;heinrichh@duesseldorf.de&gt;&quot;</span><br><span class="line"></span><br><span class="line">Real name: Repository</span><br><span class="line">Email address:</span><br><span class="line">Comment:</span><br><span class="line">You selected this USER-ID:</span><br><span class="line">    &quot;Repository&quot;</span><br><span class="line"></span><br><span class="line">Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? O</span><br><span class="line">You need a Passphrase to protect your secret key.</span><br><span class="line"></span><br><span class="line">gpg: gpg-agent is not available in this session</span><br><span class="line">We need to generate a lot of random bytes. It is a good idea to perform</span><br><span class="line">some other action (type on the keyboard, move the mouse, utilize the</span><br><span class="line">disks) during the prime generation; this gives the random number</span><br><span class="line">generator a better chance to gain enough entropy.</span><br><span class="line">...+++++</span><br><span class="line">+++++</span><br><span class="line">gpg: /root/.gnupg/trustdb.gpg: trustdb created</span><br><span class="line">gpg: key 3F21CDF4 marked as ultimately trusted</span><br><span class="line">public and secret key created and signed.</span><br><span class="line"></span><br><span class="line">gpg: checking the trustdb</span><br><span class="line">gpg: 3 marginal(s) needed, 1 complete(s) needed, PGP trust model</span><br><span class="line">gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u</span><br><span class="line">pub   1024R/3F21CDF4 2017-04-13</span><br><span class="line">      Key fingerprint = 2207 F410 60C5 D2D8 8168  60D0 E21E 0ADD 3F21 CDF4</span><br><span class="line">uid                  Repository</span><br><span class="line"></span><br><span class="line">Note that this key cannot be used for encryption.  You may want to use</span><br><span class="line">the command &quot;--edit-key&quot; to generate a subkey for this purpose.</span><br></pre></td></tr></table></figure>
+<p>导出 key 文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># cd /var/www/repo</span><br><span class="line"># gpg --list-keys</span><br><span class="line">/root/.gnupg/pubring.gpg</span><br><span class="line">------------------------</span><br><span class="line">pub   1024R/3F21CDF4 2017-04-13</span><br><span class="line">uid                  Repository</span><br><span class="line"># gpg --output keyFile --armor --export 3F21CDF4</span><br></pre></td></tr></table></figure>
+<p>生成 Packages.gz、Release、InRelease、Release.gpg 文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">### 每次添加新deb包后都需要重新执行下面命令</span><br><span class="line"># cd /var/www/repo</span><br><span class="line"># 生成索引文件</span><br><span class="line"># apt-ftparchive packages . &gt; Packages</span><br><span class="line"># gzip -c Packages &gt; Packages.gz</span><br><span class="line"># apt-ftparchive release . &gt; Release</span><br><span class="line">### 输入前面设置的GPG KEY密码</span><br><span class="line"># gpg --clearsign -o InRelease Release</span><br><span class="line"># gpg -abs -o Release.gpg Release</span><br></pre></td></tr></table></figure>
+<h3 id="设置软件源"><a href="#设置软件源" class="headerlink" title="设置软件源"></a>设置软件源</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># apt-key add /var/www/repo/keyFile</span><br><span class="line"># vim /etc/apt/sources.list</span><br><span class="line">deb http://192.168.200.15/ ./</span><br></pre></td></tr></table></figure>
+<h3 id="问题处理"><a href="#问题处理" class="headerlink" title="问题处理"></a>问题处理</h3><ul>
+<li><code>gpg --gen-key</code>失败</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Not enough random bytes available. Please do some other work to give the OS a chance to collect more entropy! (Need 300 more bytes)</span><br></pre></td></tr></table></figure>
+<p>解决办法</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># apt install rng-tools</span><br><span class="line"># rngd -r /dev/urandom</span><br></pre></td></tr></table></figure>
+<h2 id="方法二"><a href="#方法二" class="headerlink" title="方法二"></a>方法二</h2><h3 id="使用-apt-cacher-ng-制作缓存"><a href="#使用-apt-cacher-ng-制作缓存" class="headerlink" title="使用 apt-cacher-ng 制作缓存"></a>使用 apt-cacher-ng 制作缓存</h3><ul>
+<li>安装 apt-cacher-ng</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"># apt install apt-cacher-ng</span><br><span class="line"># vim /etc/apt-cacher-ng/acng.conf</span><br><span class="line">CacheDir: /var/www/repo/pkg-cache</span><br><span class="line">LogDir: /var/log/apt-cacher-ng</span><br><span class="line">Port: 3142</span><br><span class="line">BindAddress: 0.0.0.0</span><br><span class="line">Remap-debrep: file:deb_mirror*.gz /debian ; file:backends_debian # Debian Archives</span><br><span class="line">Remap-uburep: file:ubuntu_mirrors /ubuntu ; file:backends_ubuntu # Ubuntu Archives</span><br><span class="line">Remap-debvol: file:debvol_mirror*.gz /debian-volatile ; file:backends_debvol # Debian Volatile Archives</span><br><span class="line">Remap-cygwin: file:cygwin_mirrors /cygwin # ; file:backends_cygwin # incomplete, please create this file or specify preferred mirrors here</span><br><span class="line">Remap-sfnet:  file:sfnet_mirrors # ; file:backends_sfnet # incomplete, please create this file or specify preferred mirrors here</span><br><span class="line">Remap-alxrep: file:archlx_mirrors /archlinux # ; file:backend_archlx # Arch Linux</span><br><span class="line">Remap-fedora: file:fedora_mirrors # Fedora Linux</span><br><span class="line">Remap-epel:   file:epel_mirrors # Fedora EPEL</span><br><span class="line">Remap-slrep:  file:sl_mirrors # Scientific Linux</span><br><span class="line">ReportPage: acng-report.html</span><br><span class="line">PidFile: /var/run/apt-cacher-ng</span><br><span class="line">ExTreshold: 4</span><br><span class="line">LocalDirs: acng-doc /usr/share/doc/apt-cacher-ng</span><br><span class="line">PassThroughPattern: .*</span><br></pre></td></tr></table></figure>
+<ul>
+<li>修改软件源</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># echo &quot;Acquire::http::Proxy \&quot;http://192.168.200.10:3142\&quot;;&quot; &gt; /etc/apt/apt.conf.d/00apt-cacher-proxy</span><br></pre></td></tr></table></figure>
+<ul>
+<li>下载软件</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># apt update</span><br><span class="line">### deb将被缓存到/var/www/repo/pkg-cache目录</span><br><span class="line"># apt install vim</span><br></pre></td></tr></table></figure>
+<h3 id="将-apt-cacher-缓存的源做成镜像"><a href="#将-apt-cacher-缓存的源做成镜像" class="headerlink" title="将 apt-cacher 缓存的源做成镜像"></a>将 apt-cacher 缓存的源做成镜像</h3><ul>
+<li>复制目录结构</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><span class="line"># cd /var/www/repo</span><br><span class="line">### 打印apt-cacher-ng缓存的deb</span><br><span class="line"># tree pkg-cache</span><br><span class="line"></span><br><span class="line">├── mirror.rackspace.com</span><br><span class="line">│   └── mariadb</span><br><span class="line">│       └── repo</span><br><span class="line">│           └── 10.0</span><br><span class="line">│               └── ubuntu</span><br><span class="line">│                   ├── dists</span><br><span class="line">│                   │   └── xenial</span><br><span class="line">│                   │       ├── InRelease</span><br><span class="line">│                   │       ├── InRelease.head</span><br><span class="line">│                   │       └── main</span><br><span class="line">│                   │           ├── binary-amd64</span><br><span class="line">│                   │           │   ├── Packages.gz</span><br><span class="line">│                   │           │   └── Packages.gz.head</span><br><span class="line">│                   │           └── binary-i386</span><br><span class="line">│                   │               ├── Packages.gz</span><br><span class="line">│                   │               └── Packages.gz.head</span><br><span class="line">│                   └── pool</span><br><span class="line">│                       └── main</span><br><span class="line">│                           ├── g</span><br><span class="line">│                           │   └── galera-3</span><br><span class="line">│                           │       ├── galera-3_25.3.19-xenial_amd64.deb</span><br><span class="line">│                           │       └── galera-3_25.3.19-xenial_amd64.deb.head</span><br><span class="line">│                           └── m</span><br><span class="line">│                               └── mariadb-10.0</span><br><span class="line">│                                   ├── libmariadbclient18_10.0.30+maria-1~xenial_amd64.deb</span><br><span class="line">│                                   ├── libmariadbclient18_10.0.30+maria-1~xenial_amd64.deb.head</span><br><span class="line">│                                   ├── libmariadbclient-dev_10.0.30+maria-1~xenial_amd64.deb</span><br><span class="line">│                                   ├── libmariadbclient-dev_10.0.30+maria-1~xenial_amd64.deb.head</span><br><span class="line">│                                   ├── libmysqlclient18_10.0.30+maria-1~xenial_amd64.deb</span><br><span class="line">│                                   ├── libmysqlclient18_10.0.30+maria-1~xenial_amd64.deb.head</span><br><span class="line">│                                   ├── mariadb-client-10.0_10.0.30+maria-1~xenial_amd64.deb</span><br><span class="line">│                                   ├── mariadb-client-10.0_10.0.30+maria-1~xenial_amd64.deb.head</span><br><span class="line">│                                   ├── mariadb-client_10.0.30+maria-1~xenial_all.deb</span><br><span class="line">│                                   ├── mariadb-client_10.0.30+maria-1~xenial_all.deb.head</span><br><span class="line">│                                   ├── mariadb-client-core-10.0_10.0.30+maria-1~xenial_amd64.deb</span><br><span class="line">│                                   ├── mariadb-client-core-10.0_10.0.30+maria-1~xenial_amd64.deb.head</span><br><span class="line">│                                   ├── mariadb-common_10.0.30+maria-1~xenial_all.deb</span><br><span class="line">│                                   ├── mariadb-common_10.0.30+maria-1~xenial_all.deb.head</span><br><span class="line">│                                   ├── mariadb-galera-server-10.0_10.0.30+maria-1~xenial_amd64.deb</span><br><span class="line">│                                   ├── mariadb-galera-server-10.0_10.0.30+maria-1~xenial_amd64.deb.head</span><br><span class="line">│                                   ├── mysql-common_10.0.30+maria-1~xenial_all.deb</span><br><span class="line">│                                   └── mysql-common_10.0.30+maria-1~xenial_all.deb.head</span><br><span class="line">├── ubuntu-cloud.archive.canonical.com</span><br><span class="line">│   └── ubuntu</span><br><span class="line">│       ├── dists</span><br><span class="line">│       │   └── xenial-updates</span><br><span class="line">│       │       └── newton</span><br><span class="line">│       │           ├── main</span><br><span class="line">│       │           │   ├── binary-amd64</span><br><span class="line">│       │           │   │   ├── Packages.gz</span><br><span class="line">│       │           │   │   └── Packages.gz.head</span><br><span class="line">│       │           │   └── binary-i386</span><br><span class="line">│       │           │       ├── Packages.gz</span><br><span class="line">│       │           │       └── Packages.gz.head</span><br><span class="line">│       │           ├── Release</span><br><span class="line">│       │           ├── Release.gpg</span><br><span class="line">│       │           ├── Release.gpg.head</span><br><span class="line">│       │           └── Release.head</span><br><span class="line">│       └── pool</span><br><span class="line">│           └── main</span><br><span class="line">│               ├── d</span><br><span class="line">│               │   └── dnsmasq</span><br><span class="line">│               │       ├── dnsmasq_2.76-4~cloud0_all.deb</span><br><span class="line">│               │       ├── dnsmasq_2.76-4~cloud0_all.deb.head</span><br><span class="line">│               │       ├── dnsmasq-base_2.76-4~cloud0_amd64.deb</span><br><span class="line">│               │       ├── dnsmasq-base_2.76-4~cloud0_amd64.deb.head</span><br><span class="line">│               │       ├── dnsmasq-utils_2.76-4~cloud0_amd64.deb</span><br><span class="line">│               │       └── dnsmasq-utils_2.76-4~cloud0_amd64.deb.head</span><br><span class="line">│               └── p</span><br><span class="line">│                   ├── pyopenssl</span><br><span class="line">│                   │   ├── python-openssl_16.1.0-1~cloud0_all.deb</span><br><span class="line">│                   │   └── python-openssl_16.1.0-1~cloud0_all.deb.head</span><br><span class="line">│                   ├── python-cryptography</span><br><span class="line">│                   │   ├── python-cryptography_1.5-2ubuntu0.1~cloud0_amd64.deb</span><br><span class="line">│                   │   └── python-cryptography_1.5-2ubuntu0.1~cloud0_amd64.deb.head</span><br><span class="line">│                   └── python-setuptools</span><br><span class="line">│                       ├── python-pkg-resources_26.1.1-1~cloud0_all.deb</span><br><span class="line">│                       ├── python-pkg-resources_26.1.1-1~cloud0_all.deb.head</span><br><span class="line">│                       ├── python-setuptools_26.1.1-1~cloud0_all.deb</span><br><span class="line">│                       └── python-setuptools_26.1.1-1~cloud0_all.deb.head</span><br><span class="line"></span><br><span class="line">### 复制源目录结构</span><br><span class="line"># cp -r pkg-cache/mirror.rackspace.com/mariadb/repo/10.0/ubuntu/ mariadb</span><br><span class="line"># cp -r pkg-cache/ubuntu-cloud.archive.canonical.com/ubuntu/ ubuntu-cloud</span><br></pre></td></tr></table></figure>
+<ul>
+<li>修改软件源</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"># tree mariadb/dists</span><br><span class="line"># tree ubuntu-cloud/dists</span><br><span class="line">### 1.deb url中的url指向的是dists和pool的父目录</span><br><span class="line">### 2.deb url后面的格式规范：第一个是能找到Release/InRelease文件的目录结构，例如mariadb的就是xenial，ubuntu-cloud就是xenial-updates/newton；第二个就是第一个的子目录名，例如mariadb的就是main，ubuntu-cloud也是main</span><br><span class="line">### 3.如果apt update的时候提示对应deb源的packages没找到，则需要删除对应项，例如&quot;deb http://172.29.248.10:8181/ubuntu-repo xenial-security main universe multiverse&quot;提示&quot;Err:14 http://172.29.248.10:8181/ubuntu-repo xenial-security/multiverse Translation-en 404&quot;，则修改源为&quot;deb http://172.29.248.10:8181/ubuntu-repo xenial-security main universe&quot;即可</span><br><span class="line"></span><br><span class="line"># vim /etc/apt/sources.list</span><br><span class="line">deb http://172.29.248.10:8181/mariadb xenial main</span><br><span class="line">deb http://172.29.248.10:8181/ubuntu-cloud xenial-updates/newton main</span><br><span class="line"></span><br><span class="line">### 如果更新失败，去ubuntu keyserver上下载对应gpg添加上即可</span><br><span class="line"># apt update</span><br></pre></td></tr></table></figure>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://help.ubuntu.com/community/AptGet/Offline/Repository" target="_blank" rel="noopener">官方文档</a><br><a href="https://help.ubuntu.com/community/Repositories/Personal" target="_blank" rel="noopener">官方文档</a><br><a href="https://help.ubuntu.com/community/CreateAuthenticatedRepository" target="_blank" rel="noopener">官方文档</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ubuntu/" rel="tag"># ubuntu</a>
+          
+            <a href="/tags/debian/" rel="tag"># debian</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/09/k8s/服务发现/dns/external-dns/" rel="next" title="k8s external-dns">
+                <i class="fa fa-chevron-left"></i> k8s external-dns
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/01/18/linux/debian/debian常用操作/" rel="prev" title="debian常用操作">
+                debian常用操作 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#方法一"><span class="nav-number">1.</span> <span class="nav-text">方法一</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#设置软件源"><span class="nav-number">1.1.</span> <span class="nav-text">设置软件源</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#问题处理"><span class="nav-number">1.2.</span> <span class="nav-text">问题处理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#方法二"><span class="nav-number">2.</span> <span class="nav-text">方法二</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用-apt-cacher-ng-制作缓存"><span class="nav-number">2.1.</span> <span class="nav-text">使用 apt-cacher-ng 制作缓存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#将-apt-cacher-缓存的源做成镜像"><span class="nav-number">2.2.</span> <span class="nav-text">将 apt-cacher 缓存的源做成镜像</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

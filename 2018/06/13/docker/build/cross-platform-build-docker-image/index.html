@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="docker,linux,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="随着 IoT 的发展 ARM 平台变得越来越重要，HypriotOS 和 resinOS 可以轻松的在 ARM 设备上运行 Docker，部署各种好玩的应用，而不用在意各种系统的差异，在未来，容器技术将从服务器走近用户。">
+<meta name="keywords" content="docker,linux">
+<meta property="og:type" content="article">
+<meta property="og:title" content="跨平台构建 Docker 镜像">
+<meta property="og:url" content="http://liupeng0518.github.io/2018/06/13/docker/build/cross-platform-build-docker-image/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="随着 IoT 的发展 ARM 平台变得越来越重要，HypriotOS 和 resinOS 可以轻松的在 ARM 设备上运行 Docker，部署各种好玩的应用，而不用在意各种系统的差异，在未来，容器技术将从服务器走近用户。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.956Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="跨平台构建 Docker 镜像">
+<meta name="twitter:description" content="随着 IoT 的发展 ARM 平台变得越来越重要，HypriotOS 和 resinOS 可以轻松的在 ARM 设备上运行 Docker，部署各种好玩的应用，而不用在意各种系统的差异，在未来，容器技术将从服务器走近用户。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2018/06/13/docker/build/cross-platform-build-docker-image/">
+
+
+
+
+
+  <title>跨平台构建 Docker 镜像 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2018/06/13/docker/build/cross-platform-build-docker-image/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">跨平台构建 Docker 镜像</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-13T00:00:00+00:00">
+                2018-06-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index">
+                    <span itemprop="name">docker</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>随着 IoT 的发展 ARM 平台变得越来越重要，<a href="https://blog.hypriot.com/" target="_blank" rel="noopener">HypriotOS</a> 和 <a href="https://resin.io/" target="_blank" rel="noopener">resinOS</a> 可以轻松的在 ARM 设备上运行 Docker，部署各种好玩的应用，而不用在意各种系统的差异，在未来，容器技术将从服务器走近用户。</p>
+<a id="more"></a>
+<blockquote>
+<p>参考资料：<br><a href="https://blog.hypriot.com/post/setup-simple-ci-pipeline-for-arm-images/" target="_blank" rel="noopener">Setup a simple CI pipeline to build Docker images for ARM</a><br><a href="https://developer.ibm.com/linuxonpower/2017/07/27/create-multi-architecture-docker-image/" target="_blank" rel="noopener">Create and use multi-architecture docker images</a></p>
+</blockquote>
+<h2 id="Run"><a href="#Run" class="headerlink" title="Run"></a>Run</h2><p>Docker Hub 上可以找到各种非 x86_64 平台的镜像，比如 <a href="https://hub.docker.com/r/arm32v7/python/" target="_blank" rel="noopener">arm32v7/python</a>。</p>
+<p>有树莓派并且安装好 Docker 的话，可以简单运行起来：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ uname -a</span><br><span class="line">Linux raspberrypi-0 4.9.59-v7+ #1047 SMP Sun Oct 29 12:19:23 GMT 2017 armv7l GNU/Linux</span><br><span class="line">$ docker run --rm arm32v7/python:3.6.5-slim-stretch python -V</span><br><span class="line">Python 3.6.5</span><br></pre></td></tr></table></figure>
+<p>而在 x86_64 的 Linux 环境下则会得到一段错误信息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ uname -a</span><br><span class="line">Linux tomczhen-dell 4.16.6-1-default #1 SMP PREEMPT Mon Apr 30 20:33:51 UTC 2018 (566acbc) x86_64 x86_64 x86_64 GNU/Linux</span><br><span class="line">$ docker run --rm arm32v7/python:3.6.5-slim-stretch python -V</span><br><span class="line">standard_init_linux.go:185: exec user process caused &quot;exec format error&quot;</span><br></pre></td></tr></table></figure>
+<h3 id="Executable-and-Linkable-Format"><a href="#Executable-and-Linkable-Format" class="headerlink" title="Executable and Linkable Format"></a>Executable and Linkable Format</h3><blockquote>
+<p>参考资料:<br><a href="https://en.wikipedia.org/wiki/Executable_and_Linkable_Format" target="_blank" rel="noopener">Executable and Linkable Format</a><br><a href="https://en.wikipedia.org/wiki/Static_build" target="_blank" rel="noopener">Static build</a><br><a href="https://en.wikipedia.org/wiki/QEMU" target="_blank" rel="noopener">QEMU</a></p>
+</blockquote>
+<p>虽然 Python 是脚本语言可以跨平台运行，不过 Python 解释器是一个 ELF File，可以在 <code>Raspbian</code> 中使用 <code>file</code> 和 <code>ldd</code> 命令查看 <code>arm32v7/python:3.6.5-slim-stretch</code> 中 Python 解释器的文件信息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">$ docker run --rm -ti arm32v7/python:3.6.5-slim-stretch file /usr/local/bin/python3.6</span><br><span class="line">/usr/local/bin/python3.6: ELF 32-bit LSB executable, ARM, EABI5 version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-armhf.so.3, for GNU/Linux 2.6.32, BuildID[sha1]=0799c4578961617b6303499314f02158220dfdad, not stripped</span><br><span class="line">$ docker run --rm -ti arm32v7/python:3.6.5-slim-stretch ldd /usr/local/bin/python3.6</span><br><span class="line">        linux-vdso.so.1 (0x7efe9000)</span><br><span class="line">        libpython3.6m.so.1.0 =&gt; /usr/local/lib/libpython3.6m.so.1.0 (0x76ce0000)</span><br><span class="line">        libpthread.so.0 =&gt; /lib/arm-linux-gnueabihf/libpthread.so.0 (0x76cbd000)</span><br><span class="line">        libdl.so.2 =&gt; /lib/arm-linux-gnueabihf/libdl.so.2 (0x76caa000)</span><br><span class="line">        libutil.so.1 =&gt; /lib/arm-linux-gnueabihf/libutil.so.1 (0x76c97000)</span><br><span class="line">        libm.so.6 =&gt; /lib/arm-linux-gnueabihf/libm.so.6 (0x76c23000)</span><br><span class="line">        libc.so.6 =&gt; /lib/arm-linux-gnueabihf/libc.so.6 (0x76b33000)</span><br><span class="line">        /lib/ld-linux-armhf.so.3 (0x76ef3000)</span><br></pre></td></tr></table></figure>
+<p>对比 x86_64 的 Linux 环境下的结果：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">$ file /usr/bin/python3.6</span><br><span class="line">/usr/bin/python3.6: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 3.2.0, BuildID[sha1]=be84decdc1f4c54b56a4506c9a48a19c671ad10b, stripped</span><br><span class="line">$ ldd /usr/bin/python3.6</span><br><span class="line">        linux-vdso.so.1 (0x00007ffc8b7c3000)</span><br><span class="line">        libpthread.so.0 =&gt; /lib64/libpthread.so.0 (0x00007fd416ff8000)</span><br><span class="line">        libc.so.6 =&gt; /lib64/libc.so.6 (0x00007fd416c3a000)</span><br><span class="line">        libpython3.6m.so.1.0 =&gt; /usr/lib64/libpython3.6m.so.1.0 (0x00007fd4166d7000)</span><br><span class="line">        /lib64/ld-linux-x86-64.so.2 (0x00007fd41741a000)</span><br><span class="line">        libdl.so.2 =&gt; /lib64/libdl.so.2 (0x00007fd4164d3000)</span><br><span class="line">        libutil.so.1 =&gt; /lib64/libutil.so.1 (0x00007fd4162d0000)</span><br><span class="line">        libm.so.6 =&gt; /lib64/libm.so.6 (0x00007fd415f3d000)</span><br></pre></td></tr></table></figure>
+<p>显然，在 x86_64 平台上缺少运行 arm32v7 的 Python 解释器所需要的“环境依赖”，值得庆幸的是在 Linux 上我们可以用 <a href="https://www.qemu.org/" target="_blank" rel="noopener">QEMU</a> 来做到跨平台运行，QEMU 的 <code>User-mode emulation</code> 对于容器技术来说是最适合的模式。</p>
+<p><a href="https://github.com/multiarch/qemu-user-static" target="_blank" rel="noopener">qemu-user-static</a> 项目已经准备好了需要静态编译 QEMU，可以在 <a href="https://github.com/multiarch/qemu-user-static/releases" target="_blank" rel="noopener">Release</a> 页面下载 <code>qemu-arm-static</code> 并复制到系统 <code>PATH</code> 路径中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -L -o qemu-arm-static-v2.11.1.tar.gz https://github.com/multiarch/qemu-user-static/releases/download/v2.11.1/qemu-arm-static.tar.gz</span><br><span class="line">$ tar xzf qemu-arm-static-v2.11.1.tar.gz</span><br><span class="line">$ sudo cp qemu-arm-static /usr/bin/</span><br></pre></td></tr></table></figure>
+<p>然后找一个 armhf 架构下的 static-build ELF 文件运行一下，这里用著名的 <code>vlmcs-armv7el-uclibc-static</code> 做一下测试：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">$ file vlmcs-armv7el-uclibc-static</span><br><span class="line">vlmcs-armv7el-uclibc-static: ELF 32-bit LSB executable, ARM, EABI5 version 1 (SYSV), statically linked, stripped</span><br><span class="line"></span><br><span class="line">$ ./vlmcs-armv7el-uclibc-static -V</span><br><span class="line">bash: ./vlmcs-armv7el-uclibc-static: 无法执行二进制文件: 可执行文件格式错误</span><br><span class="line"></span><br><span class="line">$ qemu-arm-static ./vlmcs-armv7el-uclibc-static -V</span><br><span class="line">vlmcs 1111, built 2017-06-17 00:52:27 UTC 32-bit</span><br><span class="line">Compiler: arm-linux-gcc 4.9.0</span><br><span class="line">Intended platform: ARM thumb Linux uclibc little-endian</span><br><span class="line">Common flags:</span><br><span class="line">vlmcs flags: DNS_PARSER=internal</span><br></pre></td></tr></table></figure>
+<h3 id="binfmt-misc"><a href="#binfmt-misc" class="headerlink" title="binfmt_misc"></a>binfmt_misc</h3><blockquote>
+<p>参考资料：<br><a href="https://en.wikipedia.org/wiki/Binfmt_misc" target="_blank" rel="noopener">binfmt_misc</a></p>
+</blockquote>
+<p>在 x86_64 Linux 上试着将 <code>qemu-arm-static</code> 挂载到 <code>arm32v7/python</code> 中运行：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ docker run --rm -v /usr/bin/qemu-arm-static:/usr/bin/qemu-arm-static arm32v7/python:3.6.5-slim-stretch python -V</span><br><span class="line">standard_init_linux.go:185: exec user process caused &quot;exec format error&quot;</span><br></pre></td></tr></table></figure>
+<p>不能运行!？再试试这个：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$docker run --rm -v /usr/bin/qemu-arm-static:/usr/bin/qemu-arm-static arm32v7/python:3.6.5-slim-stretch qemu-arm-static /usr/local/bin/python3.6 -V</span><br><span class="line">Python 3.6.5</span><br></pre></td></tr></table></figure>
+<p>实际上前面的 <code>无法执行二进制文件: 可执行文件格式错误</code> 与 <code>exec format error</code> 的错误信息是一样的。<strong>Docker 并非虚拟机</strong>，容器进程仍然是从系统主进程中 fork 出来的，内核仍然无法“理解”ARM ELF 文件。</p>
+<blockquote>
+<p><a href="https://resin.io/blog/building-arm-containers-on-any-x86-machine-even-dockerhub/" target="_blank" rel="noopener">Building ARM containers on any x86 machine, even DockerHub</a></p>
+<p>On Linux, child processes are started by forking and then doing the <code>execve()</code> system call from the child process. Since QEMU merely translates system calls from the guest process to the host kernel, when the emulated <code>/bin/sh</code> calls <code>execve(&quot;/bin/echo&quot;, ..)</code>, QEMU will happily pass this on to the kernel, but the kernel has no idea what to do with this file since <code>/bin/echo</code> is an ARM binary!</p>
+</blockquote>
+<p>为了让内核可以理解 ARM ELF 文件，就需要 <code>binfmt_misc</code> 了，确定内核开启了 <code>binfmt_misc</code>，就可以手动添加：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mount binfmt_misc -t binfmt_misc /proc/sys/fs/binfmt_misc</span><br><span class="line">echo ':arm:M::\x7fELF\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x28\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-arm-static:' &gt; /proc/sys/fs/binfmt_misc/register</span><br></pre></td></tr></table></figure>
+<p>不过，<a href="https://github.com/multiarch/qemu-user-static" target="_blank" rel="noopener">qemu-user-static</a> 提供了一个基于 Docker 的一键解决方案：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ docker run --rm --privileged multiarch/qemu-user-static:register</span><br></pre></td></tr></table></figure>
+<p>然后在 x86_64 Linux 上再次运行 <code>arm32v7/python</code> 容器：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ docker run --rm -v /usr/bin/qemu-arm-static:/usr/bin/qemu-arm-static arm32v7/python:3.6.5-slim-stretch python -V</span><br><span class="line">Python 3.6.5</span><br><span class="line">$ docker run --rm -v /usr/bin/qemu-arm-static:/usr/bin/qemu-arm-static arm32v7/python:3.6.5-slim-stretch uname -a</span><br><span class="line">Linux b7c2677f0c61 4.16.6-1-default #1 SMP PREEMPT Mon Apr 30 20:33:51 UTC 2018 (566acbc) armv7l GNU/Linux</span><br></pre></td></tr></table></figure>
+<h2 id="Build"><a href="#Build" class="headerlink" title="Build"></a>Build</h2><p>在构建镜像的过程中无疑是需要有 <code>qemu-*-static</code> 才能执行 <code>RUN</code> 阶段中的命令，因此无法在 <code>RUN</code> 中获取。</p>
+<p>下面是为 zerotier-one 构建 arm64v8 镜像的 Dockerfile，完整的项目地址 <a href="https://github.com/TomCzHen/zerotier-one" target="_blank" rel="noopener">TomCzHen/zerotier-one</a>。</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ARG</span> BUILD_FROM=arm64v8/debian:stretch</span><br><span class="line"><span class="keyword">FROM</span> $BUILD_FROM</span><br><span class="line"></span><br><span class="line"><span class="keyword">ARG</span> ZT_ARCH=arm64</span><br><span class="line"><span class="keyword">ENV</span> ZT_VERSION <span class="number">1.2</span>.<span class="number">8</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">COPY</span><span class="bash"> qemu-aarch64-static /usr/bin/qemu-aarch64-static</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Install ZeroTier One</span></span><br><span class="line"><span class="keyword">RUN</span><span class="bash"> apt-get update -yqq \</span></span><br><span class="line"><span class="bash">  &amp;&amp; apt-get install curl -y \</span></span><br><span class="line"><span class="bash">  &amp;&amp; curl https://download.zerotier.com/debian/stretch/pool/main/z/zerotier-one/zerotier-one_<span class="variable">$&#123;ZT_VERSION&#125;</span>_<span class="variable">$&#123;ZT_ARCH&#125;</span>.deb -o /tmp/zerotier-one.deb \</span></span><br><span class="line"><span class="bash">  &amp;&amp; dpkg-deb -x /tmp/zerotier-one.deb /tmp/zerotier-one \</span></span><br><span class="line"><span class="bash">  &amp;&amp; cp /tmp/zerotier-one/usr/sbin/zerotier-one /usr/bin \</span></span><br><span class="line"><span class="bash">  &amp;&amp; ln -s /usr/bin/zerotier-one /usr/bin/zerotier-cli \</span></span><br><span class="line"><span class="bash">  &amp;&amp; addgroup --system --gid 1000 zerotier-one \</span></span><br><span class="line"><span class="bash">  &amp;&amp; adduser --system --ingroup zerotier-one --home /var/lib/zerotier-one --no-create-home --uid 1000 zerotier-one \</span></span><br><span class="line"><span class="bash">  &amp;&amp; mkdir -p /var/lib/zerotier-one/networks.d \</span></span><br><span class="line"><span class="bash">  &amp;&amp; rm -rf /tmp/*</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">VOLUME</span><span class="bash"> /var/lib/zerotier-one</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">COPY</span><span class="bash"> docker-entrypoint.sh /usr/<span class="built_in">local</span>/bin/</span></span><br><span class="line"><span class="keyword">RUN</span><span class="bash"> chmod +rx /usr/<span class="built_in">local</span>/bin/docker-entrypoint.sh</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">WORKDIR</span><span class="bash"> /var/lib/zerotier-one</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ENTRYPOINT</span><span class="bash"> [<span class="string">"docker-entrypoint.sh"</span>]</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">EXPOSE</span> <span class="number">9993</span></span><br><span class="line"><span class="keyword">CMD</span><span class="bash"> [<span class="string">"zerotier-one"</span>,<span class="string">"-U"</span>,<span class="string">"-p9993"</span>]</span></span><br></pre></td></tr></table></figure>
+<p>如果有使用 CI 平台的话，可以在构建脚本中获取，以 <a href="https://travis-ci.org/" target="_blank" rel="noopener">Travis CI</a>为例：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># get qemu-aarch64-static binary</span></span><br><span class="line"><span class="bullet">-</span> <span class="string">mkdir</span> <span class="string">tmp</span></span><br><span class="line"><span class="bullet">-</span> <span class="string">&gt;</span></span><br><span class="line">  <span class="string">pushd</span> <span class="string">tmp</span> <span class="string">&amp;&amp;</span></span><br><span class="line">  <span class="string">curl</span> <span class="string">-L</span> <span class="string">-o</span> <span class="string">qemu-aarch64-static.tar.gz</span> <span class="string">https://github.com/multiarch/qemu-user-static/releases/download/v2.11.1/qemu-aarch64-static.tar.gz</span> <span class="string">&amp;&amp;</span></span><br><span class="line">  <span class="string">tar</span> <span class="string">xzf</span> <span class="string">qemu-aarch64-static.tar.gz</span> <span class="string">&amp;&amp;</span></span><br><span class="line">  <span class="string">popd</span></span><br></pre></td></tr></table></figure>
+<h2 id="Ship"><a href="#Ship" class="headerlink" title="Ship"></a>Ship</h2><blockquote>
+<p>参考资料：<br><a href="https://www.youtube.com/watch?v=nrBYUw1Pz5I" target="_blank" rel="noopener">From Arm to Z: Building, Shipping, and Running a Multi-platform Docker Swarm</a><br><a href="https://docs.docker.com/edge/engine/reference/commandline/manifest/" target="_blank" rel="noopener">docker manifest</a></p>
+</blockquote>
+<p>目前在 Docker Hub 上对于多平台的镜像的处理方式有下面几种：</p>
+<ul>
+<li><p>Docker Hub 社区</p>
+<ul>
+<li><a href="https://hub.docker.com/r/arm32v7/python/" target="_blank" rel="noopener">arm32v7/python</a></li>
+<li><a href="https://hub.docker.com/r/arm64v8/python/" target="_blank" rel="noopener">arm64v8/python</a></li>
+<li><a href="https://hub.docker.com/r/amd64/python/" target="_blank" rel="noopener">amd64/python</a></li>
+</ul>
+</li>
+<li><p>基于 tag 区分</p>
+<ul>
+<li><a href="https://hub.docker.com/r/portainer/portainer/" target="_blank" rel="noopener">portainer/portainer:linux-arm-1.17.0</a></li>
+<li><a href="https://hub.docker.com/r/portainer/portainer/" target="_blank" rel="noopener">portainer/portainer:linux-arm64-1.17.0</a></li>
+<li><a href="https://hub.docker.com/r/portainer/portainer/" target="_blank" rel="noopener">portainer/portainer:linux-amd64-1.17.0</a>  </li>
+</ul>
+</li>
+<li><p>基于 image 名区分</p>
+<ul>
+<li><a href="https://hub.docker.com/r/hassioaddons/base-armhf/" target="_blank" rel="noopener">hassioaddons/base-armhf</a></li>
+<li><a href="https://hub.docker.com/r/hassioaddons/base-aarch64/" target="_blank" rel="noopener">hassioaddons/base-aarch64</a></li>
+<li><a href="https://hub.docker.com/r/hassioaddons/base-amd64/" target="_blank" rel="noopener">hassioaddons/base-amd64</a></li>
+</ul>
+</li>
+</ul>
+<p>无论采取那种方式区别，用户在获取镜像时都需要根据运行平台获取指定的镜像，其实 Docker 已经支持使用 <code>manifest</code> 来为用户提供透明化的服务，自动匹配对应的镜像。</p>
+<p>在 x86_64 Linux 上尝试获取 <code>arm32v7/python:3.6.5</code> 镜像时会有如下提示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ docker pull arm32v7/python:3.6.5</span><br><span class="line">3.6.5: Pulling from arm32v7/python</span><br><span class="line">no matching manifest for linux/amd64 in the manifest list entries</span><br></pre></td></tr></table></figure>
+<p>注：截至本文写作时，需要手动修改 <code>~/.docker/config.json</code> 文件，添加 <code>{&quot;experimental&quot;:&quot;enabled&quot;}</code>为 docker-cli 开启 <code>docker manifest</code> 命令功能。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">$ docker manifest inspect python:3.6.5</span><br><span class="line">&#123;</span><br><span class="line">   &quot;schemaVersion&quot;: 2,</span><br><span class="line">   &quot;mediaType&quot;: &quot;application/vnd.docker.distribution.manifest.list.v2+json&quot;,</span><br><span class="line">   &quot;manifests&quot;: [</span><br><span class="line">      &#123;</span><br><span class="line">         &quot;mediaType&quot;: &quot;application/vnd.docker.distribution.manifest.v2+json&quot;,</span><br><span class="line">         &quot;size&quot;: 2007,</span><br><span class="line">         &quot;digest&quot;: &quot;sha256:ebfe81b95c56a242a94001b0385f9c14b8972512e773a112adf87a30ed8e774f&quot;,</span><br><span class="line">         &quot;platform&quot;: &#123;</span><br><span class="line">            &quot;architecture&quot;: &quot;amd64&quot;,</span><br><span class="line">            &quot;os&quot;: &quot;linux&quot;</span><br><span class="line">         &#125;</span><br><span class="line">      &#125;,</span><br><span class="line">      ...</span><br><span class="line">   ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>python:3.6.5</code> 镜像有完整 <code>manifests</code> 描述了镜像支持的平台信息，因此在不同平台直接执行 <code>docker pull python:3.6.5</code> 就会自动根据平台架构获取不同的镜像。</p>
+<p>原文:<br><a href="https://github.com/TomCzHen/blog/edit/master/content/post/cross-platform-build-docker-image.md" target="_blank" rel="noopener">https://github.com/TomCzHen/blog/edit/master/content/post/cross-platform-build-docker-image.md</a></p>
+<p><a href="https://lantian.pub/article/modify-computer/build-arm-docker-image-on-x86-docker-hub-travis-automatic-build.lantian" target="_blank" rel="noopener">https://lantian.pub/article/modify-computer/build-arm-docker-image-on-x86-docker-hub-travis-automatic-build.lantian</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/docker/" rel="tag"># docker</a>
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/05/01/dev/golang/func/func/" rel="next" title="golang 笔记 -- func">
+                <i class="fa fa-chevron-left"></i> golang 笔记 -- func
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/06/28/linux/常用命令/curl和wget下载文件/" rel="prev" title="tmpfs">
+                tmpfs <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Run"><span class="nav-number">1.</span> <span class="nav-text">Run</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Executable-and-Linkable-Format"><span class="nav-number">1.1.</span> <span class="nav-text">Executable and Linkable Format</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#binfmt-misc"><span class="nav-number">1.2.</span> <span class="nav-text">binfmt_misc</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Build"><span class="nav-number">2.</span> <span class="nav-text">Build</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Ship"><span class="nav-number">3.</span> <span class="nav-text">Ship</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="linux,k8s,centos7,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="我们在使用Linux的时候从控制台上能看到如下消息： 1BUG:soft lockup detected on CPU#1! What is a CPU soft lockup?我们来看红帽知识库里的介绍 软锁(soft lockup)是指一个任务或内核线程使用CPU，并且在规定时间内不释放CPU资源的一种现象。 软锁背后的技术原因包括CPU中断以及nmi-watchdog内核线程。 系统中每个在">
+<meta name="keywords" content="linux,k8s,centos7">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kernel solft lockup">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/02/24/linux/troubleshooting/kernel-solft-lockup/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="我们在使用Linux的时候从控制台上能看到如下消息： 1BUG:soft lockup detected on CPU#1! What is a CPU soft lockup?我们来看红帽知识库里的介绍 软锁(soft lockup)是指一个任务或内核线程使用CPU，并且在规定时间内不释放CPU资源的一种现象。 软锁背后的技术原因包括CPU中断以及nmi-watchdog内核线程。 系统中每个在">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.996Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kernel solft lockup">
+<meta name="twitter:description" content="我们在使用Linux的时候从控制台上能看到如下消息： 1BUG:soft lockup detected on CPU#1! What is a CPU soft lockup?我们来看红帽知识库里的介绍 软锁(soft lockup)是指一个任务或内核线程使用CPU，并且在规定时间内不释放CPU资源的一种现象。 软锁背后的技术原因包括CPU中断以及nmi-watchdog内核线程。 系统中每个在">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/02/24/linux/troubleshooting/kernel-solft-lockup/">
+
+
+
+
+
+  <title>kernel solft lockup | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/02/24/linux/troubleshooting/kernel-solft-lockup/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">kernel solft lockup</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-02-24T09:47:19+00:00">
+                2019-02-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/linux/" itemprop="url" rel="index">
+                    <span itemprop="name">linux</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>我们在使用Linux的时候从控制台上能看到如下消息：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">BUG:soft lockup detected on CPU#1!</span><br></pre></td></tr></table></figure>
+<h1 id="What-is-a-CPU-soft-lockup"><a href="#What-is-a-CPU-soft-lockup" class="headerlink" title="What is a CPU soft lockup?"></a>What is a CPU soft lockup?</h1><p>我们来看红帽知识库里的介绍</p>
+<p><strong>软锁(soft lockup)</strong>是指一个任务或内核线程使用CPU，并且在规定时间内不释放CPU资源的一种现象。</p>
+<p>软锁背后的技术原因包括CPU中断以及nmi-watchdog内核线程。 系统中每个在线的CPU，内核会为其创建一个watchdog进程， 并且此进程被调度的优先级是最高的。此进程每秒被唤醒一次，抢占CPU，并获取当前时间戳，并保存至PER-CPU数据结构中。此过程中有一个单独的系统中断执行函数<code>softlockup_tick()</code>， 此函数用来对比当前系统时间戳与watchdog进程保存至PER-CPU数据结构的时间戳。如果当前系统时间戳大于<code>watchdog_thresh</code>(RHEL5中称为<code>softlockup_thresh</code>)，则会报系统软锁，因为实时进程watchdog无法获取CPU时间。例如, 一个调度优先级高于watchdog线程的内核线程试图获取一个自旋锁，则此线程很可能占用CPU足够长的时间而导致系统软锁。 接下来我们会进一步解释此现象，但请知晓，其他很多情况也可能导致软锁，但不一定都是在等自旋锁。</p>
+<p><strong>自旋锁(spinlock )</strong> 用来保护数据(尤其是数据结构)的一种内核同步机制，防止由于多线程程序同时访问一个数据结构而造成数据结构损坏或异常。与其他同步机制不同，一个线程会一直尝试获取此锁直到可以获取锁。自旋锁会由线程一直拿着直到程序自主释放此锁(一般都是此线程不会访问数据结构中的数据时，才会释放此锁).</p>
+<p>程序在获得自选锁时，才可以在接下来一段时间内继续运行。但当程序等待自旋锁时，会阻止CPU执行其他程序。程序无法获取锁时，则无法继续运行。</p>
+<p>当内核检测到一定时间内CPU没有释放自旋锁，则会报<code>软锁</code>警告。这是因为拿着自旋锁的进程不应该进入睡眠状态，而且可能会导致死锁。 因为线程无法进入睡眠状态， <code>nmiwatchdog</code>线程则无法执行， CPU数据结构时间戳则一直无法更新， 内核检测到此情况则会一直报警告信息。</p>
+<p><strong>案例分析</strong></p>
+<p>下面日志显示，CPU 1上出现软锁现象:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">Aug 13 17:42:32 hostname kernel: BUG: soft lockup - CPU#1 stuck for 10s! [kswapd1:982]</span><br><span class="line">Aug 13 17:42:32 hostname kernel: CPU 1:</span><br><span class="line">Aug 13 17:42:32 hostname kernel: Modules linked in: mptctl mptbase sg ipmi_si(U) ipmi_devintf(U) ipmi_msghandler(U) nfsd exportfs auth_rpcgss autofs4 nfs fscache nfs_acl hidp l2cap bluetooth lockd sunrpc bonding ipv6 xfrm_nalgo crypto_api dm_multipath scsi_dh video hwmon backlight sbs i2c_ec i2c_core button battery asus_acpi acpi_memhotplug ac parport_pc lp parport shpchp hpilo bnx2(U) serio_raw pcspkr dm_raid45 dm_message dm_region_hash dm_mem_cache dm_snapshot dm_zero dm_mirror dm_log dm_mod usb_storage cciss(U) sd_mod scsi_mod ext3 jbd uhci_hcd ohci_hcd ehci_hcd</span><br><span class="line">Aug 13 17:42:32 hostname kernel: Pid: 982, comm: kswapd1 Tainted: G      2.6.18-164.el5 #1</span><br><span class="line">Aug 13 17:42:32 hostname kernel: RIP: 0010:[&lt;ffffffff80064bcc&gt;]  [&lt;ffffffff80064bcc&gt;] .text.lock.spinlock+0x2/0x30</span><br><span class="line">Aug 13 17:42:32 hostname kernel: RSP: 0018:ffff81101f63fd38  EFLAGS: 00000282</span><br><span class="line">Aug 13 17:42:32 hostname kernel: RAX: ffff81101f63fd50 RBX: 0000000000000000 RCX: 000000000076d3ba</span><br><span class="line">Aug 13 17:42:32 hostname kernel: RDX: 0000000000000000 RSI: 00000000000000d0 RDI: ffffffff88442e30</span><br><span class="line">Aug 13 17:42:32 hostname kernel: RBP: ffffffff800c9241 R08: 0000000000193dbf R09: ffff81068a77cbb0</span><br><span class="line">Aug 13 17:42:32 hostname kernel: R10: 0000000000000064 R11: 0000000000000282 R12: ffff810820001f80</span><br><span class="line">Aug 13 17:42:32 hostname kernel: R13: ffffffff800480be R14: 000000000000000e R15: 0000000000000002</span><br><span class="line">Aug 13 17:42:32 hostname kernel: FS:  0000000000000000(0000) GS:ffff81101ff81a40(0000) knlGS:0000000000000000</span><br><span class="line">Aug 13 17:42:32 hostname kernel: CS:  0010 DS: 0018 ES: 0018 CR0: 000000008005003b</span><br><span class="line">Aug 13 17:42:32 hostname kernel: CR2: 00000000076fc460 CR3: 0000000000201000 CR4: 00000000000006e0</span><br><span class="line">Aug 13 17:42:32 hostname kernel:</span><br><span class="line">Aug 13 17:42:32 hostname kernel: Call Trace:</span><br><span class="line">Aug 13 17:42:32 hostname kernel:  [&lt;ffffffff8840933a&gt;] :nfs:nfs_access_cache_shrinker+0x2d/0x1da</span><br><span class="line">Aug 13 17:42:32 hostname kernel:  [&lt;ffffffff8003f349&gt;] shrink_slab+0x60/0x153</span><br><span class="line">Aug 13 17:42:32 hostname kernel:  [&lt;ffffffff80057db5&gt;] kswapd+0x343/0x46c</span><br><span class="line">Aug 13 17:42:32 hostname kernel:  [&lt;ffffffff8009f6c1&gt;] autoremove_wake_function+0x0/0x2e</span><br><span class="line">Aug 13 17:42:32 hostname kernel:  [&lt;ffffffff80057a72&gt;] kswapd+0x0/0x46c</span><br><span class="line">Aug 13 17:42:32 hostname kernel:  [&lt;ffffffff8009f4a9&gt;] keventd_create_kthread+0x0/0xc4</span><br><span class="line">Aug 13 17:42:32 hostname kernel:  [&lt;ffffffff8003298b&gt;] kthread+0xfe/0x132</span><br><span class="line">Aug 13 17:42:32 hostname kernel:  [&lt;ffffffff8009c33e&gt;] request_module+0x0/0x14d</span><br><span class="line">Aug 13 17:42:32 hostname kernel:  [&lt;ffffffff8005dfb1&gt;] child_rip+0xa/0x11</span><br><span class="line">Aug 13 17:42:32 hostname kernel:  [&lt;ffffffff8009f4a9&gt;] keventd_create_kthread+0x0/0xc4</span><br><span class="line">Aug 13 17:42:32 hostname kernel:  [&lt;ffffffff8003288d&gt;] kthread+0x0/0x132</span><br><span class="line">Aug 13 17:42:32 hostname kernel:  [&lt;ffffffff8005dfa7&gt;] child_rip+0x0/0x11</span><br></pre></td></tr></table></figure>
+<p>系统还报以下进程出现软锁现象: bash, rsync, hpetfe, kswapd.</p>
+<p>最重要的查看软锁产生原因的方法是，当软锁被系统检测出时，查看系统执行到哪一行代码，可通过查看RIP(指令指针)来查看系统运行到哪个函数，如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Aug 13 17:42:32 hostname kernel: RIP: 0010:[&lt;ffffffff80064bcc&gt;]  [&lt;ffffffff80064bcc&gt;] .text.lock.spinlock+0x2/0x30</span><br></pre></td></tr></table></figure>
+<p>此案例中，这段代码在试图获取自旋锁，此段代码是典型的软锁的日志。 此线程无法获取自旋锁，主要原因是因为其他进程正在拿着自旋锁而没有释放。 所以此段代码显示了”受害”的进程，接下来需要调查哪个进程拿了自旋锁。 由于拿着自旋锁的进程肯定正在CPU上运行，所以需要列出所有CPU的stack traces来查看哪个进程拿着锁(比如可执行sysrq -t 或 ‘bt -a’来查看所有CPU的traces）。 还有可能在NUMA架构的系统中，CPU访问内存的消耗不相等，导致多个进程为了读取数据结构中的数据而拿了自旋锁，需要写数据的程序则无法获取此锁而导致软锁。</p>
+<p>如果软锁日志显示的RIP没有尝试获取自旋锁，则有可能程序正在执行循环中的代码而无法释放CPU。 这种情况就需要直到为什么此循环无法完成。 有可能需要在循环中插入conditional reschedule(cond_resched())函数来暂时可以让CPU执行其他进程从而避免出现软锁。</p>
+<p>请查看以下案例:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Aug 13 17:42:32 hostname kernel:  [&lt;ffffffff8840933a&gt;] :nfs:nfs_access_cache_shrinker+0x2d/0x1da</span><br></pre></td></tr></table></figure>
+<p>Linux目前支持缓存特定文件系统至本地内存中(当前仅支持NFS和in-kernel AFS文件系统)。 可以使远程的数据在本地内存中保存缓存，来加快日后访问数据的速度，而不需要再通过网络从服务器端获取同样的数据。 此案例中，一些情况出现了错误。NFS缓存相关函数(<code>nfs_access_cache_shrinker</code>) 正在处于循环中来完成其缓存任务，从而阻止了其他进程获取相关资源(相关进程包括bash,kswapd,和rsync)。NFS缓存在10秒内没有释放自旋锁，所以内核打印了软锁警告提醒管理员知晓当前情况。</p>
+<p>现在我们来检查为什么会产生此延迟，当前有以下nfs挂载点:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">nfs1:/abi      /abi                    nfs     soft,bg 0 0</span><br><span class="line">nfs2:/d1       /servers/nfs2/d1        nfs     soft,bg 0 0</span><br><span class="line">nfs3:/d1       /servers/nfs3/d1        nfs     soft,bg 0 0</span><br><span class="line">nfs4:/d1       /servers/nfs4/d1        nfs     soft,bg 0 0</span><br><span class="line">nfs5:/d1       /servers/nfs5/d1        nfs     soft,bg 0 0</span><br></pre></td></tr></table></figure>
+<p>有很多可能会导致此问题。最常见的是NFS服务器由于网络问题导致无法连接。 此问题中我们同样可以看到rsync命令出现软锁，所以有可能是其中一个NFS共享服务器出现问题，导致无法访问其中的资源。</p>
+<h1 id="vmware-VM"><a href="#vmware-VM" class="headerlink" title="vmware VM"></a>vmware VM</h1><p>在VMware的  <a href="http://kb.vmware.com/selfservice/microsites/search.do?language=en_US&amp;cmd=displayKC&amp;externalId=1009996" target="_blank" rel="noopener">KB article 1009996</a>中提到一个原因：</p>
+<p>在启用了对称多处理 (SMP) 的虚拟机中运行 Linux 内核时，会向消息日志文件中写入类似 BUG:soft lockup detected on CPU#1! 的消息。这些消息的精确格式会因内核的不同而不同，且可能随附有内核堆栈回溯追踪。</p>
+<p>许多 Linux 内核都具有软锁定监视程序线程，如果此监视程序线程未调度超过 10 秒，则会报告软锁定消息。在物理主机上，软锁定消息通常表示内核缺陷或硬件缺陷。在虚拟机中运行时，这可能表示高级别的过量使用（尤其是内存过量使用）或其他虚拟化开销。</p>
+<p>可以这么解决：</p>
+<p>软锁定消息不属于内核不稳定的情形，通常在虚拟机使用其大量资源时显示。</p>
+<p>要停止错误消息频繁显示，请执行以下操作：</p>
+<p>一些内核允许您运行以下命令调整软锁定阈值：</p>
+<figure class="highlight plain"><figcaption><span>*time* ></span><a href="/proc/sys/kernel/softlockup_thresh```">link</a></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">其中 time 是指经过多少时间（秒）后报告软锁定。默认值通常为 10 秒。</span><br><span class="line"></span><br><span class="line"># 红帽给出的方案</span><br><span class="line"></span><br><span class="line">- While these errors can happen for a number of different reasons, one potential cause is detailed by VMWare in their [KB article **1009996**](http://kb.vmware.com/selfservice/microsites/search.do?language=en_US&amp;cmd=displayKC&amp;externalId=1009996) for Linux kernels running on SMP enabled virtual machine. As mentioned, resources may be overcommitted across VMs resulting in some of them not being scheduled for a period of time. If this is the case, then in **Red Hat Enterprise Linux 5** increasing the softlockup_thresh will reduce the frequency of these messages:</span><br></pre></td></tr></table></figure>
+<h1 id="echo-time-gt-proc-sys-kernel-softlockup-thresh"><a href="#echo-time-gt-proc-sys-kernel-softlockup-thresh" class="headerlink" title="echo [time] &gt; /proc/sys/kernel/softlockup_thresh"></a>echo [time] &gt; /proc/sys/kernel/softlockup_thresh</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">where [time] is the number of seconds after which soft lockup is reported.</span><br><span class="line"></span><br><span class="line">- In **Red Hat Enterprise Linux 6 and 7**, &quot;watchdog&quot; kernel process is implemented and from RHEL-6.1, soft and hard lockups are detected using the &quot;watchdog&quot; process. This &quot;watchdog&quot; process uses &quot;kernel.watchdog_thresh&quot; kernel parameter as threshold limit. Hence the &quot;kernel.softlockup_thresh&quot; is deprecated from Red Hat Enterprise Linux 6.1 onwards. So the value can be set using the command below:</span><br></pre></td></tr></table></figure>
+<h1 id="echo-time-gt-proc-sys-kernel-watchdog-thresh"><a href="#echo-time-gt-proc-sys-kernel-watchdog-thresh" class="headerlink" title="echo [time] &gt;  /proc/sys/kernel/watchdog_thresh"></a>echo [time] &gt;  /proc/sys/kernel/watchdog_thresh</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">- Please be aware that the biggest time you can set is 60 seconds. If you are trying to set higher value than 60 seconds, it&apos;ll show the below error message.</span><br></pre></td></tr></table></figure>
+<p>$ echo 100 &gt; /proc/sys/kernel/watchdog_thresh<br>-bash: echo: write error: Invalid argument<br><code>`</code></p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>发生这个报错通常是内核繁忙 (扫描、释放或分配大量对象)，分不出时间片给用户态进程导致的，也伴随着高负载，如果负载降低报错则会消失。</p>
+<p>短时间内创建大量进程 (可能是业务需要，也可能是业务bug或用法不正确导致创建大量进程)也会导致内核繁忙</p>
+<h1 id="原文"><a href="#原文" class="headerlink" title="原文"></a>原文</h1><p><a href="https://access.redhat.com/solutions/21849" target="_blank" rel="noopener">https://access.redhat.com/solutions/21849</a></p>
+<p><a href="https://access.redhat.com/articles/371803" target="_blank" rel="noopener">https://access.redhat.com/articles/371803</a></p>
+<p><a href="https://kb.vmware.com/s/article/1009996" target="_blank" rel="noopener">https://kb.vmware.com/s/article/1009996</a></p>
+<p><a href="https://www.suse.com/support/kb/doc/?id=7017652" target="_blank" rel="noopener">https://www.suse.com/support/kb/doc/?id=7017652</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/centos7/" rel="tag"># centos7</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/18/linux/vagrant/Vagrant使用指南/" rel="next" title="Vagrant使用指南">
+                <i class="fa fa-chevron-left"></i> Vagrant使用指南
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/03/05/cicd/gitlab 和 jenkins mulitbranch pipeline触发构建/" rel="prev" title="gitlab 和 jenkins mulitbranch pipeline触发构建">
+                gitlab 和 jenkins mulitbranch pipeline触发构建 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#What-is-a-CPU-soft-lockup"><span class="nav-number">1.</span> <span class="nav-text">What is a CPU soft lockup?</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#vmware-VM"><span class="nav-number">2.</span> <span class="nav-text">vmware VM</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#echo-time-gt-proc-sys-kernel-softlockup-thresh"><span class="nav-number">3.</span> <span class="nav-text">echo [time] &gt; /proc/sys/kernel/softlockup_thresh</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#echo-time-gt-proc-sys-kernel-watchdog-thresh"><span class="nav-number">4.</span> <span class="nav-text">echo [time] &gt;  /proc/sys/kernel/watchdog_thresh</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#原文"><span class="nav-number">6.</span> <span class="nav-text">原文</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

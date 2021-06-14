@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="vscode,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="本文由 简悦 SimpRead 转码， 原文地址 https://segmentfault.com/a/1190000007688656  标签（空格分隔）： visual-studio-code  常用 General   按 Press 功能 Function     Ctrl + Shift + P，F1 显示命令面板 Show Command Palette   Ctrl + P 快速打">
+<meta name="keywords" content="vscode">
+<meta property="og:type" content="article">
+<meta property="og:title" content="VS Code 快捷键">
+<meta property="og:url" content="http://liupeng0518.github.io/2018/12/29/工具/vscode/VS Code 快捷键/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="本文由 简悦 SimpRead 转码， 原文地址 https://segmentfault.com/a/1190000007688656  标签（空格分隔）： visual-studio-code  常用 General   按 Press 功能 Function     Ctrl + Shift + P，F1 显示命令面板 Show Command Palette   Ctrl + P 快速打">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:07.028Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="VS Code 快捷键">
+<meta name="twitter:description" content="本文由 简悦 SimpRead 转码， 原文地址 https://segmentfault.com/a/1190000007688656  标签（空格分隔）： visual-studio-code  常用 General   按 Press 功能 Function     Ctrl + Shift + P，F1 显示命令面板 Show Command Palette   Ctrl + P 快速打">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2018/12/29/工具/vscode/VS Code 快捷键/">
+
+
+
+
+
+  <title>VS Code 快捷键 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2018/12/29/工具/vscode/VS Code 快捷键/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">VS Code 快捷键</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-29T09:47:19+00:00">
+                2018-12-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/vscode/" itemprop="url" rel="index">
+                    <span itemprop="name">vscode</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>本文由 <a href="http://ksria.com/simpread/" target="_blank" rel="noopener">简悦 SimpRead</a> 转码， 原文地址 <a href="https://segmentfault.com/a/1190000007688656" target="_blank" rel="noopener">https://segmentfault.com/a/1190000007688656</a></p>
+</blockquote>
+<p>标签（空格分隔）： visual-studio-code</p>
+<hr>
+<h2 id="常用-General"><a href="#常用-General" class="headerlink" title="常用 General"></a>常用 General</h2><table>
+<thead>
+<tr>
+<th style="text-align:left">按 Press</th>
+<th style="text-align:left">功能 Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Ctrl + Shift + P，F1</td>
+<td style="text-align:left">显示命令面板 Show Command Palette</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + P</td>
+<td style="text-align:left">快速打开 Quick Open</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + Shift + N</td>
+<td style="text-align:left">新窗口 / 实例 New window/instance</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + Shift + W</td>
+<td style="text-align:left">关闭窗口 / 实例 Close window/instance</td>
+</tr>
+</tbody>
+</table>
+<h2 id="基础编辑-Basic-editing"><a href="#基础编辑-Basic-editing" class="headerlink" title="基础编辑 Basic editing"></a>基础编辑 Basic editing</h2><table>
+<thead>
+<tr>
+<th style="text-align:left">按 Press</th>
+<th style="text-align:left">功能 Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Ctrl+X</td>
+<td style="text-align:left">剪切行（空选定） Cut line (empty selection)</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+C</td>
+<td style="text-align:left">复制行（空选定）Copy line (empty selection)</td>
+</tr>
+<tr>
+<td style="text-align:left">Alt+ ↑ / ↓</td>
+<td style="text-align:left">向上 / 向下移动行 Move line up/down</td>
+</tr>
+<tr>
+<td style="text-align:left">Shift+Alt + ↓ / ↑</td>
+<td style="text-align:left">向上 / 向下复制行 Copy line up/down</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+K</td>
+<td style="text-align:left">删除行 Delete line</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Enter</td>
+<td style="text-align:left">在下面插入行 Insert line below</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+Enter</td>
+<td style="text-align:left">在上面插入行 Insert line above</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+\</td>
+<td style="text-align:left">跳到匹配的括号 Jump to matching bracket</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+] / [</td>
+<td style="text-align:left">缩进 / 缩进行 Indent/outdent line</td>
+</tr>
+<tr>
+<td style="text-align:left">Home</td>
+<td style="text-align:left">转到行首 Go to beginning of line</td>
+</tr>
+<tr>
+<td style="text-align:left">End</td>
+<td style="text-align:left">转到行尾 Go to end of line</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Home</td>
+<td style="text-align:left">转到文件开头 Go to beginning of file</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+End</td>
+<td style="text-align:left">转到文件末尾 Go to end of file</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+↑ / ↓</td>
+<td style="text-align:left">向上 / 向下滚动行 Scroll line up/down</td>
+</tr>
+<tr>
+<td style="text-align:left">Alt+PgUp / PgDown</td>
+<td style="text-align:left">向上 / 向下滚动页面 Scroll page up/down</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+[</td>
+<td style="text-align:left">折叠（折叠）区域 Fold (collapse) region</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+]</td>
+<td style="text-align:left">展开（未折叠）区域 Unfold (uncollapse) region</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K Ctrl+[</td>
+<td style="text-align:left">折叠（未折叠）所有子区域 Fold (collapse) all subregions</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K Ctrl+]</td>
+<td style="text-align:left">展开（未折叠）所有子区域 Unfold (uncollapse) all subregions</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K Ctrl+0</td>
+<td style="text-align:left">折叠（折叠）所有区域 Fold (collapse) all regions</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K Ctrl+J</td>
+<td style="text-align:left">展开（未折叠）所有区域 Unfold (uncollapse) all regions</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K Ctrl+C</td>
+<td style="text-align:left">添加行注释 Add line comment</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K Ctrl+U</td>
+<td style="text-align:left">删除行注释 Remove line comment</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+/</td>
+<td style="text-align:left">切换行注释 Toggle line comment</td>
+</tr>
+<tr>
+<td style="text-align:left">Shift+Alt+A</td>
+<td style="text-align:left">切换块注释 Toggle block comment</td>
+</tr>
+<tr>
+<td style="text-align:left">Alt+Z</td>
+<td style="text-align:left">切换换行 Toggle word wrap</td>
+</tr>
+</tbody>
+</table>
+<h2 id="导航-Navigation"><a href="#导航-Navigation" class="headerlink" title="导航 Navigation"></a>导航 Navigation</h2><table>
+<thead>
+<tr>
+<th style="text-align:left">按 Press</th>
+<th style="text-align:left">功能 Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Ctrl + T</td>
+<td style="text-align:left">显示所有符号 Show all Symbols</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + G</td>
+<td style="text-align:left">转到行… Go to Line…</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + P</td>
+<td style="text-align:left">转到文件… Go to File…</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + Shift + O</td>
+<td style="text-align:left">转到符号… Go to Symbol…</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + Shift + M</td>
+<td style="text-align:left">显示问题面板 Show Problems panel</td>
+</tr>
+<tr>
+<td style="text-align:left">F8</td>
+<td style="text-align:left">转到下一个错误或警告 Go to next error or warning</td>
+</tr>
+<tr>
+<td style="text-align:left">Shift + F8</td>
+<td style="text-align:left">转到上一个错误或警告 Go to previous error or warning</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + Shift + Tab</td>
+<td style="text-align:left">导航编辑器组历史记录 Navigate editor group history</td>
+</tr>
+<tr>
+<td style="text-align:left">Alt + ←/→</td>
+<td style="text-align:left">返回 / 前进 Go back / forward</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + M</td>
+<td style="text-align:left">切换选项卡移动焦点 Toggle Tab moves focus</td>
+</tr>
+</tbody>
+</table>
+<h2 id="搜索和替换-Search-and-replace"><a href="#搜索和替换-Search-and-replace" class="headerlink" title="搜索和替换 Search and replace"></a>搜索和替换 Search and replace</h2><table>
+<thead>
+<tr>
+<th style="text-align:left">按 Press</th>
+<th style="text-align:left">功能 Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Ctrl + F</td>
+<td style="text-align:left">查找 Find</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + H</td>
+<td style="text-align:left">替换 Replace</td>
+</tr>
+<tr>
+<td style="text-align:left">F3 / Shift + F3</td>
+<td style="text-align:left">查找下一个 / 上一个 Find next/previous</td>
+</tr>
+<tr>
+<td style="text-align:left">Alt + Enter</td>
+<td style="text-align:left">选择查找匹配的所有出现 Select all occurences of Find match</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + D</td>
+<td style="text-align:left">将选择添加到下一个查找匹配 Add selection to next Find match</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + K Ctrl + D</td>
+<td style="text-align:left">将最后一个选择移至下一个查找匹配项 Move last selection to next Find match</td>
+</tr>
+<tr>
+<td style="text-align:left">Alt + C / R / W</td>
+<td style="text-align:left">切换区分大小写 / 正则表达式 / 整个词 Toggle case-sensitive / regex / whole word</td>
+</tr>
+</tbody>
+</table>
+<h2 id="多光标和选择-Multi-cursor-and-selection"><a href="#多光标和选择-Multi-cursor-and-selection" class="headerlink" title="多光标和选择 Multi-cursor and selection"></a>多光标和选择 Multi-cursor and selection</h2><table>
+<thead>
+<tr>
+<th style="text-align:left">按 Press</th>
+<th style="text-align:left">功能 Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Alt + 单击</td>
+<td style="text-align:left">插入光标 Insert cursor</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + Alt +↑/↓</td>
+<td style="text-align:left">在上 / 下插入光标 Insert cursor above / below</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + U</td>
+<td style="text-align:left">撤消上一个光标操作 Undo last cursor operation</td>
+</tr>
+<tr>
+<td style="text-align:left">Shift + Alt + I</td>
+<td style="text-align:left">在选定的每一行的末尾插入光标 Insert cursor at end of each line selected</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + I</td>
+<td style="text-align:left">选择当前行 Select current line</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + Shift + L</td>
+<td style="text-align:left">选择当前选择的所有出现 Select all occurrences of current selection</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + F2</td>
+<td style="text-align:left">选择当前字的所有出现 Select all occurrences of current word</td>
+</tr>
+<tr>
+<td style="text-align:left">Shift + Alt + →</td>
+<td style="text-align:left">展开选择 Expand selection</td>
+</tr>
+<tr>
+<td style="text-align:left">Shift + Alt + ←</td>
+<td style="text-align:left">缩小选择 Shrink selection</td>
+</tr>
+<tr>
+<td style="text-align:left">Shift + Alt + （拖动鼠标）</td>
+<td style="text-align:left">列（框）选择 Column (box) selection</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + Shift + Alt +（箭头键）</td>
+<td style="text-align:left">列（框）选择 Column (box) selection</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + Shift + Alt + PgUp / PgDown</td>
+<td style="text-align:left">列（框）选择页上 / 下 Column (box) selection page up/down</td>
+</tr>
+</tbody>
+</table>
+<h2 id="丰富的语言编辑-Rich-languages-editing"><a href="#丰富的语言编辑-Rich-languages-editing" class="headerlink" title="丰富的语言编辑 Rich languages editing"></a>丰富的语言编辑 Rich languages editing</h2><table>
+<thead>
+<tr>
+<th style="text-align:left">按 Press</th>
+<th style="text-align:left">功能 Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Ctrl + 空格</td>
+<td style="text-align:left">触发建议 Trigger suggestion</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + Shift + Space</td>
+<td style="text-align:left">触发器参数提示 Trigger parameter hints</td>
+</tr>
+<tr>
+<td style="text-align:left">Tab</td>
+<td style="text-align:left">Emmet 展开缩写 Emmet expand abbreviation</td>
+</tr>
+<tr>
+<td style="text-align:left">Shift + Alt + F</td>
+<td style="text-align:left">格式化文档 Format document</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + K Ctrl + F</td>
+<td style="text-align:left">格式选定区域 Format selection</td>
+</tr>
+<tr>
+<td style="text-align:left">F12</td>
+<td style="text-align:left">转到定义 Go to Definition</td>
+</tr>
+<tr>
+<td style="text-align:left">Alt + F12</td>
+<td style="text-align:left">Peek 定义 Peek Definition</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + K F12</td>
+<td style="text-align:left">打开定义到边 Open Definition to the side</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + .</td>
+<td style="text-align:left">快速解决 Quick Fix</td>
+</tr>
+<tr>
+<td style="text-align:left">Shift + F12</td>
+<td style="text-align:left">显示引用 Show References</td>
+</tr>
+<tr>
+<td style="text-align:left">F2</td>
+<td style="text-align:left">重命名符号 Rename Symbol</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + K Ctrl + X</td>
+<td style="text-align:left">修剪尾随空格 Trim trailing whitespace</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl + K M</td>
+<td style="text-align:left">更改文件语言 Change file language</td>
+</tr>
+</tbody>
+</table>
+<h2 id="编辑器管理-Editor-management"><a href="#编辑器管理-Editor-management" class="headerlink" title="编辑器管理 Editor management"></a>编辑器管理 Editor management</h2><table>
+<thead>
+<tr>
+<th style="text-align:left">按 Press</th>
+<th style="text-align:left">功能 Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Ctrl+F4, Ctrl+W</td>
+<td style="text-align:left">关闭编辑器 Close editor</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K F</td>
+<td style="text-align:left">关闭文件夹 Close folder</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+\</td>
+<td style="text-align:left">拆分编辑器 Split editor</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+ 1 / 2 / 3</td>
+<td style="text-align:left">聚焦到第 1，第 2 或第 3 编辑器组 Focus into 1st, 2nd or 3rd editor group</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K Ctrl+ ←/→</td>
+<td style="text-align:left">聚焦到上一个 / 下一个编辑器组 Focus into previous/next editor group</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+PgUp / PgDown</td>
+<td style="text-align:left">向左 / 向右移动编辑器 Move editor left/right</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K ← / →</td>
+<td style="text-align:left">移动活动编辑器组 Move active editor group</td>
+</tr>
+</tbody>
+</table>
+<h2 id="文件管理-File-management"><a href="#文件管理-File-management" class="headerlink" title="文件管理 File management"></a>文件管理 File management</h2><table>
+<thead>
+<tr>
+<th style="text-align:left">按 Press</th>
+<th style="text-align:left">功能 Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Ctrl+N</td>
+<td style="text-align:left">新文件 New File</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+O</td>
+<td style="text-align:left">打开文件… Open File…</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+S</td>
+<td style="text-align:left">保存 Save</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+S</td>
+<td style="text-align:left">另存为… Save As…</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K S</td>
+<td style="text-align:left">全部保存 Save All</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+F4</td>
+<td style="text-align:left">关闭 Close</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K Ctrl+W</td>
+<td style="text-align:left">关闭所有 Close All</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+T</td>
+<td style="text-align:left">重新打开关闭的编辑器 Reopen closed editor</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K</td>
+<td style="text-align:left">输入保持打开 Enter Keep Open</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Tab</td>
+<td style="text-align:left">打开下一个 Open next</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+Tab</td>
+<td style="text-align:left">打开上一个 Open previous</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K P</td>
+<td style="text-align:left">复制活动文件的路径 Copy path of active file</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K R</td>
+<td style="text-align:left">显示资源管理器中的活动文件 Reveal active file in Explorer</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K O</td>
+<td style="text-align:left">显示新窗口 / 实例中的活动文件 Show active file in new window/instance</td>
+</tr>
+</tbody>
+</table>
+<h2 id="显示-Display"><a href="#显示-Display" class="headerlink" title="显示 Display"></a>显示 Display</h2><table>
+<thead>
+<tr>
+<th style="text-align:left">按 Press</th>
+<th style="text-align:left">功能 Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">F11</td>
+<td style="text-align:left">切换全屏 Toggle full screen</td>
+</tr>
+<tr>
+<td style="text-align:left">Shift+Alt+1</td>
+<td style="text-align:left">切换编辑器布局 Toggle editor layout</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+ = / -</td>
+<td style="text-align:left">放大 / 缩小 Zoom in/out</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+B</td>
+<td style="text-align:left">切换侧栏可见性 Toggle Sidebar visibility</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+E</td>
+<td style="text-align:left">显示浏览器 / 切换焦点 Show Explorer / Toggle focus</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+F</td>
+<td style="text-align:left">显示搜索 Show Search</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+G</td>
+<td style="text-align:left">显示 Git Show Git</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+D</td>
+<td style="text-align:left">显示调试 Show Debug</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+X</td>
+<td style="text-align:left">显示扩展 Show Extensions</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+H</td>
+<td style="text-align:left">替换文件 Replace in files</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+J</td>
+<td style="text-align:left">切换搜索详细信息 Toggle Search details</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+C</td>
+<td style="text-align:left">打开新命令提示符 / 终端 Open new command prompt/terminal</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+U</td>
+<td style="text-align:left">显示输出面板 Show Output panel</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+V</td>
+<td style="text-align:left">切换 Markdown 预览 Toggle Markdown preview</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K V</td>
+<td style="text-align:left">从旁边打开 Markdown 预览 Open Markdown preview to the side</td>
+</tr>
+</tbody>
+</table>
+<h2 id="调试-Debug"><a href="#调试-Debug" class="headerlink" title="调试 Debug"></a>调试 Debug</h2><table>
+<thead>
+<tr>
+<th style="text-align:left">按 Press</th>
+<th style="text-align:left">功能 Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">F9</td>
+<td style="text-align:left">切换断点 Toggle breakpoint</td>
+</tr>
+<tr>
+<td style="text-align:left">F5</td>
+<td style="text-align:left">开始 / 继续 Start/Continue</td>
+</tr>
+<tr>
+<td style="text-align:left">Shift+F5</td>
+<td style="text-align:left">停止 Stop</td>
+</tr>
+<tr>
+<td style="text-align:left">F11 / Shift+F11</td>
+<td style="text-align:left">下一步 / 上一步 Step into/out</td>
+</tr>
+<tr>
+<td style="text-align:left">F10</td>
+<td style="text-align:left">跳过 Step over</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+K Ctrl+I</td>
+<td style="text-align:left">显示悬停 Show hover</td>
+</tr>
+</tbody>
+</table>
+<h2 id="集成终端-Integrated-terminal"><a href="#集成终端-Integrated-terminal" class="headerlink" title="集成终端 Integrated terminal"></a>集成终端 Integrated terminal</h2><table>
+<thead>
+<tr>
+<th style="text-align:left">按 Press</th>
+<th style="text-align:left">功能 Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Ctrl+`</td>
+<td style="text-align:left">显示集成终端 Show integrated terminal</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+`</td>
+<td style="text-align:left">创建新终端 Create new terminal</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+C</td>
+<td style="text-align:left">复制选定 Copy selection</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Shift+V</td>
+<td style="text-align:left">粘贴到活动端子 Paste into active terminal</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+↑ / ↓</td>
+<td style="text-align:left">向上 / 向下滚动 Scroll up/down</td>
+</tr>
+<tr>
+<td style="text-align:left">Shift+PgUp / PgDown</td>
+<td style="text-align:left">向上 / 向下滚动页面 Scroll page up/down</td>
+</tr>
+<tr>
+<td style="text-align:left">Ctrl+Home / End</td>
+<td style="text-align:left">滚动到顶部 / 底部 Scroll to top/bottom</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>本文翻译版权归作者所有，转载请注明出处。</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/vscode/" rel="tag"># vscode</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/29/ceph/管理/ceph_pool管理/" rel="next" title="ceph_pool管理">
+                <i class="fa fa-chevron-left"></i> ceph_pool管理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/29/k8s/持久化存储/ceph/kubernetes对接ceph/" rel="prev" title="kubernetes对接ceph">
+                kubernetes对接ceph <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#常用-General"><span class="nav-number">1.</span> <span class="nav-text">常用 General</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#基础编辑-Basic-editing"><span class="nav-number">2.</span> <span class="nav-text">基础编辑 Basic editing</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#导航-Navigation"><span class="nav-number">3.</span> <span class="nav-text">导航 Navigation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#搜索和替换-Search-and-replace"><span class="nav-number">4.</span> <span class="nav-text">搜索和替换 Search and replace</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#多光标和选择-Multi-cursor-and-selection"><span class="nav-number">5.</span> <span class="nav-text">多光标和选择 Multi-cursor and selection</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#丰富的语言编辑-Rich-languages-editing"><span class="nav-number">6.</span> <span class="nav-text">丰富的语言编辑 Rich languages editing</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#编辑器管理-Editor-management"><span class="nav-number">7.</span> <span class="nav-text">编辑器管理 Editor management</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#文件管理-File-management"><span class="nav-number">8.</span> <span class="nav-text">文件管理 File management</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#显示-Display"><span class="nav-number">9.</span> <span class="nav-text">显示 Display</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#调试-Debug"><span class="nav-number">10.</span> <span class="nav-text">调试 Debug</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#集成终端-Integrated-terminal"><span class="nav-number">11.</span> <span class="nav-text">集成终端 Integrated terminal</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

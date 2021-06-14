@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="k8s,kubevirt,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="Virtlet vs KubeVirthttps://www.mirantis.com/blog/kubevirt-vs-virtlet-comparison-better/ KubeVirt 安装这里使用kubernetes 1.14.5 开启软件模拟由于虚拟机部署，硬件虚拟化限制 1234567891011121314151617root@node1:~# virt-host-validate">
+<meta name="keywords" content="k8s,kubevirt">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kubevirt 使用-初体验">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/09/20/k8s/kubevirt/kubevirt使用-初体验/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="Virtlet vs KubeVirthttps://www.mirantis.com/blog/kubevirt-vs-virtlet-comparison-better/ KubeVirt 安装这里使用kubernetes 1.14.5 开启软件模拟由于虚拟机部署，硬件虚拟化限制 1234567891011121314151617root@node1:~# virt-host-validate">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kubevirt 使用-初体验">
+<meta name="twitter:description" content="Virtlet vs KubeVirthttps://www.mirantis.com/blog/kubevirt-vs-virtlet-comparison-better/ KubeVirt 安装这里使用kubernetes 1.14.5 开启软件模拟由于虚拟机部署，硬件虚拟化限制 1234567891011121314151617root@node1:~# virt-host-validate">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/09/20/k8s/kubevirt/kubevirt使用-初体验/">
+
+
+
+
+
+  <title>kubevirt 使用-初体验 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/09/20/k8s/kubevirt/kubevirt使用-初体验/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">kubevirt 使用-初体验</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-09-20T14:47:19+00:00">
+                2019-09-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="Virtlet-vs-KubeVirt"><a href="#Virtlet-vs-KubeVirt" class="headerlink" title="Virtlet vs KubeVirt"></a>Virtlet vs KubeVirt</h1><p><a href="https://www.mirantis.com/blog/kubevirt-vs-virtlet-comparison-better/" target="_blank" rel="noopener">https://www.mirantis.com/blog/kubevirt-vs-virtlet-comparison-better/</a></p>
+<h1 id="KubeVirt-安装"><a href="#KubeVirt-安装" class="headerlink" title="KubeVirt 安装"></a>KubeVirt 安装</h1><p>这里使用kubernetes 1.14.5</p>
+<h2 id="开启软件模拟"><a href="#开启软件模拟" class="headerlink" title="开启软件模拟"></a>开启软件模拟</h2><p>由于虚拟机部署，硬件虚拟化限制</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~# virt-host-validate qemu</span><br><span class="line">  QEMU: Checking for hardware virtualization                                 : FAIL (Only emulated CPUs are available, performance will be significantly limited)</span><br><span class="line">  QEMU: Checking if device /dev/vhost-net exists                             : PASS</span><br><span class="line">  QEMU: Checking if device /dev/net/tun exists                               : PASS</span><br><span class="line">  QEMU: Checking for cgroup &apos;memory&apos; controller support                      : PASS</span><br><span class="line">  QEMU: Checking for cgroup &apos;memory&apos; controller mount-point                  : PASS</span><br><span class="line">  QEMU: Checking for cgroup &apos;cpu&apos; controller support                         : PASS</span><br><span class="line">  QEMU: Checking for cgroup &apos;cpu&apos; controller mount-point                     : PASS</span><br><span class="line">  QEMU: Checking for cgroup &apos;cpuacct&apos; controller support                     : PASS</span><br><span class="line">  QEMU: Checking for cgroup &apos;cpuacct&apos; controller mount-point                 : PASS</span><br><span class="line">  QEMU: Checking for cgroup &apos;cpuset&apos; controller support                      : PASS</span><br><span class="line">  QEMU: Checking for cgroup &apos;cpuset&apos; controller mount-point                  : PASS</span><br><span class="line">  QEMU: Checking for cgroup &apos;devices&apos; controller support                     : PASS</span><br><span class="line">  QEMU: Checking for cgroup &apos;devices&apos; controller mount-point                 : PASS</span><br><span class="line">  QEMU: Checking for cgroup &apos;blkio&apos; controller support                       : PASS</span><br><span class="line">  QEMU: Checking for cgroup &apos;blkio&apos; controller mount-point                   : PASS</span><br><span class="line">WARN (Unknown if this platform has IOMMU support)</span><br></pre></td></tr></table></figure>
+<p>这里需要开启软件虚拟</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl create namespace kubevirt</span><br><span class="line">$ kubectl create configmap -n kubevirt kubevirt-config \</span><br><span class="line">    --from-literal debug.useEmulation=true</span><br></pre></td></tr></table></figure>
+<h2 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">$ export RELEASE=v0.21.0</span><br><span class="line"># creates KubeVirt operator</span><br><span class="line">$ kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/$&#123;RELEASE&#125;/kubevirt-operator.yaml</span><br><span class="line"># creates KubeVirt KV custom resource</span><br><span class="line">$ kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/$&#123;RELEASE&#125;/kubevirt-cr.yaml</span><br><span class="line"># wait until all KubeVirt components is up</span><br><span class="line">$ kubectl -n kubevirt wait kv kubevirt --for condition=Available</span><br></pre></td></tr></table></figure>
+<h1 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h1><h2 id="Create-a-Virtual-Machine"><a href="#Create-a-Virtual-Machine" class="headerlink" title="Create a Virtual Machine"></a>Create a Virtual Machine</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">wget https://raw.githubusercontent.com/kubevirt/kubevirt.github.io/master/labs/manifests/vm.yaml</span><br><span class="line">less vm.yaml</span><br></pre></td></tr></table></figure>
+<h2 id="Apply-the-manifest-to-Kubernetes"><a href="#Apply-the-manifest-to-Kubernetes" class="headerlink" title="Apply the manifest to Kubernetes."></a>Apply the manifest to Kubernetes.</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f https://raw.githubusercontent.com/kubevirt/kubevirt.github.io/master/labs/manifests/vm.yaml</span><br><span class="line">virtualmachine.kubevirt.io &quot;testvm&quot; created</span><br><span class="line">  virtualmachineinstancepreset.kubevirt.io &quot;small&quot; created</span><br></pre></td></tr></table></figure>
+<h2 id="Manage-Virtual-Machines-optional"><a href="#Manage-Virtual-Machines-optional" class="headerlink" title="Manage Virtual Machines (optional):"></a>Manage Virtual Machines (optional):</h2><p>To get a list of existing Virtual Machines. Note the running status.<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl get vms</span><br><span class="line">kubectl get vms -o yaml testvm</span><br></pre></td></tr></table></figure></p>
+<h2 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># Start the virtual machine:</span><br><span class="line">kubectl virt start testvm</span><br><span class="line"></span><br><span class="line"># Stop the virtual machine:</span><br><span class="line">kubectl virt stop testvm</span><br></pre></td></tr></table></figure>
+<p>或者</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># Start the virtual machine:</span><br><span class="line">kubectl patch virtualmachine myvm --type merge -p \</span><br><span class="line">    &apos;&#123;&quot;spec&quot;:&#123;&quot;running&quot;:true&#125;&#125;&apos;</span><br><span class="line"></span><br><span class="line"># Stop the virtual machine:</span><br><span class="line">kubectl patch virtualmachine myvm --type merge -p \</span><br><span class="line">    &apos;&#123;&quot;spec&quot;:&#123;&quot;running&quot;:false&#125;&#125;&apos;</span><br></pre></td></tr></table></figure>
+<h2 id="查看状态"><a href="#查看状态" class="headerlink" title="查看状态"></a>查看状态</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~# kubectl get vmis</span><br><span class="line">NAME     AGE   PHASE     IP             NODENAME</span><br><span class="line">testvm   10m   Running   10.233.70.27   node5</span><br></pre></td></tr></table></figure>
+<h2 id="访问虚拟机"><a href="#访问虚拟机" class="headerlink" title="访问虚拟机"></a>访问虚拟机</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~# kubectl virt console testvm</span><br><span class="line">Successfully connected to testvm console. The escape sequence is ^]</span><br><span class="line"></span><br><span class="line">login as &apos;cirros&apos; user. default password: &apos;gocubsgo&apos;. use &apos;sudo&apos; for root.</span><br><span class="line">testvm login: cirros</span><br><span class="line">Password: </span><br><span class="line">$ </span><br><span class="line">$ </span><br><span class="line">$ </span><br><span class="line">$ ip a</span><br><span class="line">1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue qlen 1</span><br><span class="line">    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00</span><br><span class="line">    inet 127.0.0.1/8 scope host lo</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet6 ::1/128 scope host </span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast qlen 1000</span><br><span class="line">    link/ether 5a:9f:58:13:46:21 brd ff:ff:ff:ff:ff:ff</span><br><span class="line">    inet 10.233.70.27/32 brd 10.255.255.255 scope global eth0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet6 fe80::589f:58ff:fe13:4621/64 scope link </span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">$</span><br></pre></td></tr></table></figure>
+<h1 id="CDI"><a href="#CDI" class="headerlink" title="CDI"></a>CDI</h1><p><a href="https://kubevirt.io/labs/kubernetes/lab2" target="_blank" rel="noopener">https://kubevirt.io/labs/kubernetes/lab2</a></p>
+<p>参考:<br><a href="https://kubevirt.io/user-guide/docs/latest/administration/intro.html" target="_blank" rel="noopener">https://kubevirt.io/user-guide/docs/latest/administration/intro.html</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/kubevirt/" rel="tag"># kubevirt</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/09/20/k8s/kubevirt/kubevirt使用-架构/" rel="next" title="kubevirt 使用-架构">
+                <i class="fa fa-chevron-left"></i> kubevirt 使用-架构
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/09/20/k8s/op/delete namespace Terminating/" rel="prev" title="delete namespace Terminating">
+                delete namespace Terminating <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Virtlet-vs-KubeVirt"><span class="nav-number">1.</span> <span class="nav-text">Virtlet vs KubeVirt</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#KubeVirt-安装"><span class="nav-number">2.</span> <span class="nav-text">KubeVirt 安装</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#开启软件模拟"><span class="nav-number">2.1.</span> <span class="nav-text">开启软件模拟</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#部署"><span class="nav-number">2.2.</span> <span class="nav-text">部署</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#测试"><span class="nav-number">3.</span> <span class="nav-text">测试</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Create-a-Virtual-Machine"><span class="nav-number">3.1.</span> <span class="nav-text">Create a Virtual Machine</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Apply-the-manifest-to-Kubernetes"><span class="nav-number">3.2.</span> <span class="nav-text">Apply the manifest to Kubernetes.</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Manage-Virtual-Machines-optional"><span class="nav-number">3.3.</span> <span class="nav-text">Manage Virtual Machines (optional):</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#启动"><span class="nav-number">3.4.</span> <span class="nav-text">启动</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看状态"><span class="nav-number">3.5.</span> <span class="nav-text">查看状态</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#访问虚拟机"><span class="nav-number">3.6.</span> <span class="nav-text">访问虚拟机</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CDI"><span class="nav-number">4.</span> <span class="nav-text">CDI</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="ceph,pool,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="目标ceph 下利用命令行对池管理 显示池 参考下面命令可以查询当前 ceph 中 pool 信息  123456789[root@cephsvr-128040 ceph]# rados lspoolsvolumes[root@cephsvr-128040 ceph]# ceph osd lspools1 volumes,[root@cephsvr-128040 ceph]# ceph osd p">
+<meta name="keywords" content="ceph,pool">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ceph_pool管理">
+<meta property="og:url" content="http://liupeng0518.github.io/2018/12/29/ceph/管理/ceph_pool管理/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="目标ceph 下利用命令行对池管理 显示池 参考下面命令可以查询当前 ceph 中 pool 信息  123456789[root@cephsvr-128040 ceph]# rados lspoolsvolumes[root@cephsvr-128040 ceph]# ceph osd lspools1 volumes,[root@cephsvr-128040 ceph]# ceph osd p">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.936Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ceph_pool管理">
+<meta name="twitter:description" content="目标ceph 下利用命令行对池管理 显示池 参考下面命令可以查询当前 ceph 中 pool 信息  123456789[root@cephsvr-128040 ceph]# rados lspoolsvolumes[root@cephsvr-128040 ceph]# ceph osd lspools1 volumes,[root@cephsvr-128040 ceph]# ceph osd p">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2018/12/29/ceph/管理/ceph_pool管理/">
+
+
+
+
+
+  <title>ceph_pool管理 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2018/12/29/ceph/管理/ceph_pool管理/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">ceph_pool管理</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-29T09:47:19+00:00">
+                2018-12-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/ceph/" itemprop="url" rel="index">
+                    <span itemprop="name">ceph</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="目标"><a href="#目标" class="headerlink" title="目标"></a>目标</h1><p>ceph 下利用命令行对池管理</p>
+<h1 id="显示池"><a href="#显示池" class="headerlink" title="显示池"></a>显示池</h1><blockquote>
+<p>参考下面命令可以查询当前 ceph 中 pool 信息</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 ceph]# rados lspools</span><br><span class="line">volumes</span><br><span class="line">[root@cephsvr-128040 ceph]# ceph osd lspools</span><br><span class="line">1 volumes,</span><br><span class="line">[root@cephsvr-128040 ceph]# ceph osd pool ls</span><br><span class="line">volumes</span><br><span class="line">[root@cephsvr-128040 ceph]# ceph osd pool ls detail</span><br><span class="line">pool 1 &apos;volumes&apos; replicated size 3 min_size 1 crush_rule 0 object_hash rjenkins pg_num 2048 pgp_num 2048 last_change 161 flags hashpspool stripe_width 0 application rbd</span><br><span class="line">                removed_snaps [1~3]</span><br></pre></td></tr></table></figure>
+<h1 id="池使用率"><a href="#池使用率" class="headerlink" title="池使用率"></a>池使用率</h1><p>参考下面命令<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 ceph]# rados df</span><br><span class="line">POOL_NAME USED  OBJECTS CLONES COPIES MISSING_ON_PRIMARY UNFOUND DEGRADED RD_OPS RD    WR_OPS WR</span><br><span class="line">volumes   1496M     383      0   1149                  0       0        0  42762 1528M   2422 1485M</span><br><span class="line"></span><br><span class="line">total_objects    383</span><br><span class="line">total_used       8476M</span><br><span class="line">total_avail      196T</span><br><span class="line">total_space      196T</span><br></pre></td></tr></table></figure></p>
+<blockquote>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 ceph]# ceph df</span><br><span class="line">GLOBAL:</span><br><span class="line">        SIZE     AVAIL     RAW USED     %RAW USED</span><br><span class="line">        196T      196T        8476M             0</span><br><span class="line">POOLS:</span><br><span class="line">        NAME        ID     USED      %USED     MAX AVAIL     OBJECTS</span><br><span class="line">        volumes     1      1496M         0          186T         383</span><br></pre></td></tr></table></figure>
+<h1 id="创建池"><a href="#创建池" class="headerlink" title="创建池"></a>创建池</h1><p>格式<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ceph osd pool create &#123;pool-name&#125; &#123;pg-num&#125; [&#123;pgp-num&#125;]</span><br></pre></td></tr></table></figure></p>
+<p>命令行<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ceph osd pool create volumes 2048 2048</span><br></pre></td></tr></table></figure></p>
+<h2 id="pg-num-与-gpg-num"><a href="#pg-num-与-gpg-num" class="headerlink" title="pg-num 与 gpg-num"></a>pg-num 与 gpg-num</h2><blockquote>
+<p>当前以 36 osd 只创建一个池 3 副本的容量进行计算<br>假如预计以后需要进行两倍扩容, 那么建议 pg-num 与 pgp-num 设定为 4096<br>pg-num 与 pgp-num 只可以扩大不可以缩小<br>pg-num 与 pgp-num 常见数量一样<br>建议在创建池时候就定义好合理的 pg-num 与 pgp-num<br>在改变(增加) pg-num 与 pgp-num 时候, 会自动产生 rebalance 操作, 会严重影响 ceph cluster io 性能</p>
+</blockquote>
+<p><a href="http://ceph.com/pgcalc/" target="_blank" rel="noopener">参考官方推荐 OSD 计算方法</a></p>
+<h3 id="查询-pg-pgp"><a href="#查询-pg-pgp" class="headerlink" title="查询 pg pgp"></a>查询 pg pgp</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 ceph]# ceph osd pool get volumes pg_num</span><br><span class="line">pg_num: 2048</span><br><span class="line">[root@cephsvr-128040 ceph]# ceph osd pool get volumes pgp_num</span><br><span class="line">pgp_num: 2048</span><br></pre></td></tr></table></figure>
+<h3 id="修改"><a href="#修改" class="headerlink" title="修改"></a>修改</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 ceph]# ceph osd pool set volumes pg_num 3000</span><br><span class="line">set pool 1 pg_num to 3000</span><br><span class="line">[root@cephsvr-128040 ceph]# ceph osd pool set volumes pgp_num 3000</span><br><span class="line">set pool 1 pgp_num to 3000</span><br></pre></td></tr></table></figure>
+<p>述只作为修改例子<br>常见 pg-num 与 pgp-num 都为 2 的平方数倍数</p>
+<h2 id="pool-size"><a href="#pool-size" class="headerlink" title="pool size"></a>pool size</h2><p>pool size 用于指定当前存放在对应池中的文件实际保存的文件副本数量, 常见为 3</p>
+<h3 id="查询"><a href="#查询" class="headerlink" title="查询"></a>查询</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 ceph]# ceph osd pool get volumes size</span><br><span class="line">size: 3</span><br></pre></td></tr></table></figure>
+<h3 id="修改-1"><a href="#修改-1" class="headerlink" title="修改"></a>修改</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 ceph]# ceph osd pool set volumes size 3</span><br><span class="line">set pool 1 size to 3</span><br></pre></td></tr></table></figure>
+<h2 id="pool-rule"><a href="#pool-rule" class="headerlink" title="pool rule"></a>pool rule</h2><p>rule 修改, 格式参考 crush map 说明</p>
+<h3 id="查询-1"><a href="#查询-1" class="headerlink" title="查询"></a>查询</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 ~]# ceph osd dump | grep &quot;^pool&quot; | grep &quot;crush&quot;</span><br><span class="line">pool 2 &apos;volumes&apos; replicated size 3 min_size 1 crush_rule 0 object_hash rjenkins pg_num 2048 pgp_num 2048 last_change 244 flags hashpspool stripe_width 0 application rbd</span><br></pre></td></tr></table></figure>
+<p>另外一种方法<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 tmp]# ceph osd pool get volumes crush_rule</span><br><span class="line">crush_rule: replicated_rule</span><br></pre></td></tr></table></figure></p>
+<h1 id="定义池使用类型"><a href="#定义池使用类型" class="headerlink" title="定义池使用类型"></a>定义池使用类型</h1><p>这个是 luminous 版本新特性<br>在不定义池使用类型时, 会获得下面错误信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 ~]# ceph -s</span><br><span class="line">    cluster:</span><br><span class="line">        id:     c45b752d-5d4d-4d3a-a3b2-04e73eff4ccd</span><br><span class="line">        health: HEALTH_WARN</span><br><span class="line">                        application not enabled on 1 pool(s)       &lt;- 参考这里</span><br><span class="line">                        too many PGs per OSD (341 &gt; max 300)</span><br><span class="line"></span><br><span class="line">    services:</span><br><span class="line">        mon: 3 daemons, quorum cephsvr-128040,cephsvr-128214,cephsvr-128215</span><br><span class="line">        mgr: openstack(active)</span><br><span class="line">        osd: 36 osds: 36 up, 36 in</span><br><span class="line"></span><br><span class="line">    data:</span><br><span class="line">        pools:   2 pools, 4096 pgs</span><br><span class="line">        objects: 10343 objects, 33214 MB</span><br><span class="line">        usage:   101 GB used, 196 TB / 196 TB avail</span><br><span class="line">        pgs:     4096 active+clean</span><br></pre></td></tr></table></figure></p>
+<h1 id="设定池类型"><a href="#设定池类型" class="headerlink" title="设定池类型"></a>设定池类型</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 tmp]# ceph osd pool application enable volumes rbd</span><br><span class="line">enabled application &apos;rbd&apos; on pool &apos;volumes&apos;</span><br></pre></td></tr></table></figure>
+<p>当前常见池使用类型有三种</p>
+<blockquote>
+<p>CephFS uses the application name cephfs<br>RBD uses the application name rbd<br>RGW uses the application name rgw</p>
+</blockquote>
+<p>修改方法<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 ~]# ceph osd dump | grep &quot;^pool&quot; | grep &quot;crush&quot;</span><br><span class="line">pool 1 &apos;volumes&apos; replicated size 3 min_size 1 crush_rule 0 object_hash rjenkins pg_num 2048 pgp_num 2048 last_change 506 flags hashpspool stripe_width 0</span><br><span class="line">[root@cephsvr-128040 ~]#  ceph osd pool application enable data rbd</span><br><span class="line">enabled application &apos;rbd&apos; on pool &apos;data&apos;</span><br><span class="line">[root@cephsvr-128040 ~]# ceph osd dump | grep &quot;^pool&quot; | grep &quot;crush&quot;</span><br><span class="line">pool 1 &apos;volumes&apos; replicated size 3 min_size 1 crush_rule 0 object_hash rjenkins pg_num 2048 pgp_num 2048 last_change 532 flags hashpspool stripe_width 0 application rbd</span><br></pre></td></tr></table></figure></p>
+<h1 id="初始化-rbd-池"><a href="#初始化-rbd-池" class="headerlink" title="初始化 rbd 池"></a>初始化 rbd 池</h1><p>这个是 luminous 版本新特性<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 tmp]# rbd pool init volumes</span><br></pre></td></tr></table></figure></p>
+<h1 id="rbd-文件导入"><a href="#rbd-文件导入" class="headerlink" title="rbd 文件导入"></a>rbd 文件导入</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 tmp]# rbd -p volumes import 7.tar 8.tar</span><br><span class="line">rbd: --pool is deprecated for import, use --dest-pool</span><br><span class="line">Importing image: 100% complete...done.</span><br><span class="line">[root@cephsvr-128040 tmp]# rbd --dest-pool volumes import 7.tar 9.tar</span><br><span class="line">Importing image: 100% complete...done.</span><br></pre></td></tr></table></figure>
+<p>注意</p>
+<p>-p 参数已经弃用, 需要使用 –dest-pool 参数</p>
+<h1 id="rbd-文件导出"><a href="#rbd-文件导出" class="headerlink" title="rbd 文件导出"></a>rbd 文件导出</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 tmp]# rbd -p volumes export 8.tar 8.tar</span><br><span class="line">Exporting image: 100% complete...done.</span><br></pre></td></tr></table></figure>
+<h1 id="删除池"><a href="#删除池" class="headerlink" title="删除池"></a>删除池</h1><p>当执行删除操作, 池中所有数据都会清空<br>注意下面错误信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 ceph]# ceph osd pool delete volumes volumes --yes-i-really-really-mean-it</span><br><span class="line">Error EPERM: pool deletion is disabled; you must first set the mon_allow_pool_delete config option to true before you can destroy a pool</span><br></pre></td></tr></table></figure></p>
+<p>以上是 luminous 版本的新特性<br>你需要配置 mon_allow_pool_delete 配置后才允许对 pool 进行删除</p>
+<h2 id="查询配置"><a href="#查询配置" class="headerlink" title="查询配置"></a>查询配置</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 ceph]# ceph --admin-daemon /var/run/ceph/ceph-osd.0.asok config show | grep mon_allow_pool_delete</span><br><span class="line">        &quot;mon_allow_pool_delete&quot;: &quot;false&quot;,</span><br></pre></td></tr></table></figure>
+<h2 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h2><h3 id="获得ceph-mon-socket-位置"><a href="#获得ceph-mon-socket-位置" class="headerlink" title="获得ceph mon socket 位置"></a>获得ceph mon socket 位置</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 tmp]# ceph-conf --name mon.$(hostname -s) --show-config-value admin_socket</span><br><span class="line">/var/run/ceph/ceph-mon.cephsvr-128040.asok</span><br></pre></td></tr></table></figure>
+<h3 id="显示-mon-配置"><a href="#显示-mon-配置" class="headerlink" title="显示 mon 配置"></a>显示 mon 配置</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 tmp]# ceph daemon /var/run/ceph/ceph-mon.$(hostname -s).asok config show | grep mon_allow_pool_delete</span><br><span class="line">        &quot;mon_allow_pool_delete&quot;: &quot;false&quot;,</span><br></pre></td></tr></table></figure>
+<h3 id="修改配置-1"><a href="#修改配置-1" class="headerlink" title="修改配置"></a>修改配置</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 ceph]# ceph osd pool delete volumes volumes --yes-i-really-really-mean-it</span><br><span class="line">Error EPERM: pool deletion is disabled; you must first set the mon_allow_pool_delete config option to true before you can destroy a pool</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">[root@cephsvr-128040 tmp]# ceph daemon /var/run/ceph/ceph-mon.$(hostname -s).asok config show | grep mon_allow_pool_delete</span><br><span class="line">        &quot;mon_allow_pool_delete&quot;: &quot;false&quot;,</span><br><span class="line"></span><br><span class="line">[root@cephsvr-128040 tmp]# ceph tell mon.cephsvr-128040 injectargs &apos;--mon_allow_pool_delete=true&apos;</span><br><span class="line">injectargs:mon_allow_pool_delete = &apos;true&apos; (not observed, change may require restart)</span><br></pre></td></tr></table></figure>
+<p>请忽略这里的 [not observed, change may require restart] 告警<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@cephsvr-128040 tmp]# ceph daemon /var/run/ceph/ceph-mon.$(hostname -s).asok config show | grep mon_allow_pool_delete</span><br><span class="line">        &quot;mon_allow_pool_delete&quot;: &quot;true&quot;,</span><br><span class="line"></span><br><span class="line">[root@cephsvr-128040 ceph]# ceph osd pool delete volumes volumes --yes-i-really-really-mean-it</span><br><span class="line">pool &apos;volumes&apos; removed</span><br></pre></td></tr></table></figure></p>
+<p>原文：<a href="https://blog.csdn.net/signmem/article/details/78594340" target="_blank" rel="noopener">https://blog.csdn.net/signmem/article/details/78594340</a> </p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ceph/" rel="tag"># ceph</a>
+          
+            <a href="/tags/pool/" rel="tag"># pool</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/29/k8s/helm/helm部署/" rel="next" title="helm部署">
+                <i class="fa fa-chevron-left"></i> helm部署
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/29/工具/vscode/VS Code 快捷键/" rel="prev" title="VS Code 快捷键">
+                VS Code 快捷键 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#目标"><span class="nav-number">1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#显示池"><span class="nav-number">2.</span> <span class="nav-text">显示池</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#池使用率"><span class="nav-number">3.</span> <span class="nav-text">池使用率</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#创建池"><span class="nav-number">4.</span> <span class="nav-text">创建池</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#pg-num-与-gpg-num"><span class="nav-number">4.1.</span> <span class="nav-text">pg-num 与 gpg-num</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#查询-pg-pgp"><span class="nav-number">4.1.1.</span> <span class="nav-text">查询 pg pgp</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#修改"><span class="nav-number">4.1.2.</span> <span class="nav-text">修改</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pool-size"><span class="nav-number">4.2.</span> <span class="nav-text">pool size</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#查询"><span class="nav-number">4.2.1.</span> <span class="nav-text">查询</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#修改-1"><span class="nav-number">4.2.2.</span> <span class="nav-text">修改</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pool-rule"><span class="nav-number">4.3.</span> <span class="nav-text">pool rule</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#查询-1"><span class="nav-number">4.3.1.</span> <span class="nav-text">查询</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#定义池使用类型"><span class="nav-number">5.</span> <span class="nav-text">定义池使用类型</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#设定池类型"><span class="nav-number">6.</span> <span class="nav-text">设定池类型</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#初始化-rbd-池"><span class="nav-number">7.</span> <span class="nav-text">初始化 rbd 池</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#rbd-文件导入"><span class="nav-number">8.</span> <span class="nav-text">rbd 文件导入</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#rbd-文件导出"><span class="nav-number">9.</span> <span class="nav-text">rbd 文件导出</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#删除池"><span class="nav-number">10.</span> <span class="nav-text">删除池</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#查询配置"><span class="nav-number">10.1.</span> <span class="nav-text">查询配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#修改配置"><span class="nav-number">10.2.</span> <span class="nav-text">修改配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#获得ceph-mon-socket-位置"><span class="nav-number">10.2.1.</span> <span class="nav-text">获得ceph mon socket 位置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#显示-mon-配置"><span class="nav-number">10.2.2.</span> <span class="nav-text">显示 mon 配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#修改配置-1"><span class="nav-number">10.2.3.</span> <span class="nav-text">修改配置</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

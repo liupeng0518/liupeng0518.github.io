@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="k8s,弹性伸缩,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="原文：https://rancher.com/blog/2018/2018-08-06-k8s-hpa-resource-custom-metrics/   Kubernetes的一个很好的功能是能够在运行的服务上自定义autoscale。如果没有autoscaling，则很难适应deployment scaling并满足SLA。本文将向您展示如何使用Horizo​​ntal Pod Autos">
+<meta name="keywords" content="k8s,弹性伸缩">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kubernetes弹性伸缩">
+<meta property="og:url" content="http://liupeng0518.github.io/2018/12/24/k8s/资源管理/kubernetes弹性伸缩/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="原文：https://rancher.com/blog/2018/2018-08-06-k8s-hpa-resource-custom-metrics/   Kubernetes的一个很好的功能是能够在运行的服务上自定义autoscale。如果没有autoscaling，则很难适应deployment scaling并满足SLA。本文将向您展示如何使用Horizo​​ntal Pod Autos">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://raw.githubusercontent.com/liupeng0518/e-book/master/k8s/.images/horizontal-pod-autoscaler.svg">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kubernetes弹性伸缩">
+<meta name="twitter:description" content="原文：https://rancher.com/blog/2018/2018-08-06-k8s-hpa-resource-custom-metrics/   Kubernetes的一个很好的功能是能够在运行的服务上自定义autoscale。如果没有autoscaling，则很难适应deployment scaling并满足SLA。本文将向您展示如何使用Horizo​​ntal Pod Autos">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/liupeng0518/e-book/master/k8s/.images/horizontal-pod-autoscaler.svg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2018/12/24/k8s/资源管理/kubernetes弹性伸缩/">
+
+
+
+
+
+  <title>kubernetes弹性伸缩 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2018/12/24/k8s/资源管理/kubernetes弹性伸缩/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">kubernetes弹性伸缩</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-24T09:47:19+00:00">
+                2018-12-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>原文：<a href="https://rancher.com/blog/2018/2018-08-06-k8s-hpa-resource-custom-metrics/" target="_blank" rel="noopener">https://rancher.com/blog/2018/2018-08-06-k8s-hpa-resource-custom-metrics/</a></p>
+</blockquote>
+<blockquote>
+<p>Kubernetes的一个很好的功能是能够在运行的服务上自定义autoscale。如果没有autoscaling，则很难适应deployment scaling并满足SLA。本文将向您展示如何使用Horizo​​ntal Pod Autoscale在Kubernetes上自动扩展您的服务。</p>
+</blockquote>
+<h1 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h1><p>Kubernetes的一个很好的功能是能够在运行的服务上自定义autoscale。如果没有autoscaling，则很难适应deployment scaling并满足SLA。此功能在Kubernetes集群上称为Horizo​​ntal Pod Autoscaler（HPA）。</p>
+<h1 id="为什么使用Horizo​​ntal-Pod-Autoscaling"><a href="#为什么使用Horizo​​ntal-Pod-Autoscaling" class="headerlink" title="为什么使用Horizo​​ntal Pod Autoscaling"></a>为什么使用Horizo​​ntal Pod Autoscaling</h1><p>使用HPA，你可以在deployments里基于资源使用或或自定义指标实现 up/down autoscaling，并根据实时负载状态扩展你的服务。</p>
+<p>HPA对您的服务进行了两项直接改进：</p>
+<ol>
+<li>负载高时自动增加计算和内存资源，如果不需要则释放它们。</li>
+<li>根据需要增加/降低性能以实现SLA。</li>
+</ol>
+<h1 id="HPA是如何工作的"><a href="#HPA是如何工作的" class="headerlink" title="HPA是如何工作的"></a>HPA是如何工作的</h1><p>HPA会根据获取到的CPU/内存利用率（resource metrics）或基于第三metrics采集工具（Prometheus, Datadog等）提供的自定义指标自动调整replication controller, deployment 或 replica set中的容器数（自定义的最小和最大容量数）普罗米修斯，Datadog等。<br>HPA实现方式是control loop，其周期由Kubernetes controller manager控制，要使用HPA，那么在启动时需要添加 –horizo​​ntal-pod-autoscaler-sync-period（默认值30s）。</p>
+<p><img src="https://raw.githubusercontent.com/liupeng0518/e-book/master/k8s/.images/horizontal-pod-autoscaler.svg" alt="HPA schema"></p>
+<h1 id="定义-HPA"><a href="#定义-HPA" class="headerlink" title="定义 HPA"></a>定义 HPA</h1><p>HPA是Kubernetes autoscaling API组中的API资源。当前的稳定版本是autoscaling/v1，它仅包括对CPU自动缩放的支持。<br>要获得对内存和自定义指标扩展的额外支持，它包含在autoscaling/v2beta1和autoscaling/v2beta2中。</p>
+<p><a href="https://git.k8s.io/community/contributors/design-proposals/autoscaling/horizontal-pod-autoscaler.md#horizontalpodautoscaler-object" target="_blank" rel="noopener">获取更多HPA api object信息</a></p>
+<p>HPA可以通过 kubectl 创建，管理和删除它：</p>
+<ul>
+<li>创建 HPA<ul>
+<li>通过 manifest: kubectl create -f &lt;HPA_MANIFEST&gt;</li>
+<li>通过kubectl(仅支持CPU): kubectl autoscale deployment hello-world –min=2 –max=5 –cpu-percent=50</li>
+</ul>
+</li>
+<li>获取 hpa 信息<ul>
+<li>基本信息: kubectl get hpa hello-world</li>
+<li>详细描述: kubectl describe hpa hello-world</li>
+</ul>
+</li>
+<li>删除 hpa<ul>
+<li>kubectl delete hpa hello-world</li>
+</ul>
+</li>
+</ul>
+<p>下面是一个简单的 HPA manifest 示例：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: autoscaling/v2beta1</span><br><span class="line">kind: HorizontalPodAutoscaler</span><br><span class="line">metadata:</span><br><span class="line">  name: hello-world</span><br><span class="line">spec:</span><br><span class="line">  scaleTargetRef:</span><br><span class="line">    apiVersion: extensions/v1beta1</span><br><span class="line">    kind: Deployment</span><br><span class="line">    name: hello-world</span><br><span class="line">  minReplicas: 1</span><br><span class="line">  maxReplicas: 10</span><br><span class="line">  metrics:</span><br><span class="line">  - type: Resource</span><br><span class="line">    resource:</span><br><span class="line">      name: cpu</span><br><span class="line">      targetAverageUtilization: 50</span><br><span class="line">  - type: Resource</span><br><span class="line">    resource:</span><br><span class="line">      name: memory</span><br><span class="line">      targetAverageValue: 100Mi</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>使用autoscaling/v2beta1版本的api来定义cpu和内存 metrics</li>
+<li>控制hello-world 的deployment自动调度</li>
+<li>定义的最小副本数为1</li>
+<li>定义的最大副本数为10</li>
+<li>扩展触发条件：<ul>
+<li>cpu利用率超过50％</li>
+<li>内存使用超过100Mi</li>
+</ul>
+</li>
+</ul>
+<h1 id="Installation"><a href="#Installation" class="headerlink" title="Installation"></a>Installation</h1><p>你需要配置并部署相关资源才能使用HPA的功能。</p>
+<h2 id="Requirements"><a href="#Requirements" class="headerlink" title="Requirements"></a>Requirements</h2><p>确认以下信息：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">- kube-api: requestheader-client-ca-file </span><br><span class="line">- kubelet: read-only-port at 10255 </span><br><span class="line">- kube-controller: Optional, just needed if distinct values than default are required. </span><br><span class="line">- horizontal-pod-autoscaler-downscale-delay: &quot;5m0s&quot; </span><br><span class="line">- horizontal-pod-autoscaler-upscale-delay: &quot;3m0s&quot; </span><br><span class="line">- horizontal-pod-autoscaler-sync-period: &quot;30s&quot;</span><br></pre></td></tr></table></figure></p>
+<p>如果是RKE，那么直接修改配置文件：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">services:</span><br><span class="line">...</span><br><span class="line">  kube-api: </span><br><span class="line">    extra_args: </span><br><span class="line">      requestheader-client-ca-file: &quot;/etc/kubernetes/ssl/kube-ca.pem&quot;</span><br><span class="line">  kube-controller:</span><br><span class="line">    extra_args: </span><br><span class="line">      horizontal-pod-autoscaler-downscale-delay: &quot;5m0s&quot;</span><br><span class="line">      horizontal-pod-autoscaler-upscale-delay: &quot;1m0s&quot;</span><br><span class="line">      horizontal-pod-autoscaler-sync-period: &quot;30s&quot;</span><br><span class="line">  kubelet:</span><br><span class="line">    extra_args:</span><br><span class="line">      read-only-port: 10255</span><br></pre></td></tr></table></figure></p>
+<p>要部署metrics services，必须正确配置和部署Kubernetes集群。</p>
+<p>如果是二进制部署 K8S 集群：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">设置apiserver相关参数</span><br><span class="line">      --requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.pem  \</span><br><span class="line">      --proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.pem  \</span><br><span class="line">      --proxy-client-key-file=/etc/kubernetes/pki/front-proxy-client-key.pem  \</span><br><span class="line">      --requestheader-allowed-names=aggregator  \</span><br><span class="line">      --requestheader-group-headers=X-Remote-Group  \</span><br><span class="line">      --requestheader-extra-headers-prefix=X-Remote-Extra-  \</span><br><span class="line">      --requestheader-username-headers=X-Remote-User  \</span><br></pre></td></tr></table></figure></p>
+<p>这里指定了ca，/etc/kubernetes/pki/front-proxy-ca.pem 文件来自于部署kubernetes集群时，用于Authenticating Proxy功能的API Aggregation的认证 证书。</p>
+<h2 id="Resource-metrics"><a href="#Resource-metrics" class="headerlink" title="Resource metrics"></a>Resource metrics</h2><p>如果HPA想要使用resource metrics，则需要在Kubernetes集群的kube-system命名空间中应用metrics-server。</p>
+<ol>
+<li>Configure kubectl to connect to the proper Kubernetes cluster.</li>
+<li>Clone Github metrics-server repo: git clone <a href="https://github.com/kubernetes-incubator/metrics-server" target="_blank" rel="noopener">https://github.com/kubernetes-incubator/metrics-server</a></li>
+<li>Install metrics-server package (assuming that Kubernetes is up to version 1.8): kubectl create -f metrics-server/deploy/1.8+/</li>
+<li>Check that metrics-server is running properly. Check service pod and logs at namespace kube-system</li>
+<li><p>Check that the metrics API is accesible from kubectl:</p>
+<ul>
+<li><p>If you are accessing directly to the Kubernetes cluster, use the server URL at kubectl config like ‘https://:6443’</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># kubectl get --raw /apis/metrics.k8s.io/v1beta1</span></span><br><span class="line">&#123;<span class="string">"kind"</span>:<span class="string">"APIResourceList"</span>,<span class="string">"apiVersion"</span>:<span class="string">"v1"</span>,<span class="string">"groupVersion"</span>:<span class="string">"metrics.k8s.io/v1beta1"</span>,<span class="string">"resources"</span>:[&#123;<span class="string">"name"</span>:<span class="string">"nodes"</span>,<span class="string">"singularName"</span>:<span class="string">""</span>,<span class="string">"namespaced"</span>:<span class="literal">false</span>,<span class="string">"kind"</span>:<span class="string">"NodeMetrics"</span>,<span class="string">"verbs"</span>:[<span class="string">"get"</span>,<span class="string">"list"</span>]&#125;,&#123;<span class="string">"name"</span>:<span class="string">"pods"</span>,<span class="string">"singularName"</span>:<span class="string">""</span>,<span class="string">"namespaced"</span>:<span class="literal">true</span>,<span class="string">"kind"</span>:<span class="string">"PodMetrics"</span>,<span class="string">"verbs"</span>:[<span class="string">"get"</span>,<span class="string">"list"</span>]&#125;]&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>If you are accessing the Kubernetes cluster through Rancher, server URL at kubectl config like this: https://&lt;RANCHER_URL&gt;/k8s/clusters/&lt;CLUSTER_ID&gt; You also need to add prefix /k8s/clusters/&lt;CLUSTER_ID&gt; to the API path.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># kubectl get --raw /k8s/clusters/&lt;CLUSTER_ID&gt;/apis/metrics.k8s.io/v1beta1</span></span><br><span class="line">&#123;<span class="string">"kind"</span>:<span class="string">"APIResourceList"</span>,<span class="string">"apiVersion"</span>:<span class="string">"v1"</span>,<span class="string">"groupVersion"</span>:<span class="string">"metrics.k8s.io/v1beta1"</span>,<span class="string">"resources"</span>:[&#123;<span class="string">"name"</span>:<span class="string">"nodes"</span>,<span class="string">"singularName"</span>:<span class="string">""</span>,<span class="string">"namespaced"</span>:<span class="literal">false</span>,<span class="string">"kind"</span>:<span class="string">"NodeMetrics"</span>,<span class="string">"verbs"</span>:[<span class="string">"get"</span>,<span class="string">"list"</span>]&#125;,&#123;<span class="string">"name"</span>:<span class="string">"pods"</span>,<span class="string">"singularName"</span>:<span class="string">""</span>,<span class="string">"namespaced"</span>:<span class="literal">true</span>,<span class="string">"kind"</span>:<span class="string">"PodMetrics"</span>,<span class="string">"verbs"</span>:[<span class="string">"get"</span>,<span class="string">"list"</span>]&#125;]&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="自定义-Metrics-Prometheus"><a href="#自定义-Metrics-Prometheus" class="headerlink" title="自定义 Metrics (Prometheus)"></a>自定义 Metrics (Prometheus)</h2>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/弹性伸缩/" rel="tag"># 弹性伸缩</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/24/k8s/资源管理/pod 探针/" rel="next" title="Pod的liveness和readiness探针">
+                <i class="fa fa-chevron-left"></i> Pod的liveness和readiness探针
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/24/k8s/概念/声明式API/Kubernetes_API资源的Group和Version选择/" rel="prev" title="Kubernetes API 资源应该使用哪个 Group 和 Version?">
+                Kubernetes API 资源应该使用哪个 Group 和 Version? <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Introduction"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么使用Horizo​​ntal-Pod-Autoscaling"><span class="nav-number">2.</span> <span class="nav-text">为什么使用Horizo​​ntal Pod Autoscaling</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HPA是如何工作的"><span class="nav-number">3.</span> <span class="nav-text">HPA是如何工作的</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#定义-HPA"><span class="nav-number">4.</span> <span class="nav-text">定义 HPA</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Installation"><span class="nav-number">5.</span> <span class="nav-text">Installation</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Requirements"><span class="nav-number">5.1.</span> <span class="nav-text">Requirements</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Resource-metrics"><span class="nav-number">5.2.</span> <span class="nav-text">Resource metrics</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自定义-Metrics-Prometheus"><span class="nav-number">5.3.</span> <span class="nav-text">自定义 Metrics (Prometheus)</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

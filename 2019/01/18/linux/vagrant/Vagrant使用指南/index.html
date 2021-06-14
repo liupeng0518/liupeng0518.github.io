@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="linux,vagrant,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="Vagrant是一款虚拟机管理工具，通过它可以以代码的方式快速地重建不同虚拟环境的虚拟机。 本文以virtualbox作为虚拟机引擎来演示一下Vagrant的使用方法。 Vagrant的依赖Vagrant本身并不具有虚拟化的能力，因此它额外依赖于一套虚拟机程序,我们这里以VirtualBox作为例子，当然除了VirtualBox之外，Vagrant也支持Hyper-V和VMWare，甚至支持Doc">
+<meta name="keywords" content="linux,vagrant">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vagrant使用指南">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/01/18/linux/vagrant/Vagrant使用指南/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="Vagrant是一款虚拟机管理工具，通过它可以以代码的方式快速地重建不同虚拟环境的虚拟机。 本文以virtualbox作为虚拟机引擎来演示一下Vagrant的使用方法。 Vagrant的依赖Vagrant本身并不具有虚拟化的能力，因此它额外依赖于一套虚拟机程序,我们这里以VirtualBox作为例子，当然除了VirtualBox之外，Vagrant也支持Hyper-V和VMWare，甚至支持Doc">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.996Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Vagrant使用指南">
+<meta name="twitter:description" content="Vagrant是一款虚拟机管理工具，通过它可以以代码的方式快速地重建不同虚拟环境的虚拟机。 本文以virtualbox作为虚拟机引擎来演示一下Vagrant的使用方法。 Vagrant的依赖Vagrant本身并不具有虚拟化的能力，因此它额外依赖于一套虚拟机程序,我们这里以VirtualBox作为例子，当然除了VirtualBox之外，Vagrant也支持Hyper-V和VMWare，甚至支持Doc">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/01/18/linux/vagrant/Vagrant使用指南/">
+
+
+
+
+
+  <title>Vagrant使用指南 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/01/18/linux/vagrant/Vagrant使用指南/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Vagrant使用指南</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-18T09:47:19+00:00">
+                2019-01-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/vagrant/" itemprop="url" rel="index">
+                    <span itemprop="name">vagrant</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Vagrant是一款虚拟机管理工具，通过它可以以代码的方式快速地重建不同虚拟环境的虚拟机。</p>
+<p>本文以virtualbox作为虚拟机引擎来演示一下Vagrant的使用方法。</p>
+<p>Vagrant的依赖<br>Vagrant本身并不具有虚拟化的能力，因此它额外依赖于一套虚拟机程序,我们这里以VirtualBox作为例子，当然除了VirtualBox之外，Vagrant也支持Hyper-V和VMWare，甚至支持Docker作为虚拟机(虚拟环境)引擎。 我们一般把这些虚拟机引擎称之为provider.</p>
+<p>sudo pacman -S virtualbox vagrant –noconfirm<br>当然，要使虚拟机能够运行起来，除了有虚拟机引擎创建虚拟机之外，还需要有被虚拟的操作系统镜像，这些镜像我们称之为box。 box可以由自己创建或者直接使用他人分享的。 Vagrant有两类box，一类是“Pre-Build”，表示所有东西都已经安装在box中了，直接使用就好。 还有一类是“Base OS”，即只安装了一个基础的操作系统，其他所有的软件都需要自己来安装。</p>
+<p>创建第一台虚拟机<br>Vagrant通过一个名为 VagrangtFile 的配置文件来创建虚拟机,该文件中包含了如下信息：</p>
+<p>使用哪个box作为虚拟镜像<br>使用哪个虚拟引擎进行虚拟化(virtualbox,vmware,hyper-v,docker等)<br>虚拟机的网络配置信息<br>其他虚拟机初始化脚本(shell,puppet,chef等)<br>创建VagrantFile<br>我们需要创建一个目录，用于存放VagrantFile</p>
+<p>mkdir ~/rhel7<br>cd ~/rhel7<br>运行 vagrant init 初始化Vagrant box。</p>
+<p>vagrant init “generic/rhel7”<br>A <code>Vagrantfile</code> has been placed in this directory. You are now<br>ready to <code>vagrant up</code> your first virtual environment! Please read<br>the comments in the Vagrantfile as well as documentation on<br><code>vagrantup.com</code> for more information on using Vagrant.<br>该命令会初始化所在目录用于存放Vagrant相关信息(.vagrant目录)，并在其中中创建一个 VagrantFile 文件，并且在其中指明使用的box为 centos/7</p>
+<p>Vagrant本身有一个云端预存了大量的box，你可以去 Vagrant Cloud 搜索其他想要的box</p>
+<p>配置VagrangFile<br>打开VagrantFile你会发现其中包含了关于虚拟机的大量设置，每个配置项还很贴心的包含了注释说明</p>
+<p>其中比较常用的配置项有下面几个：</p>
+<p>config.vm.box 定义了使用哪个box启动虚拟机。若指定的box本机找不到，则会从 Vagrant Cloud 中搜索并下载指定的box</p>
+<p>config.vm.box = “generic/rhel7”<br>config.vm.hostname 定义了虚拟机的主机名</p>
+<p>config.vm.hostname = “rhel7”<br>config.vm.boot_timeout 指明了系统启动的超时时间，若这段时间内Vagrang还无法连接上虚拟机，则认为虚拟机启动过程中发生了错误</p>
+<p>config.vm.boot_timeout = 600<br>config.vm.communicator 指明了Vagrant与虚拟机通讯的方式，可以选择”ssh”或者”winrm”,一般box为linux类操作系统则使用”ssh”，为windows操作系统则选择”winrm”</p>
+<p>config.vm.communicator = “ssh”<br>config.vm.provider 用于对虚拟机引擎进行配置</p>
+<p>config.vm.provider “virtualbox” do |vb|</p>
+<h1 id="Display-the-VirtualBox-GUI-when-booting-the-machine"><a href="#Display-the-VirtualBox-GUI-when-booting-the-machine" class="headerlink" title="Display the VirtualBox GUI when booting the machine"></a>Display the VirtualBox GUI when booting the machine</h1><p>  vb.gui = true</p>
+<h1 id="Customize-the-amount-of-memory-on-the-VM"><a href="#Customize-the-amount-of-memory-on-the-VM" class="headerlink" title="Customize the amount of memory on the VM:"></a>Customize the amount of memory on the VM:</h1><p>  vb.memory = “1024”<br>  vb.cpus = 2<br>  vb.customize [“modifyvm”, :id, “–vram”, “128”]<br>  vb.customize [“modifyvm”, :id, “–clipboard”, “bidirectional”]<br>  vb.name = “RHEL7”<br>end<br>比如这段配置指明了虚拟机引擎为 “virtualbox”，启动虚拟机时会现实VirtualBox GUI。同时它还定义了该虚拟机拥有:</p>
+<p>1G内存<br>2个CPU<br>128M显存<br>设置虚拟机与主机双向共享粘帖板<br>虚拟机的名称为RHEL7<br>Vagrant常用命令<br>启动虚拟机<br>配置好 VagrantFile 后，我们只需要在当前目录下运行 vagrant up 就能启动虚拟机了。</p>
+<p>vagrant up<br>若虚拟机尚未创建，则 vagrant up 会自动创建新虚拟机；同时若创建虚拟机时Vagrant发现指定的box不存在，则还会自动从 Vagrant Cloud 上搜索并下载指定的box</p>
+<p>值得一提的时，由于在当前目录中存储了相关虚拟机的信息，因此在执行Vagrant命令时都无需指明作用于哪个虚拟机之上。</p>
+<p>指定provider<br>前面提到过Vagrant支持多种虚拟引擎来进行虚拟化，我们可以通过 –provider 参数来指定虚拟引擎，默认为 virtualbox</p>
+<p>比如 generic/arch box有5种provider提供，分别时virtualbox,vmware_desktop,hyperv,libvirt,parallels. 那么我们可以通过下面命令指定provider为libvirt</p>
+<h1 id="安装必要的依赖"><a href="#安装必要的依赖" class="headerlink" title="安装必要的依赖"></a>安装必要的依赖</h1><p>sudo pacman -Syu ebtables dnsmasq</p>
+<h1 id="vagrant默认只支持VirtualBox，Hyper-V和Docker-provider，需要安装插件来支持libvirt-provider"><a href="#vagrant默认只支持VirtualBox，Hyper-V和Docker-provider，需要安装插件来支持libvirt-provider" class="headerlink" title="vagrant默认只支持VirtualBox，Hyper-V和Docker provider，需要安装插件来支持libvirt provider"></a>vagrant默认只支持VirtualBox，Hyper-V和Docker provider，需要安装插件来支持libvirt provider</h1><p>vagrant plugin install vagrant-libvirt</p>
+<h1 id="指定使用的box"><a href="#指定使用的box" class="headerlink" title="指定使用的box"></a>指定使用的box</h1><p>vagrant init generic/arch</p>
+<h1 id="指定启动的provider为libvirt"><a href="#指定启动的provider为libvirt" class="headerlink" title="指定启动的provider为libvirt"></a>指定启动的provider为libvirt</h1><p>vagrant up –provider libvirt<br>查看虚拟机状态<br>vagrant status<br>挂起虚拟机<br>vagrant suspend<br>重启虚拟机<br>vagrant reload<br>关闭虚拟机<br>vagrant shutdown<br>删除虚拟机<br>vagrant destory<br>ssh登陆虚拟机<br>vagrant ssh<br>Vagrant provision<br>Vagrant provision能够让你为虚拟机自动安装软件并修改配置。</p>
+<p>Vagrant会在三种情况下触发provision:</p>
+<p>第一次使用vagrant up创建虚拟环境,且没有指定 –no-provision 时<br>运行命令 vagrant provision 时<br>运行命令 vagrant reload –provision 时<br>Vagrant支持两种provision provider:</p>
+<p>shell provider<br>调用shell或powershell脚本，脚本中应该不包括手工交互内容</p>
+<p>一个shell provision大概长得像这样</p>
+<p>config.vm.provision “shell”, inline: &lt;&lt;-SHELL<br>  apt-get update<br>  apt-get install -y apache2<br>SHELL<br>其中 “shell” 表示使用的是shell provider, inline: 表示要执行的内容嵌入在后面， &lt;&lt;-SHELL 表示执行脚本到 SHELL 这一行结束。</p>
+<p>除了 inline: ,还可以是 path: 表示要执行的内容存放在后面指定的文件中。</p>
+<p>config.vm.provision :shell, path: “shell/main.cmd”<br>file provider<br>将主机上的文件拷贝到虚拟机中但并不执行脚本的内容。</p>
+<p>一个shell provision大概长得像这样</p>
+<p>config.vm.provision “file”,<br>                    source: “shell/RunBoxStarterGist.bat”,<br>                    destination: “desktop\RunBoxStarterGist.bat”<br>很明显, source: 和 destination: 分别指明了源文件路径和目的文件路径</p>
+<p>此外，值得说明的是，一个VagrantFile中支持多个 config.vm.provision 模块，Vagrant会从上到下一次执行。</p>
+<p>管理box<br>添加box<br>box是用来创建虚拟机的基础镜像。当使用 vagrant up 启动虚拟机时，Vagrant会自动下载box，但你也可以使用下面命令手工添加一个box</p>
+<p>vagrant box add ${name_or_url_or_path} [–name ${name}] [–box-version ${version}] [–provider ${provider}]<br>其中 ${name_or_url_or_path} 可以是box名称，或者指向box文件的URL或路径， 当 ${name_or_url_or_path} 是box名称时，Vagrant会在 Vagrant Cloud 中搜索指定名称的box， 当 ${name_or_url_or_path} 是指向box文件的URL或路径时，还必须跟 –name ${name} 连用以指定box名称。</p>
+<p>同一个名字的box可能包含多个版本，这种情况下可以通过 –box-version ${version} 指定版本， 类似的，也可以通过 –provider ${provider} 来下载指定provider的box</p>
+<p>配置box<br>添加box之后，我们可以在配置文件中使用它，关于box的配置是以 config.vm.box 开头的</p>
+<p>像这样：</p>
+<p>Vagrant.configure(“2”) do |config|<br>  config.vm.box = “hashicorp/precise64”<br>  config.vm.box_version = “1.1.0”<br>end<br>或者是这样：</p>
+<p>Vagrant.configure(“2”) do |config|<br>  config.vm.box = “hashicorp/precise64”<br>  config.vm.box_url = “<a href="http://files.vagrantup.com/precise64.box&quot;" target="_blank" rel="noopener">http://files.vagrantup.com/precise64.box&quot;</a><br>end<br>注意， config.vm.box 并没有关于 provider 的配置，因为它是由 config.vm.provider 决定的</p>
+<p>升级box<br>随着时间的推移，box可能也会发生改变，这是可以使用 vagrant box update 命令来对box进行升级。</p>
+<p>vagrant box update [–box ${name}] [–provider ${provider}]<br>默认情况下，vagrant会对当前目录所指定的box进行升级，但通过 –box ${name} 也可以指定升级特定的box, 通过 –provider ${provider} 则表示只更新特定 provider 的box</p>
+<p>删除box<br>当不再使用某个box来创建虚拟机了，则可以将该box删除掉，以释放空间。</p>
+<p>vagrant box remove ${name} [–provider ${provider}] [–box-version ${version}]</p>
+<p>关于同步目录(Synced Folders)<br>Synced Folder可以用来实现宿主机和虚拟机之间共享文件，</p>
+<p>默认情况下Vagrant会将你的项目目录(即包含Vagrangfile的那个目录)挂载到虚拟机的 /vargrant 目录。</p>
+<p>可以在Vagrantfile中通过 config.vm.synced_folder 来添加Synced Folder</p>
+<p>config.vm.synced_folder ${主机目录}, ${虚拟机目录}<br>其中主机目录若为相对路径，则是以Vagrant项目目录为基准</p>
+<p>网络配置<br>Vagrnat中的所有关于网络的配置都是通过 config.vm.network 配置方法来进行的。 这个方法的第一个参数是一个字符串标识符，用来指明配置网络哪个方面的参数，比如 “forwarded_port” 就表示用来指明配置的是网络转发。 这个方法的其他参数则根据第一个参数的不同而不同。</p>
+<p>在一个VagrantFile中，可以通过多次调用 config.vm.network 方法来多次配置网络参数。</p>
+<p>端口转发<br>Vagrant的端口转发功能能够让你把发送到主机端口的数据包转发到虚拟机中去，从而实现暴露虚拟机服务的功能。</p>
+<p>端口转发的标识符为 “forwarded_port”, 它有两个必须接受的参数 host 和 guest. 即发送到主机 host 端口上的数据包会被转发到 虚拟机的 guest 端口上。</p>
+<p>比如</p>
+<p>Vagrant.configure(“2”) do |config|<br>  config.vm.network “forwarded_port”, guest: 80, host: 8080<br>end<br>表示访问主机8080端口的数据包其实会被转发到虚拟机的80端口上去。</p>
+<p>除了 host 和 guest 之外，其他常见的参数还包括:</p>
+<p>guest_ip<br>指定转发到虚拟机的哪个IP上，默认会转发到虚拟机的每个IP接口上<br>host_ip<br>指定只有访问主机哪个IP上的端口才进行转发，默认也是主机的每个IP<br>protocol<br>指定转发的协议是 “tcp” 还是 “udp”,默认是 “tcp”<br>私有网络<br>虚拟机与虚拟机之间、虚拟机与主机之间可以组成一个私有网络，这个网络只允许网络内的虚拟机或本地主机访问，而不允许主机外的机器进行访问。</p>
+<p>私有网络的标识符为 “private_network”</p>
+<p>配置IP<br>配置IP有两种方式，一种是DHCP，一种是配置静态IP。最方便的方法莫过于直接通过DHCP动态分配IP了:</p>
+<p>Vagrant.configure(“2”) do |config|<br>  config.vm.network “private_network”, type: “dhcp”<br>end<br>配置静态IP其实也挺简单的:</p>
+<p>Vagrant.configure(“2”) do |config|<br>  config.vm.network “private_network”, ip: “192.168.50.4”<br>end<br>同时，静态IP还支持IPV6</p>
+<p>Vagrant.configure(“2”) do |config|<br>  config.vm.network “private_network”, ip: “fde4:8dba:82e1::c4”<br>end<br>公有网络<br>Vagrant也支持创建共有网络，主机外的机器允许访问共有网络。 公有网络的意义根据虚拟机引擎的不同有所不同，一般来说它意味着 “桥接网卡”.</p>
+<p>私有网络的标识符为 “public_network”</p>
+<p>DHCP<br>若公网上启用了DHCP，则共有网络无需任何配置</p>
+<p>Vagrant.configure(“2”) do |config|<br>  config.vm.network “public_network”<br>end<br>设置静态IP<br>与私有网络类似，你可以通过 ip 参数来设置静态IP</p>
+<p>config.vm.network “public_network”, ip: “192.168.0.17”<br>指定桥接的网卡<br>可以通过 bridge 参数来指定桥接的网卡</p>
+<p>config.vm.network “public_network”, bridge: “en1: Wi-Fi (AirPort)”<br>有些provider甚至支持桥接多个网卡</p>
+<p>config.vm.network “public_network”, bridge: [<br>  “en1: Wi-Fi (AirPort)”,<br>  “en6: Broadcom NetXtreme Gigabit Ethernet Controller”,<br>]<br>其他网络设置<br>我们实际上可以通过 provision 的能力来让虚拟机每次启动自动设置网络</p>
+<p>config.vm.provision “shell”,<br>    run: “always”,<br>    inline: “ifconfig eth1 192.168.0.17 netmask 255.255.255.0 up”</p>
+<h1 id="default-router"><a href="#default-router" class="headerlink" title="default router"></a>default router</h1><p>config.vm.provision “shell”,<br>    run: “always”,<br>    inline: “route add default gw 192.168.0.1”<br>插件<br>通过Vagrant插件可以扩展vagrant的功能或者更改vagrant的某些行为，事实上，某些Vagrant的核心功能都是以插件的方式来实现的。</p>
+<p>安装插件<br>通过 vagrant plugin install 命令可以安装插件。一个插件其实就是ruby的gem包。</p>
+<p>安装插件有两种方式：</p>
+<p>一种是从已知的gem源搜索并安装插件</p>
+<p>vagrant plugin install 插件名称<br>其中 插件名称 一般遵循 vagrant-xxxx 的命名规则</p>
+<p>还有一种是安装下载到本地的插件</p>
+<p>vagrant plugin install /path/to/plugin.gem<br>更新插件<br>运行 vagrant plugin update 会更新所有已安装的插件到最新版。</p>
+<p>你也可以通过 vagrant plugin update 插件名称 来指定更新某个插件</p>
+<p>列出已安装的插件<br>vagrant plugin list 命令会列出已经安装的插件及其对应的版本号</p>
+<p>vagrant plugin list<br>vagrant-libvirt (0.0.43)<br>vagrant-proxyconf (1.5.2)<br>vagrant-vbguest (0.15.2)<br>卸载插件<br>vagrant plugin uninstall ${plugin_name}<br>Uninstalling the ‘vagrant-proxyconf’ plugin…<br>Successfully uninstalled vagrant-proxyconf-1.5.2<br>设置代理服务器<br>为 vagrant 命令设置代理<br>通过配置 http_proxy 和 https_proxy 这两个环境变量可以让 vagrant 命令通过代理访问互联网。</p>
+<p>export http_proxy=<a href="http://proxyserver:port" target="_blank" rel="noopener">http://proxyserver:port</a><br>export https_proxy=<a href="https://proxyserver:port" target="_blank" rel="noopener">https://proxyserver:port</a><br>为虚拟机设置代理<br>为虚拟机设置代理需要借助 vagrant-proxyconf 插件</p>
+<p>安装 vagrant-proxyconf 插件</p>
+<p>vagrant plugin install vagrant-proxyconf<br>在 VagrantFile 中添加下面配置</p>
+<p>Vagrant.configure(“2”) do |config|<br>  if Vagrant.has_plugin?(“vagrant-proxyconf”)</p>
+<pre><code># 若安装了plugin，则设置代理信息
+config.proxy.http     = &quot;http://192.168.0.2:3128/&quot;
+config.proxy.https    = &quot;http://192.168.0.2:3128/&quot;
+config.proxy.no_proxy = &quot;localhost,127.0.0.1,.example.com&quot;
+</code></pre><p>  else</p>
+<pre><code># 若没有安装plugin，则调用系统命令安装插件，并提示重运行命令
+system(&apos;vagrant plugin install vagrant-proxyconf&apos;)
+raise(&quot;vagrant-proxyconf installed. Run command again.&quot;);
+</code></pre><p>  end</p>
+<h1 id="…-rest-of-the-configurations"><a href="#…-rest-of-the-configurations" class="headerlink" title="… rest of the configurations"></a>… rest of the configurations</h1><p>end</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+            <a href="/tags/vagrant/" rel="tag"># vagrant</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/18/linux/middleware/influxdb/influxdb配置/" rel="next" title="influxdb使用">
+                <i class="fa fa-chevron-left"></i> influxdb使用
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/02/24/linux/troubleshooting/kernel-solft-lockup/" rel="prev" title="kernel solft lockup">
+                kernel solft lockup <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Display-the-VirtualBox-GUI-when-booting-the-machine"><span class="nav-number">1.</span> <span class="nav-text">Display the VirtualBox GUI when booting the machine</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Customize-the-amount-of-memory-on-the-VM"><span class="nav-number">2.</span> <span class="nav-text">Customize the amount of memory on the VM:</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#安装必要的依赖"><span class="nav-number">3.</span> <span class="nav-text">安装必要的依赖</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#vagrant默认只支持VirtualBox，Hyper-V和Docker-provider，需要安装插件来支持libvirt-provider"><span class="nav-number">4.</span> <span class="nav-text">vagrant默认只支持VirtualBox，Hyper-V和Docker provider，需要安装插件来支持libvirt provider</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#指定使用的box"><span class="nav-number">5.</span> <span class="nav-text">指定使用的box</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#指定启动的provider为libvirt"><span class="nav-number">6.</span> <span class="nav-text">指定启动的provider为libvirt</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#default-router"><span class="nav-number">7.</span> <span class="nav-text">default router</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#…-rest-of-the-configurations"><span class="nav-number">8.</span> <span class="nav-text">… rest of the configurations</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

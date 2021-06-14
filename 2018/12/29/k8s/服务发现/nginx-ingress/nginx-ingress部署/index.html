@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="k8s,ingress,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="nginx-ingress 介绍Ingress 是一种 Kubernetes 资源，也是将 Kubernetes 集群内服务暴露到外部的一种方式。Nginx Ingress Controller 是 Kubernetes Ingress Controller 的一种实现，作为反向代理将外部流量导入集群内部，实现将 Kubernetes 内部的 Service 暴露给外部，这样我们就能通过公网或内网">
+<meta name="keywords" content="k8s,ingress">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nginx-ingress部署">
+<meta property="og:url" content="http://liupeng0518.github.io/2018/12/29/k8s/服务发现/nginx-ingress/nginx-ingress部署/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="nginx-ingress 介绍Ingress 是一种 Kubernetes 资源，也是将 Kubernetes 集群内服务暴露到外部的一种方式。Nginx Ingress Controller 是 Kubernetes Ingress Controller 的一种实现，作为反向代理将外部流量导入集群内部，实现将 Kubernetes 内部的 Service 暴露给外部，这样我们就能通过公网或内网">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="nginx-ingress部署">
+<meta name="twitter:description" content="nginx-ingress 介绍Ingress 是一种 Kubernetes 资源，也是将 Kubernetes 集群内服务暴露到外部的一种方式。Nginx Ingress Controller 是 Kubernetes Ingress Controller 的一种实现，作为反向代理将外部流量导入集群内部，实现将 Kubernetes 内部的 Service 暴露给外部，这样我们就能通过公网或内网">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2018/12/29/k8s/服务发现/nginx-ingress/nginx-ingress部署/">
+
+
+
+
+
+  <title>nginx-ingress部署 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2018/12/29/k8s/服务发现/nginx-ingress/nginx-ingress部署/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">nginx-ingress部署</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-29T09:47:19+00:00">
+                2018-12-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="nginx-ingress-介绍"><a href="#nginx-ingress-介绍" class="headerlink" title="nginx-ingress 介绍"></a>nginx-ingress 介绍</h1><p>Ingress 是一种 Kubernetes 资源，也是将 Kubernetes 集群内服务暴露到外部的一种方式。<br>Nginx Ingress Controller 是 Kubernetes Ingress Controller 的一种实现，作为反向代理将外部流量导入集群内部，实现将 Kubernetes 内部的 Service 暴露给外部，这样我们就能通过公网或内网直接访问集群内部的服务。</p>
+<p>目前helm仓库中已经有了nginx-ingress的资源。  </p>
+<p>项目地址: <a href="https://kubernetes.github.io/ingress-nginx" target="_blank" rel="noopener">https://kubernetes.github.io/ingress-nginx</a>  </p>
+<p>github地址: <a href="https://github.com/kubernetes/ingress-nginx/" target="_blank" rel="noopener">https://github.com/kubernetes/ingress-nginx/</a>  </p>
+<h1 id="流量导入方式"><a href="#流量导入方式" class="headerlink" title="流量导入方式"></a>流量导入方式</h1><p>要想暴露内部流量，就需要让 Ingress Controller 自身能够对外提供服务，我们可以选择一下方式：</p>
+<p>Ingress Controller 使用 Deployment 部署，Service 类型指定为 LoadBalancer</p>
+<pre><code>- 可以通过 Cloud Provider 提供loadbalancer
+- 可以通过指定external ip 设置vip方式
+</code></pre><p>Ingress Controller 使用 DeamonSet 部署，Pod 指定 hostnetwork或hostPort 来暴露端口</p>
+<pre><code>- 没有高可用保证，需要自己实现
+- 需要占用宿主机端口
+</code></pre><p>Ingress Controller 使用 NodePort方式</p>
+<pre><code>- 没有高可用保证，需要自己实现
+- 需要占用宿主机端口
+</code></pre><h1 id="LoadBalancer-方式导入流量"><a href="#LoadBalancer-方式导入流量" class="headerlink" title="LoadBalancer 方式导入流量"></a>LoadBalancer 方式导入流量</h1><h2 id="云厂商-Cloud-Provider"><a href="#云厂商-Cloud-Provider" class="headerlink" title="云厂商 Cloud Provider"></a>云厂商 Cloud Provider</h2><p>这种方式部署 Nginx Ingress Controller 最简单，只要保证上面说的前提：集群有 Cloud Provider 并且支持 LoadBalancer，如果你是使用云厂商的 Kubernetes 集群，保证你集群所使用的云厂商的账号有足够的余额，执行下面的命令一键安装：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">helm install --name nginx-ingress --namespace kube-system stable/nginx-ingress</span><br></pre></td></tr></table></figure></p>
+<p>因为 stable/nginx-ingress 这个 helm 的 chart 包默认就是使用的这种方式部署。</p>
+<p>部署完了我们可以查看 LoadBalancer 给我们分配的 IP 地址：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl get svc -n kube-system</span><br><span class="line">NAME                            TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)                      AGE</span><br><span class="line">nginx-ingress-controller        LoadBalancer   10.3.255.123   120.27.122.135   80:30113/TCP,443:32564/TCP   1h</span><br></pre></td></tr></table></figure></p>
+<p>EXTERNAL-IP 就是我们需要的外部 IP 地址，通过访问它就可以访问到集群内部的服务了，我们可以将想要的域名配置这个IP的DNS记录，这样就可以直接通过域名来访问了。具体访问哪个 Service, 这个就是我们创建的 Ingress 里面所配置规则的了，可以通过匹配请求的 Host 和 路径这些来转发到不同的后端 Service.</p>
+<h1 id="Bare-Metal-环境下流量导入"><a href="#Bare-Metal-环境下流量导入" class="headerlink" title="Bare Metal 环境下流量导入"></a>Bare Metal 环境下流量导入</h1><p>barematal可以参考官方文档：<br><a href="https://kubernetes.github.io/ingress-nginx/deploy/#bare-metal" target="_blank" rel="noopener">https://kubernetes.github.io/ingress-nginx/deploy/#bare-metal</a></p>
+<p><a href="https://kubernetes.github.io/ingress-nginx/deploy/baremetal/" target="_blank" rel="noopener">https://kubernetes.github.io/ingress-nginx/deploy/baremetal/</a></p>
+<p>我这里简单罗列了集中方式，仅供参考：</p>
+<p>在使用 Bare Metal 的时候可以有几种方式：</p>
+<ul>
+<li>A pure software solution: MetalLB</li>
+<li>Over a NodePort Service</li>
+<li>Via the host network</li>
+<li>Using a self-provisioned edge</li>
+<li>External IPs</li>
+</ul>
+<h2 id="MetalLB"><a href="#MetalLB" class="headerlink" title="MetalLB"></a>MetalLB</h2><p>待补充…</p>
+<h2 id="EXTERNAL-IP"><a href="#EXTERNAL-IP" class="headerlink" title="EXTERNAL-IP"></a>EXTERNAL-IP</h2><h3 id="kube-proxy-ipvs"><a href="#kube-proxy-ipvs" class="headerlink" title="kube-proxy ipvs"></a>kube-proxy ipvs</h3><p>在我们的环境中，kube-proxy开启了ipvs模式，ingress controller采用externalIp的Service，externalIp指定的就是VIP，vip会由kube-proxy ipvs接管。<br>实验环境：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@lab1 ingeress]<span class="comment"># kubectl get node -owide </span></span><br><span class="line">NAME      STATUS    ROLES     AGE       VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                KERNEL-VERSION               CONTAINER-RUNTIME</span><br><span class="line">lab1      Ready     master    1d        v1.11.5   10.7.12.201   &lt;none&gt;        CentOS Linux 7 (Core)   3.10.0-862.11.6.el7.x86_64   docker://17.3.2</span><br><span class="line">lab2      Ready     master    1d        v1.11.5   10.7.12.202   &lt;none&gt;        CentOS Linux 7 (Core)   3.10.0-862.11.6.el7.x86_64   docker://17.3.2</span><br><span class="line">lab3      Ready     master    1d        v1.11.5   10.7.12.203   &lt;none&gt;        CentOS Linux 7 (Core)   3.10.0-862.11.6.el7.x86_64   docker://17.3.2</span><br><span class="line">lab4      Ready     &lt;none&gt;    1d        v1.11.5   10.7.12.204   &lt;none&gt;        CentOS Linux 7 (Core)   3.10.0-862.11.6.el7.x86_64   docker://17.3.2</span><br><span class="line">[root@lab1 ingeress]<span class="comment">#</span></span><br></pre></td></tr></table></figure></p>
+<p>此时我们部署:<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">helm install --name nginx-ingress --<span class="built_in">set</span> <span class="string">"rbac.create=true,controller.service.externalIPs[0]=10.7.12.210"</span> stable/nginx-ingress</span><br></pre></td></tr></table></figure></p>
+<p>这种方式提供了一种，基于 IPVS 的 Bare metal环境下Kubernetes Ingress边缘节点的高可用。<br>如果这里不使用的ipvs，那么需要使用keepalived代替 提供vip支持。<br>亦或是：这里提供多组ip:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">spec:</span><br><span class="line">  externalIPs:</span><br><span class="line">  - 203.0.113.2</span><br><span class="line">  - 203.0.113.3</span><br></pre></td></tr></table></figure></p>
+<p>然后将域名同时解析到externalIPs里。</p>
+<blockquote>
+<p>这里提到了externalIP在ingress中的几种使用方式:</p>
+<ol>
+<li>ipvs(k8s 1.11 后可直接切换为ipvs)</li>
+<li>keepalived(自建)</li>
+<li>多组externalIPs</li>
+</ol>
+</blockquote>
+<p>这时我们去任意节点查看：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">[root@lab1 ingeress]<span class="comment"># ip a sh kube-ipvs0</span></span><br><span class="line">7: kube-ipvs0: &lt;BROADCAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default </span><br><span class="line">    link/ether 9a:e7:21:a4:e5:ab brd ff:ff:ff:ff:ff:ff</span><br><span class="line">    inet 10.96.0.1/32 brd 10.96.0.1 scope global kube-ipvs0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet 10.96.0.10/32 brd 10.96.0.10 scope global kube-ipvs0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet 10.98.162.41/32 brd 10.98.162.41 scope global kube-ipvs0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet 10.104.239.107/32 brd 10.104.239.107 scope global kube-ipvs0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet 10.103.35.242/32 brd 10.103.35.242 scope global kube-ipvs0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet 10.104.65.25/32 brd 10.104.65.25 scope global kube-ipvs0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet 10.99.227.84/32 brd 10.99.227.84 scope global kube-ipvs0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet 10.7.12.210/32 brd 10.7.12.210 scope global kube-ipvs0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet 10.104.157.87/32 brd 10.104.157.87 scope global kube-ipvs0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br></pre></td></tr></table></figure></p>
+<p>可以看到 10,7.12.210这个ip绑定到了 kube-ipvs0 上了</p>
+<p>在几台节点宿主机上查看，我们可以看到 ExternalIP 的 Service 是通过 Kube-Proxy对外暴露的，这里的 10.7.12.210是内网 IP。 实际生产应用中是需要通过边缘路由器或全局统一接入层的负载均衡器将到达公网 IP 的外网流量转发到这个内网 IP 上，外部用户再通过域名访问集群中以 Ingress 暴露的所有服务。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@lab1 ingeress]# sudo netstat -tlunp|grep kube-proxy|grep -E &apos;80|443&apos;</span><br><span class="line">tcp        0      0 10.7.12.210:443         0.0.0.0:*               LISTEN      3127/kube-proxy     </span><br><span class="line">tcp        0      0 10.7.12.210:80          0.0.0.0:*               LISTEN      3127/kube-proxy</span><br></pre></td></tr></table></figure>
+<p>这时我们访问：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">[root@lab1 deploy]# curl http://10.7.12.210</span><br><span class="line">default backend - 404</span><br><span class="line"></span><br><span class="line">[root@lab1 deploy]# curl -k  https://10.7.12.210</span><br><span class="line">default backend - 404</span><br><span class="line"></span><br><span class="line">[root@lab1 ingeress]# curl -I http://10.7.12.210/healthz/</span><br><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Server: nginx/1.13.8</span><br><span class="line">Date: Thu, 13 Dec 2018 04:44:47 GMT</span><br><span class="line">Content-Type: text/html</span><br><span class="line">Content-Length: 0</span><br><span class="line">Connection: keep-alive</span><br><span class="line">Strict-Transport-Security: max-age=15724800; includeSubDomains;</span><br><span class="line"></span><br><span class="line">[root@lab1 ingeress]# curl -I --insecure http://10.7.12.210/healthz/</span><br><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Server: nginx/1.13.8</span><br><span class="line">Date: Thu, 13 Dec 2018 04:45:00 GMT</span><br><span class="line">Content-Type: text/html</span><br><span class="line">Content-Length: 0</span><br><span class="line">Connection: keep-alive</span><br><span class="line">Strict-Transport-Security: max-age=15724800; includeSubDomains;</span><br></pre></td></tr></table></figure>
+<p>创建测试<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">[root@lab1 ingeress]<span class="comment"># cat my-nginx.yaml </span></span><br><span class="line">apiVersion: extensions/v1beta1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: my-nginx</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        run: my-nginx</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: my-nginx</span><br><span class="line">        image: nginx</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 80</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: my-nginx</span><br><span class="line">  labels:</span><br><span class="line">    app: my-nginx</span><br><span class="line">spec:</span><br><span class="line">  ports:</span><br><span class="line">  - port: 80</span><br><span class="line">    protocol: TCP</span><br><span class="line">    name: http</span><br><span class="line">  selector:</span><br><span class="line">    run: my-nginx</span><br><span class="line">---</span><br><span class="line">apiVersion: extensions/v1beta1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: my-nginx</span><br><span class="line">  annotations:</span><br><span class="line">    kubernetes.io/ingress.class: <span class="string">"nginx"</span></span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: my-nginx</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        backend:</span><br><span class="line">          serviceName: my-nginx</span><br><span class="line">          servicePort: 80</span><br></pre></td></tr></table></figure></p>
+<p>访问：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@lab1 ingeress]<span class="comment"># curl my-nginx</span></span><br><span class="line">...</span><br><span class="line">&lt;title&gt;Welcome to nginx!&lt;/title&gt;</span><br><span class="line">...</span><br></pre></td></tr></table></figure></p>
+<p>查看相关信息<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">[root@lab1 ingeress]<span class="comment"># kubectl get svc</span></span><br><span class="line">kub	NAME                            TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE</span><br><span class="line">kubernetes                      ClusterIP      10.96.0.1       &lt;none&gt;        443/TCP                      1d</span><br><span class="line">my-nginx                        ClusterIP      10.104.65.25    &lt;none&gt;        80/TCP                       31m</span><br><span class="line">nginx-ingress-controller        LoadBalancer   10.99.227.84    10.7.12.210   80:31970/TCP,443:30512/TCP   1m</span><br><span class="line">nginx-ingress-default-backend   ClusterIP      10.104.157.87   &lt;none&gt;        80/TCP                       1m</span><br><span class="line">nobby-scorpion-mariadb          ClusterIP      10.103.35.242   &lt;none&gt;        3306/TCP                     18h</span><br><span class="line">[root@lab1 ingeress]<span class="comment"># kubectl get pod</span></span><br><span class="line">NAME                                             READY     STATUS    RESTARTS   AGE</span><br><span class="line">my-nginx-59497d7745-f785f                        1/1       Running   0          32m</span><br><span class="line">nginx-ingress-controller-58bff448cb-6hf9s        1/1       Running   1          1m</span><br><span class="line">nginx-ingress-default-backend-7744786499-wnhsh   1/1       Running   0          1m</span><br><span class="line">nobby-scorpion-mariadb-756d49cfb8-z7jtb          1/1       Running   0          18h</span><br><span class="line">static-ceph-pod                                  1/1       Running   1          19h</span><br><span class="line">[root@lab1 ingeress]<span class="comment"># kubectl get ing</span></span><br><span class="line">NAME       HOSTS      ADDRESS   PORTS     AGE</span><br><span class="line">my-nginx   my-nginx             80        32m</span><br></pre></td></tr></table></figure></p>
+<h3 id="kube-proxy-iptables"><a href="#kube-proxy-iptables" class="headerlink" title="kube-proxy iptables"></a>kube-proxy iptables</h3><p>这种方式需要外部提供vip高可用</p>
+<p>这里我们指定controller.service.externalIPs[0]为vip地址，如下方式部署：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">helm install --name nginx-ingress --<span class="built_in">set</span> <span class="string">"rbac.create=true,controller.service.externalIPs[0]=10.7.12.210,controller.service.externalIPs[1]=10.7.12.201,controller.service.externalIPs[2]=10.7.12.202"</span> stable/nginx-ingress</span><br></pre></td></tr></table></figure></p>
+<p>部署之后，我们这里只是指定了vip地址，但是环境中并未真实提供vip地址，<br>那么之后可以通过keepalived方式提供vip。</p>
+<h2 id="hostnetwork-hostport"><a href="#hostnetwork-hostport" class="headerlink" title="hostnetwork/hostport"></a>hostnetwork/hostport</h2><p>这种方式实际是使用集群内的某些节点来暴露流量，使用 DeamonSet 部署，保证让符合我们要求的节点都会启动一个 Nginx 的 Ingress Controller 来监听端口，这些节点我们叫它 边缘节点，因为它们才是真正监听端口，让外界流量进入集群内部的节点，这里我使用集群内部的一个节点来暴露流量，并且 80 和 443 端口没有被其它占用。</p>
+<p>nodeport 则是在所有集群节点启动监听端口。</p>
+<p>接下来的实现方式是 hostNetwork：</p>
+<h3 id="挑选边缘节点"><a href="#挑选边缘节点" class="headerlink" title="挑选边缘节点"></a>挑选边缘节点</h3><p>首先，查看集群节点：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ kubectl get node</span><br><span class="line">NAME   STATUS   ROLES    AGE   VERSION</span><br><span class="line">lab1   Ready    master   17h   v1.11.5</span><br><span class="line">lab2   Ready    master   17h   v1.11.5</span><br><span class="line">lab3   Ready    master   17h   v1.11.5</span><br><span class="line">lab4   Ready    &lt;none&gt;   17h   v1.11.5</span><br></pre></td></tr></table></figure></p>
+<p>我想要 lab4 这个节点作为 边缘节点 来暴露流量，我来给它加个 label，以便后面我们用 DeamonSet 部署 Nginx Ingress Controller 时能绑到这个节点上，我这里就加个名为 node:edge 的 label :<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl label node lab4 node=edge</span><br><span class="line">node <span class="string">"lab4"</span> labeled</span><br></pre></td></tr></table></figure></p>
+<p>如果 label 加错了可以这样删掉:<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl label node lab4 node-</span><br><span class="line">node <span class="string">"lab4"</span> labeled</span><br></pre></td></tr></table></figure></p>
+<h3 id="部署ingress"><a href="#部署ingress" class="headerlink" title="部署ingress"></a>部署ingress</h3><p>我们可以这样查看版本：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@lab1 ~]<span class="comment"># helm search nginx-ingress</span></span><br><span class="line">NAME                            	CHART VERSION	APP VERSION	DESCRIPTION                                                 </span><br><span class="line">aliyun-stable/nginx-ingress     	0.16.1       	0.12.0-2   	An nginx Ingress controller that uses ConfigMap to store ...</span><br><span class="line">bitnami/nginx-ingress-controller	3.1.1        	0.21.0     	Chart <span class="keyword">for</span> the nginx Ingress controller                      </span><br><span class="line"><span class="built_in">local</span>/nginx-ingress             	0.9.5        	0.10.2     	An nginx Ingress controller that uses ConfigMap to store ...</span><br><span class="line">stable/nginx-ingress            	0.9.5        	0.10.2     	An nginx Ingress controller that uses ConfigMap to store ...</span><br><span class="line">stable/nginx-lego               	0.3.1        	           	Chart <span class="keyword">for</span> nginx-ingress-controller and kube-lego</span><br></pre></td></tr></table></figure></p>
+<p>注意： 目前有的k8s版本使用hostport不生效，这里我是使用的hostnetwork方式。</p>
+<p>接下来我们覆盖一些默认配置来安装，我们选择stable的0.9.5，注意这里集群开启了rbac，所以这里也要开启rbac支持，否则会导致controller无法启动。<br>同时我们这里选择了hostNetwork的方式：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">helm install stable/nginx-ingress \</span><br><span class="line">  --namespace kube-system \</span><br><span class="line">  --name nginx-ingress \</span><br><span class="line">  --version=0.9.5 \</span><br><span class="line">  --<span class="built_in">set</span> rbac.create=<span class="literal">true</span> \</span><br><span class="line">  --<span class="built_in">set</span> controller.kind=DaemonSet \</span><br><span class="line"><span class="comment">#  --set controller.daemonset.useHostPort=true \</span></span><br><span class="line">  --<span class="built_in">set</span> controller.hostNetwork=<span class="literal">true</span> \</span><br><span class="line">  --<span class="built_in">set</span> controller.nodeSelector.node=edge \</span><br><span class="line">  --<span class="built_in">set</span> controller.service.type=ClusterIP</span><br></pre></td></tr></table></figure></p>
+<p>这里指定的参数具体可以在<a href="https://github.com/helm/charts/tree/master/stable/nginx-ingress" target="_blank" rel="noopener">github</a>主页查看：</p>
+<p>可以看下是否成功启动:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@lab1 ~]<span class="comment"># kubectl get pods -owide -n kube-system | grep nginx-ingress</span></span><br><span class="line">nginx-ingress-controller-9nxsw                   1/1       Running   0          1m        10.244.3.198   lab4      &lt;none&gt;</span><br><span class="line">nginx-ingress-default-backend-7744786499-kmfrx   1/1       Running   0          1m        10.244.3.199   lab4      &lt;none&gt;</span><br></pre></td></tr></table></figure>
+<p>如果状态不是 Running 可以查看下详情:<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl describe -n kube-system po/nginx-ingress-controller-9nxsw</span><br></pre></td></tr></table></figure></p>
+<p>这里我们可以在lab4节点上查看：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># 查看宿主机端口监听</span></span><br><span class="line">[root@lab4 ~]<span class="comment"># ss -antlp|grep '80\|443'</span></span><br><span class="line">LISTEN     0      128          *:443                      *:*                   users:((<span class="string">"nginx"</span>,pid=28179,fd=15),(<span class="string">"nginx"</span>,pid=28175,fd=15),(<span class="string">"nginx"</span>,pid=27967,fd=15))</span><br><span class="line">LISTEN     0      128          *:18080                    *:*                   users:((<span class="string">"nginx"</span>,pid=28179,fd=17),(<span class="string">"nginx"</span>,pid=28175,fd=17),(<span class="string">"nginx"</span>,pid=27967,fd=17))</span><br><span class="line">LISTEN     0      128          *:80                       *:*</span><br></pre></td></tr></table></figure></p>
+<p>[root@lab1 deploy]# curl <a href="http://10.7.12.204" target="_blank" rel="noopener">http://10.7.12.204</a><br>default backend - 404</p>
+<p>[root@lab1 deploy]# curl -k  <a href="https://10.7.12.204" target="_blank" rel="noopener">https://10.7.12.204</a><br>default backend - 404</p>
+<p>​<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">LISTEN     0      128         :::443                     :::*                   users:((&quot;nginx&quot;,pid=28179,fd=16),(&quot;nginx&quot;,pid=28175,fd=16),(&quot;nginx&quot;,pid=27967,fd=16))</span><br><span class="line">LISTEN     0      128         :::18080                   :::*                   users:((&quot;nginx&quot;,pid=28179,fd=18),(&quot;nginx&quot;,pid=28175,fd=18),(&quot;nginx&quot;,pid=27967,fd=18))</span><br><span class="line">LISTEN     0      128         :::80                      :::*                   users:((&quot;nginx&quot;,pid=28179,fd=14),(&quot;nginx&quot;,pid=28175,fd=14),(&quot;nginx&quot;,pid=27967,fd=14))</span><br><span class="line"></span><br><span class="line"># 查看宿主机所启动的进程</span><br><span class="line">[root@lab4 ~]# ps aux|grep nginx|grep -v grep</span><br><span class="line">root     27862  0.0  0.0   4040   356 ?        Ss   18:31   0:00 /usr/bin/dumb-init /nginx-ingress-controller --default-backend-service=kube-system/nginx-ingress-default-backend --election-id=ingress-controller-leader --ingress-class=nginx --configmap=kube-system/nginx-ingress-controller</span><br><span class="line">root     27872  0.6  0.2  39700 19892 ?        Ssl  18:31   0:02 /nginx-ingress-controller --default-backend-service=kube-system/nginx-ingress-default-backend --election-id=ingress-controller-leader --ingress-class=nginx --configmap=kube-system/nginx-ingress-controller</span><br></pre></td></tr></table></figure></p>
+<p>这时会在lab4上启动进程监听80和443：<br>可以通过浏览器访问 lab4或ip：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@lab1 deploy]# curl http://10.7.12.204</span><br><span class="line">default backend - 404</span><br><span class="line"></span><br><span class="line">[root@lab1 deploy]# curl -k  https://10.7.12.204</span><br><span class="line">default backend - 404</span><br></pre></td></tr></table></figure>
+<p>运行成功我们就可以创建 Ingress 来将外部流量导入集群内部啦，外部 IP 是我们的 边缘节点 的 IP，公网和内网 IP 都算，我用的 lab4 这个节点，并且它有公网 IP，我就可以通过公网 IP 来访问了，如果再给这个公网 IP 添加 DNS 记录，我就可以用域名访问了。</p>
+<p>这里一点要注意：</p>
+<p>hostnetwork下pod会继承宿主机的网络协议,也就是使用了主机的dns,会导致svc的请求直接走宿主机的上到公网的dns服务器而非集群里的dns server,需要设置pod的dnsPolicy: ClusterFirstWithHostNet即可</p>
+<h3 id="高可用"><a href="#高可用" class="headerlink" title="高可用"></a>高可用</h3><p>此时部署成功之后，这里同样需要通过keepalived或外部LB提供高可用</p>
+<p>示例：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@k8s-m1 deploy]# kubectl get nodes --show-labels</span><br><span class="line">NAME     STATUS   ROLES    AGE   VERSION   LABELS</span><br><span class="line">k8s-m1   Ready    master   22d   v1.12.3   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=k8s-m1,node-role.kubernetes.io/master=,node=edge</span><br><span class="line">k8s-m2   Ready    master   22d   v1.12.3   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=k8s-m2,node-role.kubernetes.io/master=,node=edge</span><br><span class="line">k8s-m3   Ready    master   22d   v1.12.3   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=k8s-m3,node-role.kubernetes.io/master=,node=edge</span><br><span class="line">k8s-n1   Ready    node     22d   v1.12.3   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=k8s-n1,node-role.kubernetes.io/node=</span><br><span class="line">k8s-n2   Ready    node     22d   v1.12.3   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=k8s-n2,node-role.kubernetes.io/node=</span><br></pre></td></tr></table></figure></p>
+<p>edge节点keepalived（这里同时兼master高可用）配置：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line">[root@k8s-m1 deploy]# cat /etc/keepalived/keepalived.conf </span><br><span class="line">vrrp_script haproxy-check &#123;</span><br><span class="line">    script &quot;/bin/bash /etc/keepalived/check_haproxy.sh&quot;</span><br><span class="line">    interval 3</span><br><span class="line">    weight -2</span><br><span class="line">    fall 10</span><br><span class="line">    rise 2</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vrrp_instance haproxy-vip &#123;</span><br><span class="line">    state BACKUP</span><br><span class="line">    priority 101</span><br><span class="line">    interface eth0</span><br><span class="line">    virtual_router_id 47</span><br><span class="line">    advert_int 3</span><br><span class="line"></span><br><span class="line">    unicast_peer &#123;</span><br><span class="line">	10.7.12.201</span><br><span class="line">	10.7.12.202</span><br><span class="line">	10.7.12.203</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    virtual_ipaddress &#123;</span><br><span class="line">        10.7.12.200</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    track_script &#123;</span><br><span class="line">        haproxy-check</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">virtual_server 10.7.12.200 443 &#123;</span><br><span class="line">    delay_loop 6</span><br><span class="line">    lb_algo loadbalance</span><br><span class="line">    lb_kind DR</span><br><span class="line">    nat_max 255.255.0.0</span><br><span class="line">    persistence_timeout 50</span><br><span class="line">    protocol TCP</span><br><span class="line"></span><br><span class="line">    real_server 10.7.12.204 443 &#123;</span><br><span class="line">        weight 1</span><br><span class="line">        TCP_CHECK &#123;</span><br><span class="line">          connect_timeout 3</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    real_server 10.7.2.205 443 &#123;</span><br><span class="line">        weight 1</span><br><span class="line">        TCP_CHECK &#123;</span><br><span class="line">          connect_timeout 3</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">virtual_server 10.7.12.200 80 &#123;</span><br><span class="line">    delay_loop 6</span><br><span class="line">    lb_algo loadbalance</span><br><span class="line">    lb_kind DR </span><br><span class="line">    nat_max 255.255.0.0</span><br><span class="line">    persistence_timeout 50</span><br><span class="line">    protocol TCP</span><br><span class="line"></span><br><span class="line">    real_server 10.7.12.204 80 &#123;</span><br><span class="line">        weight 1</span><br><span class="line">        TCP_CHECK &#123;</span><br><span class="line">          connect_timeout 3</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    real_server 10.7.2.205 80 &#123;</span><br><span class="line">        weight 1 </span><br><span class="line">        TCP_CHECK &#123;</span><br><span class="line">          connect_timeout 3</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[root@k8s-m1 deploy]# cat /etc/keepalived/check_haproxy.sh </span><br><span class="line">#!/bin/bash</span><br><span class="line">VIRTUAL_IP=10.7.12.200</span><br><span class="line"></span><br><span class="line">errorExit() &#123;</span><br><span class="line">    echo &quot;*** $*&quot; 1&gt;&amp;2</span><br><span class="line">    exit 1</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">if ip addr | grep -q $VIRTUAL_IP ; then</span><br><span class="line">    curl -s --max-time 2 --insecure https://$&#123;VIRTUAL_IP&#125;:8443/ -o /dev/null || errorExit &quot;Error GET https://$&#123;VIRTUAL_IP&#125;:8443/&quot;</span><br><span class="line">fi</span><br></pre></td></tr></table></figure>
+<p>这时访问vip即可<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@k8s-m1 deploy]# curl 10.7.12.200</span><br><span class="line">default backend - 404</span><br></pre></td></tr></table></figure></p>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>我们来创建一个服务测试一下，先创建一个 my-nginx.yaml<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line">vi my-nginx.yaml</span><br><span class="line">粘贴以下内容：</span><br><span class="line"></span><br><span class="line">apiVersion: extensions/v1beta1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: my-nginx</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        run: my-nginx</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: my-nginx</span><br><span class="line">        image: nginx</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 80</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: my-nginx</span><br><span class="line">  labels:</span><br><span class="line">    app: my-nginx</span><br><span class="line">spec:</span><br><span class="line">  ports:</span><br><span class="line">  - port: 80</span><br><span class="line">    protocol: TCP</span><br><span class="line">    name: http</span><br><span class="line">  selector:</span><br><span class="line">    run: my-nginx</span><br><span class="line">---</span><br><span class="line">apiVersion: extensions/v1beta1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: my-nginx</span><br><span class="line">  annotations:</span><br><span class="line">    kubernetes.io/ingress.class: <span class="string">"nginx"</span></span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        backend:</span><br><span class="line">          serviceName: my-nginx</span><br><span class="line">          servicePort: 80</span><br></pre></td></tr></table></figure></p>
+<p>创建：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f my-nginx.yaml</span><br></pre></td></tr></table></figure></p>
+<p>查看状态：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[root@lab1 ingeress]<span class="comment"># kubectl get pod</span></span><br><span class="line">NAME                                      READY     STATUS    RESTARTS   AGE</span><br><span class="line">my-nginx-59497d7745-h6h4r                 1/1       Running   0          30s</span><br><span class="line">nobby-scorpion-mariadb-756d49cfb8-z7jtb   1/1       Running   0          2h</span><br><span class="line">static-ceph-pod                           1/1       Running   0          2h</span><br><span class="line">[root@lab1 ingeress]<span class="comment"># kubectl get svc</span></span><br><span class="line">NAME                     TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE</span><br><span class="line">kubernetes               ClusterIP   10.96.0.1       &lt;none&gt;        443/TCP    1d</span><br><span class="line">my-nginx                 ClusterIP   10.99.42.39     &lt;none&gt;        80/TCP     34s</span><br><span class="line">nobby-scorpion-mariadb   ClusterIP   10.103.35.242   &lt;none&gt;        3306/TCP   2h</span><br><span class="line">[root@lab1 ingeress]<span class="comment"># kubectl get ing</span></span><br><span class="line">NAME       HOSTS      ADDRESS   PORTS     AGE</span><br><span class="line">my-nginx   my-nginx             80        36s</span><br></pre></td></tr></table></figure></p>
+<p>没有dns，那么可以通过配置/etc/hsots 方式解析。</p>
+<p>然后浏览器通过域名访问，可以看到 Welcome to nginx! 这个 nginx 默认的主页。</p>
+<p>注意：定义 Ingress 的时候最好加上 kubernetes.io/ingress.class 这个 annotation，在有多个 Ingress Controller 的情况下让请求能够被我们安装的这个处理（云厂商托管的 Kubernetes 集群一般会有默认的 Ingress Controller)</p>
+<h2 id="nodeport"><a href="#nodeport" class="headerlink" title="nodeport"></a>nodeport</h2><p>这里我们使用官方yaml文件方式部署</p>
+<p>github地址: <a href="https://github.com/kubernetes/ingress-nginx/" target="_blank" rel="noopener">https://github.com/kubernetes/ingress-nginx/</a>  </p>
+<p>官方部署文档：<br><a href="https://github.com/kubernetes/ingress-nginx/blob/nginx-0.20.0/docs/deploy/index.md" target="_blank" rel="noopener">https://github.com/kubernetes/ingress-nginx/blob/nginx-0.20.0/docs/deploy/index.md</a></p>
+<p>我们可以如下方式直接部署：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/kubernetes/ingress-nginx.git</span><br><span class="line">git checkout nginx-0.20.1</span><br><span class="line"><span class="built_in">cd</span> ~/ingress-nginx/deploy</span><br><span class="line">kubectl apply -f mandatory.yaml</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># baremetal方式部署</span></span><br><span class="line"><span class="comment"># 这里可以修改yaml，指定nodePort，默认是动态生成</span></span><br><span class="line">kubectl apply -f provider/baremetal/service-nodeport.yaml</span><br></pre></td></tr></table></figure>
+<p>部署完成之后，可以访问nodePort，同样会返回;</p>
+<p>default backend - 404</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a href="https://imroc.io/posts/kubernetes/use-nginx-ingress-controller-to-expose-service/" target="_blank" rel="noopener">https://imroc.io/posts/kubernetes/use-nginx-ingress-controller-to-expose-service/</a></p>
+<p><a href="https://blog.frognew.com/2018/06/kubernetes-ingress-1.html" target="_blank" rel="noopener">https://blog.frognew.com/2018/06/kubernetes-ingress-1.html</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/ingress/" rel="tag"># ingress</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/29/k8s/Network/异常排错/" rel="next" title="异常排错">
+                <i class="fa fa-chevron-left"></i> 异常排错
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/29/ceph/问题处理/Ceph_PG_Inconsistent_Error处理/" rel="prev" title="\[转\]Ceph PG Inconsistent Error处理">
+                \[转\]Ceph PG Inconsistent Error处理 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#nginx-ingress-介绍"><span class="nav-number">1.</span> <span class="nav-text">nginx-ingress 介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#流量导入方式"><span class="nav-number">2.</span> <span class="nav-text">流量导入方式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#LoadBalancer-方式导入流量"><span class="nav-number">3.</span> <span class="nav-text">LoadBalancer 方式导入流量</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#云厂商-Cloud-Provider"><span class="nav-number">3.1.</span> <span class="nav-text">云厂商 Cloud Provider</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Bare-Metal-环境下流量导入"><span class="nav-number">4.</span> <span class="nav-text">Bare Metal 环境下流量导入</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#MetalLB"><span class="nav-number">4.1.</span> <span class="nav-text">MetalLB</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#EXTERNAL-IP"><span class="nav-number">4.2.</span> <span class="nav-text">EXTERNAL-IP</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#kube-proxy-ipvs"><span class="nav-number">4.2.1.</span> <span class="nav-text">kube-proxy ipvs</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#kube-proxy-iptables"><span class="nav-number">4.2.2.</span> <span class="nav-text">kube-proxy iptables</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#hostnetwork-hostport"><span class="nav-number">4.3.</span> <span class="nav-text">hostnetwork/hostport</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#挑选边缘节点"><span class="nav-number">4.3.1.</span> <span class="nav-text">挑选边缘节点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#部署ingress"><span class="nav-number">4.3.2.</span> <span class="nav-text">部署ingress</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#高可用"><span class="nav-number">4.3.3.</span> <span class="nav-text">高可用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#测试"><span class="nav-number">4.3.4.</span> <span class="nav-text">测试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#nodeport"><span class="nav-number">4.4.</span> <span class="nav-text">nodeport</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

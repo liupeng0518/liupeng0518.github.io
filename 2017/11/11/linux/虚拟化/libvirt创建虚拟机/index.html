@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="linux,libvirt,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="kvm支持的镜像很多，常用的是原始镜像(*.img)，还有支持动态大小扩张的qocw2格式（首选）。 更优的选择是系统盘如C盘用img格式，数据盘用qcow2格式以减少服务器磁盘闲置空间。 本文仅记录如何用ubuntu.iso制作系统镜像VM_NAME.qcow2并创建启动虚拟机 制作虚拟机镜像模板创建qcow2镜像文件创建qcow2镜像，但是其实际占有磁盘大小仅为193K左右，而虚拟机内部显示磁">
+<meta name="keywords" content="linux,libvirt">
+<meta property="og:type" content="article">
+<meta property="og:title" content="libvirt创建虚拟机">
+<meta property="og:url" content="http://liupeng0518.github.io/2017/11/11/linux/虚拟化/libvirt创建虚拟机/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="kvm支持的镜像很多，常用的是原始镜像(*.img)，还有支持动态大小扩张的qocw2格式（首选）。 更优的选择是系统盘如C盘用img格式，数据盘用qcow2格式以减少服务器磁盘闲置空间。 本文仅记录如何用ubuntu.iso制作系统镜像VM_NAME.qcow2并创建启动虚拟机 制作虚拟机镜像模板创建qcow2镜像文件创建qcow2镜像，但是其实际占有磁盘大小仅为193K左右，而虚拟机内部显示磁">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.996Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="libvirt创建虚拟机">
+<meta name="twitter:description" content="kvm支持的镜像很多，常用的是原始镜像(*.img)，还有支持动态大小扩张的qocw2格式（首选）。 更优的选择是系统盘如C盘用img格式，数据盘用qcow2格式以减少服务器磁盘闲置空间。 本文仅记录如何用ubuntu.iso制作系统镜像VM_NAME.qcow2并创建启动虚拟机 制作虚拟机镜像模板创建qcow2镜像文件创建qcow2镜像，但是其实际占有磁盘大小仅为193K左右，而虚拟机内部显示磁">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2017/11/11/linux/虚拟化/libvirt创建虚拟机/">
+
+
+
+
+
+  <title>libvirt创建虚拟机 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2017/11/11/linux/虚拟化/libvirt创建虚拟机/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">libvirt创建虚拟机</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-11T10:10:39+00:00">
+                2017-11-11
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/linux/" itemprop="url" rel="index">
+                    <span itemprop="name">linux</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>kvm支持的镜像很多，常用的是原始镜像(*.img)，还有支持动态大小扩张的qocw2格式（首选）。</p>
+<p>更优的选择是系统盘如C盘用img格式，数据盘用qcow2格式以减少服务器磁盘闲置空间。</p>
+<p>本文仅记录如何用ubuntu.iso制作系统镜像VM_NAME.qcow2并创建启动虚拟机</p>
+<h1 id="制作虚拟机镜像模板"><a href="#制作虚拟机镜像模板" class="headerlink" title="制作虚拟机镜像模板"></a>制作虚拟机镜像模板</h1><h2 id="创建qcow2镜像文件"><a href="#创建qcow2镜像文件" class="headerlink" title="创建qcow2镜像文件"></a>创建qcow2镜像文件</h2><p>创建qcow2镜像，但是其实际占有磁盘大小仅为193K左右，而虚拟机内部显示磁盘大小为10G，也就是磁盘空间使用时才分配，即所谓动态扩张。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">qemu-img create -f qcow2 VM_NAME.qcow2 10G</span><br></pre></td></tr></table></figure>
+<h2 id="准备iso等文件"><a href="#准备iso等文件" class="headerlink" title="准备iso等文件"></a>准备iso等文件</h2><p>复制ubuntu官方iso镜像到指定目录，本文将所有镜像及配置文件放到 /home/createvm 目录下，创建配置文件setup.xml，内容如下</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">domain</span> <span class="attr">type</span>=<span class="string">'kvm'</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">name</span>&gt;</span>VM_NAME<span class="tag">&lt;/<span class="name">name</span>&gt;</span>           //虚拟机名称</span><br><span class="line">  <span class="tag">&lt;<span class="name">memory</span>&gt;</span>1048576<span class="tag">&lt;/<span class="name">memory</span>&gt;</span>         //最大内存</span><br><span class="line">  <span class="tag">&lt;<span class="name">currentMemory</span>&gt;</span>1048576<span class="tag">&lt;/<span class="name">currentMemory</span>&gt;</span>  //可用内存</span><br><span class="line">  <span class="tag">&lt;<span class="name">vcpu</span>&gt;</span>1<span class="tag">&lt;/<span class="name">vcpu</span>&gt;</span>                           //虚拟cpu个数</span><br><span class="line">  <span class="tag">&lt;<span class="name">os</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">type</span> <span class="attr">arch</span>=<span class="string">'x86_64'</span> <span class="attr">machine</span>=<span class="string">'pc'</span>&gt;</span>hvm<span class="tag">&lt;/<span class="name">type</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">boot</span> <span class="attr">dev</span>=<span class="string">'cdrom'</span>/&gt;</span>                      //光盘启动</span><br><span class="line">  <span class="tag">&lt;/<span class="name">os</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">features</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">acpi</span>/&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">apic</span>/&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">pae</span>/&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">features</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">clock</span> <span class="attr">offset</span>=<span class="string">'localtime'</span>/&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">on_poweroff</span>&gt;</span>destroy<span class="tag">&lt;/<span class="name">on_poweroff</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">on_reboot</span>&gt;</span>restart<span class="tag">&lt;/<span class="name">on_reboot</span>&gt;</span>  </span><br><span class="line">  <span class="tag">&lt;<span class="name">on_crash</span>&gt;</span>destroy<span class="tag">&lt;/<span class="name">on_crash</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">devices</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">emulator</span>&gt;</span>/usr/libexec/qemu-kvm<span class="tag">&lt;/<span class="name">emulator</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">disk</span> <span class="attr">type</span>=<span class="string">'file'</span> <span class="attr">device</span>=<span class="string">'disk'</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">driver</span> <span class="attr">name</span>=<span class="string">'qemu'</span> <span class="attr">type</span>=<span class="string">'qcow2'</span>/&gt;</span>      //此处关键，要求libvirt版本至少应该在0.9以上才能支持</span><br><span class="line">     <span class="tag">&lt;<span class="name">source</span> <span class="attr">file</span>=<span class="string">'/home/createvm/VM_NAME.qcow2'</span>/&gt;</span>     //目的镜像路径</span><br><span class="line">     <span class="tag">&lt;<span class="name">target</span> <span class="attr">dev</span>=<span class="string">'hda'</span> <span class="attr">bus</span>=<span class="string">'ide'</span>/&gt;</span></span><br><span class="line">   <span class="tag">&lt;/<span class="name">disk</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">disk</span> <span class="attr">type</span>=<span class="string">'file'</span> <span class="attr">device</span>=<span class="string">'cdrom'</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">source</span> <span class="attr">file</span>=<span class="string">'/home/createvm/ubuntu.iso'</span>/&gt;</span>       //光盘镜像路径</span><br><span class="line">     <span class="tag">&lt;<span class="name">target</span> <span class="attr">dev</span>=<span class="string">'hdb'</span> <span class="attr">bus</span>=<span class="string">'ide'</span>/&gt;</span></span><br><span class="line">   <span class="tag">&lt;/<span class="name">disk</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">interface</span> <span class="attr">type</span>=<span class="string">'bridge'</span>&gt;</span>                        //虚拟机网络连接方式</span><br><span class="line">   <span class="tag">&lt;<span class="name">source</span> <span class="attr">bridge</span>=<span class="string">'br0'</span>/&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">mac</span> <span class="attr">address</span>=<span class="string">"00:16:3e:5d:aa:a8"</span>/&gt;</span>  //为虚拟机分配mac地址，务必唯一，否则dhcp获得同样ip,引起冲突</span><br><span class="line">  <span class="tag">&lt;/<span class="name">interface</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">'mouse'</span> <span class="attr">bus</span>=<span class="string">'ps2'</span>/&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">graphics</span> <span class="attr">type</span>=<span class="string">'vnc'</span> <span class="attr">port</span>=<span class="string">'-1'</span> <span class="attr">autoport</span>=<span class="string">'yes'</span> <span class="attr">listen</span> = <span class="string">'0.0.0.0'</span> <span class="attr">keymap</span>=<span class="string">'en-us'</span>/&gt;</span>//vnc方式登录，端口号自动分配，自动加1</span><br><span class="line">  <span class="tag">&lt;/<span class="name">devices</span>&gt;</span></span><br><span class="line"> <span class="tag">&lt;/<span class="name">domain</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>ppc64le的模板文件</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">domain</span> <span class="attr">type</span>=<span class="string">'kvm'</span> <span class="attr">id</span>=<span class="string">'7'</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">name</span>&gt;</span>vm-template<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">uuid</span>&gt;</span>6f5e8ff8-bc72-40bc-bc5c-e7e275d915d6<span class="tag">&lt;/<span class="name">uuid</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">memory</span> <span class="attr">unit</span>=<span class="string">'KiB'</span>&gt;</span>2097152<span class="tag">&lt;/<span class="name">memory</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">currentMemory</span> <span class="attr">unit</span>=<span class="string">'KiB'</span>&gt;</span>2097152<span class="tag">&lt;/<span class="name">currentMemory</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">vcpu</span> <span class="attr">placement</span>=<span class="string">'static'</span>&gt;</span>2<span class="tag">&lt;/<span class="name">vcpu</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">resource</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">partition</span>&gt;</span>/machine<span class="tag">&lt;/<span class="name">partition</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">resource</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">os</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">type</span> <span class="attr">arch</span>=<span class="string">'ppc64le'</span> <span class="attr">machine</span>=<span class="string">'pseries-rhel7.5.0'</span>&gt;</span>hvm<span class="tag">&lt;/<span class="name">type</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">boot</span> <span class="attr">dev</span>=<span class="string">'cdrom'</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">boot</span> <span class="attr">dev</span>=<span class="string">'hd'</span>/&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">os</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">clock</span> <span class="attr">offset</span>=<span class="string">'utc'</span>/&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">on_poweroff</span>&gt;</span>destroy<span class="tag">&lt;/<span class="name">on_poweroff</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">on_reboot</span>&gt;</span>destroy<span class="tag">&lt;/<span class="name">on_reboot</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">on_crash</span>&gt;</span>destroy<span class="tag">&lt;/<span class="name">on_crash</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">devices</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">emulator</span>&gt;</span>/usr/libexec/qemu-kvm<span class="tag">&lt;/<span class="name">emulator</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">disk</span> <span class="attr">type</span>=<span class="string">'file'</span> <span class="attr">device</span>=<span class="string">'disk'</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">driver</span> <span class="attr">name</span>=<span class="string">'qemu'</span> <span class="attr">type</span>=<span class="string">'qcow2'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">source</span> <span class="attr">file</span>=<span class="string">'/mnt/data/vm-template.qcow2'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">backingStore</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">target</span> <span class="attr">dev</span>=<span class="string">'vda'</span> <span class="attr">bus</span>=<span class="string">'virtio'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">alias</span> <span class="attr">name</span>=<span class="string">'virtio-disk0'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">address</span> <span class="attr">type</span>=<span class="string">'pci'</span> <span class="attr">domain</span>=<span class="string">'0x0000'</span> <span class="attr">bus</span>=<span class="string">'0x00'</span> <span class="attr">slot</span>=<span class="string">'0x03'</span> <span class="attr">function</span>=<span class="string">'0x0'</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">disk</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">disk</span> <span class="attr">type</span>=<span class="string">'file'</span> <span class="attr">device</span>=<span class="string">'cdrom'</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">driver</span> <span class="attr">name</span>=<span class="string">'qemu'</span> <span class="attr">type</span>=<span class="string">'raw'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">source</span> <span class="attr">file</span>=<span class="string">'/root/tools/CentOS-7.3-everthing_ppc64le.iso'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">backingStore</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">target</span> <span class="attr">dev</span>=<span class="string">'sda'</span> <span class="attr">bus</span>=<span class="string">'scsi'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">readonly</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">alias</span> <span class="attr">name</span>=<span class="string">'scsi0-0-0-0'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">address</span> <span class="attr">type</span>=<span class="string">'drive'</span> <span class="attr">controller</span>=<span class="string">'0'</span> <span class="attr">bus</span>=<span class="string">'0'</span> <span class="attr">target</span>=<span class="string">'0'</span> <span class="attr">unit</span>=<span class="string">'0'</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">disk</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">controller</span> <span class="attr">type</span>=<span class="string">'usb'</span> <span class="attr">index</span>=<span class="string">'0'</span> <span class="attr">model</span>=<span class="string">'qemu-xhci'</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">alias</span> <span class="attr">name</span>=<span class="string">'usb'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">address</span> <span class="attr">type</span>=<span class="string">'pci'</span> <span class="attr">domain</span>=<span class="string">'0x0000'</span> <span class="attr">bus</span>=<span class="string">'0x00'</span> <span class="attr">slot</span>=<span class="string">'0x02'</span> <span class="attr">function</span>=<span class="string">'0x0'</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">controller</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">controller</span> <span class="attr">type</span>=<span class="string">'pci'</span> <span class="attr">index</span>=<span class="string">'0'</span> <span class="attr">model</span>=<span class="string">'pci-root'</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">model</span> <span class="attr">name</span>=<span class="string">'spapr-pci-host-bridge'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">target</span> <span class="attr">index</span>=<span class="string">'0'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">alias</span> <span class="attr">name</span>=<span class="string">'pci.0'</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">controller</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">controller</span> <span class="attr">type</span>=<span class="string">'scsi'</span> <span class="attr">index</span>=<span class="string">'0'</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">alias</span> <span class="attr">name</span>=<span class="string">'scsi0'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">address</span> <span class="attr">type</span>=<span class="string">'spapr-vio'</span> <span class="attr">reg</span>=<span class="string">'0x2000'</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">controller</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">interface</span> <span class="attr">type</span>=<span class="string">'direct'</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">mac</span> <span class="attr">address</span>=<span class="string">'52:54:00:cf:fa:a2'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">source</span> <span class="attr">dev</span>=<span class="string">'enP49p1s0f1'</span> <span class="attr">mode</span>=<span class="string">'bridge'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">target</span> <span class="attr">dev</span>=<span class="string">'macvtap0'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">model</span> <span class="attr">type</span>=<span class="string">'virtio'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">alias</span> <span class="attr">name</span>=<span class="string">'net0'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">address</span> <span class="attr">type</span>=<span class="string">'pci'</span> <span class="attr">domain</span>=<span class="string">'0x0000'</span> <span class="attr">bus</span>=<span class="string">'0x00'</span> <span class="attr">slot</span>=<span class="string">'0x01'</span> <span class="attr">function</span>=<span class="string">'0x0'</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">interface</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">serial</span> <span class="attr">type</span>=<span class="string">'pty'</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">source</span> <span class="attr">path</span>=<span class="string">'/dev/pts/4'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">target</span> <span class="attr">type</span>=<span class="string">'spapr-vio-serial'</span> <span class="attr">port</span>=<span class="string">'0'</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">model</span> <span class="attr">name</span>=<span class="string">'spapr-vty'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">target</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">alias</span> <span class="attr">name</span>=<span class="string">'serial0'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">address</span> <span class="attr">type</span>=<span class="string">'spapr-vio'</span> <span class="attr">reg</span>=<span class="string">'0x30000000'</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">serial</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">console</span> <span class="attr">type</span>=<span class="string">'pty'</span> <span class="attr">tty</span>=<span class="string">'/dev/pts/4'</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">source</span> <span class="attr">path</span>=<span class="string">'/dev/pts/4'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">target</span> <span class="attr">type</span>=<span class="string">'serial'</span> <span class="attr">port</span>=<span class="string">'0'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">alias</span> <span class="attr">name</span>=<span class="string">'serial0'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">address</span> <span class="attr">type</span>=<span class="string">'spapr-vio'</span> <span class="attr">reg</span>=<span class="string">'0x30000000'</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">console</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">'keyboard'</span> <span class="attr">bus</span>=<span class="string">'usb'</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">alias</span> <span class="attr">name</span>=<span class="string">'input0'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">address</span> <span class="attr">type</span>=<span class="string">'usb'</span> <span class="attr">bus</span>=<span class="string">'0'</span> <span class="attr">port</span>=<span class="string">'1'</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">input</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">'mouse'</span> <span class="attr">bus</span>=<span class="string">'usb'</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">alias</span> <span class="attr">name</span>=<span class="string">'input1'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">address</span> <span class="attr">type</span>=<span class="string">'usb'</span> <span class="attr">bus</span>=<span class="string">'0'</span> <span class="attr">port</span>=<span class="string">'2'</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">input</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">graphics</span> <span class="attr">type</span>=<span class="string">'vnc'</span> <span class="attr">port</span>=<span class="string">'5900'</span> <span class="attr">autoport</span>=<span class="string">'yes'</span> <span class="attr">listen</span>=<span class="string">'127.0.0.1'</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">listen</span> <span class="attr">type</span>=<span class="string">'address'</span> <span class="attr">address</span>=<span class="string">'127.0.0.1'</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">graphics</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">video</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">model</span> <span class="attr">type</span>=<span class="string">'vga'</span> <span class="attr">vram</span>=<span class="string">'16384'</span> <span class="attr">heads</span>=<span class="string">'1'</span> <span class="attr">primary</span>=<span class="string">'yes'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">alias</span> <span class="attr">name</span>=<span class="string">'video0'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">address</span> <span class="attr">type</span>=<span class="string">'pci'</span> <span class="attr">domain</span>=<span class="string">'0x0000'</span> <span class="attr">bus</span>=<span class="string">'0x00'</span> <span class="attr">slot</span>=<span class="string">'0x05'</span> <span class="attr">function</span>=<span class="string">'0x0'</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">video</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">memballoon</span> <span class="attr">model</span>=<span class="string">'virtio'</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">alias</span> <span class="attr">name</span>=<span class="string">'balloon0'</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">address</span> <span class="attr">type</span>=<span class="string">'pci'</span> <span class="attr">domain</span>=<span class="string">'0x0000'</span> <span class="attr">bus</span>=<span class="string">'0x00'</span> <span class="attr">slot</span>=<span class="string">'0x04'</span> <span class="attr">function</span>=<span class="string">'0x0'</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">memballoon</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">panic</span> <span class="attr">model</span>=<span class="string">'pseries'</span>/&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">devices</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">seclabel</span> <span class="attr">type</span>=<span class="string">'dynamic'</span> <span class="attr">model</span>=<span class="string">'dac'</span> <span class="attr">relabel</span>=<span class="string">'yes'</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">label</span>&gt;</span>+107:+107<span class="tag">&lt;/<span class="name">label</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">imagelabel</span>&gt;</span>+107:+107<span class="tag">&lt;/<span class="name">imagelabel</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">seclabel</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">domain</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h2 id="启动虚拟机模板"><a href="#启动虚拟机模板" class="headerlink" title="启动虚拟机模板"></a>启动虚拟机模板</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># virsh define setup.xml    //创建虚拟机 查看当前系统所有的虚拟机信息：virsh list --all</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># virsh start VM_NAME //启动虚拟机</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># virsh vncdisplay VM_NAME //查看虚拟机的vnc端口</span></span><br></pre></td></tr></table></figure>
+<h2 id="使用vnc登录虚拟机"><a href="#使用vnc登录虚拟机" class="headerlink" title="使用vnc登录虚拟机"></a>使用vnc登录虚拟机</h2><p>登录后能看到操作系统安装的初始界面，开始安装系统，安装完成即表示镜像制作完成(ubuntu.qcow2)。</p>
+<h2 id="准备qcow2镜像模板"><a href="#准备qcow2镜像模板" class="headerlink" title="准备qcow2镜像模板"></a>准备qcow2镜像模板</h2><p>上面安装结束之后，需要关机，当作模板镜像</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">virsh shutdown test_ubuntu //关闭虚拟机</span><br></pre></td></tr></table></figure>
+<p>如果无法关闭，那么：</p>
+<ul>
+<li><p>命令行virsh reboot vm-name</p>
+<p> kvm目前仍不支持reboot命令，’reboot’ is not supported by the hypervisor</p>
+</li>
+<li><p>虚拟机内部重启操作不成功，状态为关机，重启失败。</p>
+<p>原因配置文件中：</p>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;on_poweroff&gt;destroy&lt;/on_poweroff&gt;</span><br><span class="line">&lt;on_reboot&gt;restart&lt;/on_reboot&gt;</span><br><span class="line">&lt;on_crash&gt;destroy&lt;/on_crash&gt;</span><br></pre></td></tr></table></figure>
+<p>其中&lt;on_reboot&gt; 选项设置为restart则表示在虚拟机内部执行reboot但不关机， 如果设置为destroy则表示执行reboot命令后直接关机。</p>
+<p>更多参数设置可参考liibvirt官网<a href="http://libvirt.org/drvqemu.html#xmlconfig" target="_blank" rel="noopener">http://libvirt.org/drvqemu.html#xmlconfig</a></p>
+<ul>
+<li>kvm环境下可以使用shutdown命令让虚拟机关机,但不生效。<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">virsh shutdown vm-name</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>由于关机通过acpi电源管理接口来实现的</p>
+<p>首先配置文件里需要有这个选项<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;features&gt;</span><br><span class="line"> &lt;acpi/&gt;</span><br><span class="line"> &lt;apic/&gt;</span><br><span class="line"> &lt;pae/&gt;</span><br><span class="line">&lt;/features&gt;</span><br></pre></td></tr></table></figure></p>
+<p>虚拟机内部需要有acpi服务并运行</p>
+<p>  Windowns的虚拟机一般情况是默认已安装且运行的</p>
+<p>  linux虚拟机例如Ubuntu虚拟机如果没有安装acpi服务，</p>
+<p>  先执行apt-get install acpid进行安装并启动该服务，即可让虚拟机响应shutdown命令</p>
+<p>依此方法通过ubuntu server 10.04.2，redhat6.0企业版，windows xp sp3 ,windows server2003操作系统进行验证均可以实现自然关机。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">virsh destory VM_NAME //强制关闭虚拟机</span><br><span class="line">virsh undefine VM_NAME //删除虚拟机</span><br><span class="line">Virsh autostart --disable VM_NAME</span><br></pre></td></tr></table></figure>
+<h1 id="启动虚拟机"><a href="#启动虚拟机" class="headerlink" title="启动虚拟机"></a>启动虚拟机</h1><h2 id="创建文件start-xml，内容如下："><a href="#创建文件start-xml，内容如下：" class="headerlink" title="创建文件start.xml，内容如下："></a>创建文件start.xml，内容如下：</h2><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">domain</span> <span class="attr">type</span>=<span class="string">'kvm'</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">name</span>&gt;</span>VM_NAME<span class="tag">&lt;/<span class="name">name</span>&gt;</span> </span><br><span class="line"><span class="tag">&lt;<span class="name">memory</span>&gt;</span>1048576<span class="tag">&lt;/<span class="name">memory</span>&gt;</span> </span><br><span class="line"><span class="tag">&lt;<span class="name">currentMemory</span>&gt;</span>1048576<span class="tag">&lt;/<span class="name">currentMemory</span>&gt;</span> </span><br><span class="line"><span class="tag">&lt;<span class="name">vcpu</span>&gt;</span>1<span class="tag">&lt;/<span class="name">vcpu</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">os</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">type</span> <span class="attr">arch</span>=<span class="string">'x86_64'</span> <span class="attr">machine</span>=<span class="string">'pc'</span>&gt;</span>hvm<span class="tag">&lt;/<span class="name">type</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">boot</span> <span class="attr">dev</span>=<span class="string">'hd'</span>/&gt;</span>   //即harddisk，从磁盘启动 </span><br><span class="line"><span class="tag">&lt;/<span class="name">os</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">features</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">acpi</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">apic</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">pae</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">features</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">clock</span> <span class="attr">offset</span>=<span class="string">'localtime'</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">on_poweroff</span>&gt;</span>destroy<span class="tag">&lt;/<span class="name">on_poweroff</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">on_reboot</span>&gt;</span>restart<span class="tag">&lt;/<span class="name">on_reboot</span>&gt;</span> </span><br><span class="line"><span class="tag">&lt;<span class="name">on_crash</span>&gt;</span>destroy<span class="tag">&lt;/<span class="name">on_crash</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">devices</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">emulator</span>&gt;</span>/usr/libexec/qemu-kvm<span class="tag">&lt;/<span class="name">emulator</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">disk</span> <span class="attr">type</span>=<span class="string">'file'</span> <span class="attr">device</span>=<span class="string">'disk'</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">driver</span> <span class="attr">name</span>=<span class="string">'qemu'</span> <span class="attr">type</span>=<span class="string">'qcow2'</span>/&gt;</span> </span><br><span class="line"><span class="tag">&lt;<span class="name">source</span> <span class="attr">file</span>=<span class="string">'/home/createvm/VM_NAME.qcow2'</span>/&gt;</span> //目的镜像路径</span><br><span class="line"><span class="tag">&lt;<span class="name">target</span> <span class="attr">dev</span>=<span class="string">'hda'</span> <span class="attr">bus</span>=<span class="string">'ide'</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">disk</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">disk</span> <span class="attr">type</span>=<span class="string">'file'</span> <span class="attr">device</span>=<span class="string">'cdrom'</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">source</span> <span class="attr">file</span>=<span class="string">'/home/createvm/ubuntu.iso'</span>/&gt;</span> //光盘镜像路径</span><br><span class="line"><span class="tag">&lt;<span class="name">target</span> <span class="attr">dev</span>=<span class="string">'hdb'</span> <span class="attr">bus</span>=<span class="string">'ide'</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">disk</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">interface</span> <span class="attr">type</span>=<span class="string">'bridge'</span>&gt;</span> </span><br><span class="line"><span class="tag">&lt;<span class="name">source</span> <span class="attr">bridge</span>=<span class="string">'br0'</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">mac</span> <span class="attr">address</span>=<span class="string">"00:16:3e:5d:aa:a8"</span>/&gt;</span> </span><br><span class="line"><span class="tag">&lt;/<span class="name">interface</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">'mouse'</span> <span class="attr">bus</span>=<span class="string">'ps2'</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">graphics</span> <span class="attr">type</span>=<span class="string">'vnc'</span> <span class="attr">port</span>=<span class="string">'-1'</span> <span class="attr">autoport</span>=<span class="string">'yes'</span> <span class="attr">keymap</span>=<span class="string">'en-us'</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">devices</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">domain</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h2 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h2><p>使用制作好的镜像和start.xml配置文件来创建并启动虚拟机。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">virsh define VM_NAME.xml</span><br><span class="line">virsh start VM_NAME</span><br></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+            <a href="/tags/libvirt/" rel="tag"># libvirt</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/11/11/linux/虚拟化/qcow2和raw格式对比/" rel="next" title="qcow2和raw格式对比">
+                <i class="fa fa-chevron-left"></i> qcow2和raw格式对比
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/01/09/help/contact/" rel="prev" title="个人联系方式">
+                个人联系方式 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#制作虚拟机镜像模板"><span class="nav-number">1.</span> <span class="nav-text">制作虚拟机镜像模板</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#创建qcow2镜像文件"><span class="nav-number">1.1.</span> <span class="nav-text">创建qcow2镜像文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#准备iso等文件"><span class="nav-number">1.2.</span> <span class="nav-text">准备iso等文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#启动虚拟机模板"><span class="nav-number">1.3.</span> <span class="nav-text">启动虚拟机模板</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用vnc登录虚拟机"><span class="nav-number">1.4.</span> <span class="nav-text">使用vnc登录虚拟机</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#准备qcow2镜像模板"><span class="nav-number">1.5.</span> <span class="nav-text">准备qcow2镜像模板</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#启动虚拟机"><span class="nav-number">2.</span> <span class="nav-text">启动虚拟机</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#创建文件start-xml，内容如下："><span class="nav-number">2.1.</span> <span class="nav-text">创建文件start.xml，内容如下：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#启动"><span class="nav-number">2.2.</span> <span class="nav-text">启动</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

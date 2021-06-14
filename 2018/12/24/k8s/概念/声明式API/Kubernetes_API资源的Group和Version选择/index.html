@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="k8s,api,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="原文链接：https://akomljen.com/kubernetes-api-resources-which-group-and-version-to-use/ Kubernetes使用声明式的 API 让系统更加健壮。但是这样也就意味着我们想要系统执行某些操作就需要通过使用 CLI或者 REST API来创建一个资源对象，为此，我们需要定义 API 资源的名称、组和版本等信息。但是很多用户就">
+<meta name="keywords" content="k8s,api">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kubernetes API 资源应该使用哪个 Group 和 Version?">
+<meta property="og:url" content="http://liupeng0518.github.io/2018/12/24/k8s/概念/声明式API/Kubernetes_API资源的Group和Version选择/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="原文链接：https://akomljen.com/kubernetes-api-resources-which-group-and-version-to-use/ Kubernetes使用声明式的 API 让系统更加健壮。但是这样也就意味着我们想要系统执行某些操作就需要通过使用 CLI或者 REST API来创建一个资源对象，为此，我们需要定义 API 资源的名称、组和版本等信息。但是很多用户就">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Kubernetes API 资源应该使用哪个 Group 和 Version?">
+<meta name="twitter:description" content="原文链接：https://akomljen.com/kubernetes-api-resources-which-group-and-version-to-use/ Kubernetes使用声明式的 API 让系统更加健壮。但是这样也就意味着我们想要系统执行某些操作就需要通过使用 CLI或者 REST API来创建一个资源对象，为此，我们需要定义 API 资源的名称、组和版本等信息。但是很多用户就">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2018/12/24/k8s/概念/声明式API/Kubernetes_API资源的Group和Version选择/">
+
+
+
+
+
+  <title>Kubernetes API 资源应该使用哪个 Group 和 Version? | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2018/12/24/k8s/概念/声明式API/Kubernetes_API资源的Group和Version选择/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Kubernetes API 资源应该使用哪个 Group 和 Version?</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-24T09:47:19+00:00">
+                2018-12-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>原文链接：<a href="https://akomljen.com/kubernetes-api-resources-which-group-and-version-to-use/" target="_blank" rel="noopener">https://akomljen.com/kubernetes-api-resources-which-group-and-version-to-use/</a></p>
+<p>Kubernetes使用声明式的 API 让系统更加健壮。但是这样也就意味着我们想要系统执行某些操作就需要通过使用 CLI或者 REST API来创建一个资源对象，为此，我们需要定义 API 资源的名称、组和版本等信息。但是很多用户就会为此感到困惑了，因为有太多的资源、太多的版本、太多的组了，这些都非常容易产生混淆。如果我们通过 YAML 文件定义过 Deployment 这样的资源清单文件的话，那么你应该会看到 apiVersion:apps/v1beta2、 apiVersion:apps/v1等等这样的信息，那么我们到底应该使用哪一个呢？哪一个才是正确的呢？如何检查 Kubernetes集群支持哪些？其实我们使用 kubectl工具就可以来解决我们的这些疑惑。</p>
+<h1 id="API-Resources"><a href="#API-Resources" class="headerlink" title="API Resources"></a>API Resources</h1><p>我们可以通过下面的命令来获取 Kubernetes集群支持的所有 API 资源：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl api-resources -o wide</span><br><span class="line">NAME                              SHORTNAMES   APIGROUP                       NAMESPACED   KIND                             VERBS</span><br><span class="line">bindings                                                                      <span class="literal">true</span>         Binding                          [create]</span><br><span class="line">componentstatuses                 cs                                          <span class="literal">false</span>        ComponentStatus                  [get list]</span><br><span class="line">configmaps                        cm                                          <span class="literal">true</span>         ConfigMap                        [create delete deletecollection get list patch update watch]</span><br><span class="line">endpoints                         ep                                          <span class="literal">true</span>         Endpoints                        [create delete deletecollection get list patch update watch]</span><br><span class="line">events                            ev                                          <span class="literal">true</span>         Event                            [create delete deletecollection get list patch update watch]</span><br><span class="line">limitranges                       limits                                      <span class="literal">true</span>         LimitRange                       [create delete deletecollection get list patch update watch]</span><br><span class="line">namespaces                        ns                                          <span class="literal">false</span>        Namespace                        [create delete get list patch update watch]</span><br><span class="line">nodes                             no                                          <span class="literal">false</span>        Node                             [create delete deletecollection get list patch proxy update watch]</span><br><span class="line">persistentvolumeclaims            pvc                                         <span class="literal">true</span>         PersistentVolumeClaim            [create delete deletecollection get list patch update watch]</span><br><span class="line">persistentvolumes                 pv                                          <span class="literal">false</span>        PersistentVolume                 [create delete deletecollection get list patch update watch]</span><br><span class="line">pods                              po                                          <span class="literal">true</span>         Pod                              [create delete deletecollection get list patch proxy update watch]</span><br><span class="line">podtemplates                                                                  <span class="literal">true</span>         PodTemplate                      [create delete deletecollection get list patch update watch]</span><br><span class="line">replicationcontrollers            rc                                          <span class="literal">true</span>         ReplicationController            [create delete deletecollection get list patch update watch]</span><br><span class="line">resourcequotas                    quota                                       <span class="literal">true</span>         ResourceQuota                    [create delete deletecollection get list patch update watch]</span><br><span class="line">secrets                                                                       <span class="literal">true</span>         Secret                           [create delete deletecollection get list patch update watch]</span><br><span class="line">serviceaccounts                   sa                                          <span class="literal">true</span>         ServiceAccount                   [create delete deletecollection get list patch update watch]</span><br><span class="line">services                          svc                                         <span class="literal">true</span>         Service                          [create delete get list patch proxy update watch]</span><br><span class="line">mutatingwebhookconfigurations                  admissionregistration.k8s.io   <span class="literal">false</span>        MutatingWebhookConfiguration     [create delete deletecollection get list patch update watch]</span><br><span class="line">validatingwebhookconfigurations                admissionregistration.k8s.io   <span class="literal">false</span>        ValidatingWebhookConfiguration   [create delete deletecollection get list patch update watch]</span><br><span class="line">customresourcedefinitions         crd          apiextensions.k8s.io           <span class="literal">false</span>        CustomResourceDefinition         [create delete deletecollection get list patch update watch]</span><br><span class="line">apiservices                                    apiregistration.k8s.io         <span class="literal">false</span>        APIService                       [create delete deletecollection get list patch update watch]</span><br><span class="line">controllerrevisions                            apps                           <span class="literal">true</span>         ControllerRevision               [create delete deletecollection get list patch update watch]</span><br><span class="line">daemonsets                        ds           apps                           <span class="literal">true</span>         DaemonSet                        [create delete deletecollection get list patch update watch]</span><br><span class="line">deployments                       deploy       apps                           <span class="literal">true</span>         Deployment                       [create delete deletecollection get list patch update watch]</span><br><span class="line">replicasets                       rs           apps                           <span class="literal">true</span>         ReplicaSet                       [create delete deletecollection get list patch update watch]</span><br><span class="line">statefulsets                      sts          apps                           <span class="literal">true</span>         StatefulSet                      [create delete deletecollection get list patch update watch]</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>需要注意的是在 1.11.0以上版本的集群中 kubectl才支持上面的 api-resources命令。<br>上面的命令输出了很多有用的信息：<br>SHORTNAMES - 资源名称的简写，比如 deployments 简写就是 deploy，我们可以将这些快捷方式与 kubectl一起使用<br>APIGROUP - 我们可以查看官方文档以了解更多信息，但简而言之，您将在 yaml文件中使用它像 apiVersion：<apigroup>/v1<br>KIND - 资源名称<br>VERBS - 可用的方法，在您想要定义 ClusterRoleRBAC规则时也很有用，您还可以选择获取特定 API 组的 API 资源，例如：</apigroup></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl api-resources --api-group apps -o wide</span><br><span class="line">NAME                  SHORTNAMES   APIGROUP   NAMESPACED   KIND                 VERBS</span><br><span class="line">controllerrevisions                apps       <span class="literal">true</span>         ControllerRevision   [create delete deletecollection get list patch update watch]</span><br><span class="line">daemonsets            ds           apps       <span class="literal">true</span>         DaemonSet            [create delete deletecollection get list patch update watch]</span><br><span class="line">deployments           deploy       apps       <span class="literal">true</span>         Deployment           [create delete deletecollection get list patch update watch]</span><br><span class="line">replicasets           rs           apps       <span class="literal">true</span>         ReplicaSet           [create delete deletecollection get list patch update watch]</span><br><span class="line">statefulsets          sts          apps       <span class="literal">true</span>         StatefulSet</span><br></pre></td></tr></table></figure>
+<p>对于上面的每种资源类型，我们都可以使用 kubectl explain命令来获取有关的资源详细信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl explain configmap</span><br><span class="line">KIND:     ConfigMap</span><br><span class="line">VERSION:  v1</span><br><span class="line"></span><br><span class="line">DESCRIPTION:</span><br><span class="line">     ConfigMap holds configuration data <span class="keyword">for</span> pods to consume.</span><br><span class="line"></span><br><span class="line">FIELDS:</span><br><span class="line">   apiVersion	&lt;string&gt;</span><br><span class="line">     APIVersion defines the versioned schema of this representation of an</span><br><span class="line">     object. Servers should convert recognized schemas to the latest internal</span><br><span class="line">     value, and may reject unrecognized values. More info:</span><br><span class="line">     https://git.k8s.io/community/contributors/devel/api-conventions.md<span class="comment">#resources</span></span><br><span class="line"></span><br><span class="line">   data	&lt;map[string]string&gt;</span><br><span class="line">     Data contains the configuration data. Each key must consist of alphanumeric</span><br><span class="line">     characters, <span class="string">'-'</span>, <span class="string">'_'</span> or <span class="string">'.'</span>.</span><br><span class="line"></span><br><span class="line">   kind	&lt;string&gt;</span><br><span class="line">     Kind is a string value representing the REST resource this object</span><br><span class="line">     represents. Servers may infer this from the endpoint the client submits</span><br><span class="line">     requests to. Cannot be updated. In CamelCase. More info:</span><br><span class="line">     https://git.k8s.io/community/contributors/devel/api-conventions.md<span class="comment">#types-kinds</span></span><br><span class="line"></span><br><span class="line">   metadata	&lt;Object&gt;</span><br><span class="line">     Standard object<span class="string">'s metadata. More info:</span></span><br><span class="line"><span class="string">     https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata</span></span><br></pre></td></tr></table></figure>
+<p>kubectl explain命令非常有用，特别是在我们不知道该如何编写 YAML文件的时候，就可以使用改命令来帮助我们获得更多提示信息。</p>
+<p>需要注意的是 explain命令可能会显示旧的 group/version，我们可以通过 –api-version参数显示设置它，比如：<br>请注意，explain可能会显示旧组/版本，但您可以使用–api-version显式设置它，例如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl explain replicaset --api-version apps/v1</span><br></pre></td></tr></table></figure>
+<h1 id="API-Versions"><a href="#API-Versions" class="headerlink" title="API Versions"></a>API Versions</h1><p>我们也可以使用下面的命令来获取集群支持的所有 API 版本：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl api-versions</span><br><span class="line">admissionregistration.k8s.io/v1beta1</span><br><span class="line">apiextensions.k8s.io/v1beta1</span><br><span class="line">apiregistration.k8s.io/v1beta1</span><br><span class="line">apps/v1</span><br><span class="line">apps/v1beta1</span><br><span class="line">apps/v1beta2</span><br><span class="line">authentication.k8s.io/v1</span><br><span class="line">authentication.k8s.io/v1beta1</span><br><span class="line">authorization.k8s.io/v1</span><br><span class="line">authorization.k8s.io/v1beta1</span><br><span class="line">autoscaling/v1</span><br><span class="line">autoscaling/v2beta1</span><br><span class="line">batch/v1</span><br><span class="line">batch/v1beta1</span><br><span class="line">certificates.k8s.io/v1beta1</span><br><span class="line">certmanager.k8s.io/v1alpha1</span><br><span class="line">enterprises.upmc.com/v1</span><br><span class="line">events.k8s.io/v1beta1</span><br><span class="line">extensions/v1beta1</span><br><span class="line">metrics.k8s.io/v1beta1</span><br><span class="line">monitoring.coreos.com/v1</span><br><span class="line">networking.k8s.io/v1</span><br><span class="line">policy/v1beta1</span><br><span class="line">rbac.authorization.k8s.io/v1</span><br><span class="line">rbac.authorization.k8s.io/v1beta1</span><br><span class="line">storage.k8s.io/v1</span><br><span class="line">storage.k8s.io/v1beta1</span><br><span class="line">v1</span><br></pre></td></tr></table></figure></p>
+<p>输出结果是以 group/version的方式呈现的，可以通过查看此页面了解更多有关 Kubernetes中 API 版本控制的信息。</p>
+<p>有的时候，我们只想检查特定的 group/version是否可以用于某些资源即可，大多数的资源都有可用的 GET方法，所以我们只需要尝试获取下资源，同时提供 API 的 version 和 group 即可验证， kubectlget&lt;API_RESOURCE_NAME&gt;.&lt;API_VERSION&gt;.&lt;API_GROUP&gt;，例如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl get deployments.v1.apps -n kube-system</span><br><span class="line">NAME                                    DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE</span><br><span class="line">autoscaler-aws-cluster-autoscaler       1         1         1            1           55d</span><br><span class="line">calico-kube-controllers                 1         1         1            1           317d</span><br><span class="line">calico-policy-controller                0         0         0            0           317d</span><br><span class="line">dns-controller                          1         1         1            1           317d</span><br><span class="line">elasticsearch-operator                  1         1         1            1           274d</span><br><span class="line">hpa-hpa-operator                        1         1         1            1           60d</span><br><span class="line">hpa-metrics-server                      1         1         1            1           60d</span><br><span class="line">kube-dns                                2         2         2            2           317d</span><br><span class="line">kube-dns-autoscaler                     1         1         1            1           317d</span><br><span class="line">spot-rescheduler-k8s-spot-rescheduler   1         1         1            1           136d</span><br><span class="line">tiller-deploy                           1         1         1            1           315d</span><br></pre></td></tr></table></figure>
+<p>如果资源不存在指定的 group/version组合或者资源根本不存在，我们将会收到错误信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl get deployments.v1beta.apps -n kube-system</span><br><span class="line">error: the server doesn<span class="string">'t have a resource type "deployments"</span></span><br></pre></td></tr></table></figure>
+<p>总结<br>本文将帮助您了解 YAML文件中的 kind和 apiVersion这两个内容，如果你想了解更多关于 Kubernetes设计的信息，我建议你查看下这篇文章，谢谢。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/api/" rel="tag"># api</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/24/k8s/资源管理/kubernetes弹性伸缩/" rel="next" title="kubernetes弹性伸缩">
+                <i class="fa fa-chevron-left"></i> kubernetes弹性伸缩
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/24/k8s/registry/registryv2/registry常用维护操作/" rel="prev" title="registry常用维护操作">
+                registry常用维护操作 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#API-Resources"><span class="nav-number">1.</span> <span class="nav-text">API Resources</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#API-Versions"><span class="nav-number">2.</span> <span class="nav-text">API Versions</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

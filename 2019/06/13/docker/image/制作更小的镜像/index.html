@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="docker,image,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="本文作者以一个使用 Go 语言编写的 Web 服务为例，重点介绍了如何通过 Scratch 创建一个尽可能小的 Docker 容器。在尝试过程中，作 者也发现了很多问题，也逐一得到解决，感兴趣的读者一定要看看作者解决问题的思路。本文看点包括如何从 Docker 内部调用 Docker、创建 Docker 容器的 Docker 容器、Go 语言创建静态链接的可执行文件。 当在使用 Docker 的时">
+<meta name="keywords" content="docker,image">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[转]制作更小的镜像">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/06/13/docker/image/制作更小的镜像/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="本文作者以一个使用 Go 语言编写的 Web 服务为例，重点介绍了如何通过 Scratch 创建一个尽可能小的 Docker 容器。在尝试过程中，作 者也发现了很多问题，也逐一得到解决，感兴趣的读者一定要看看作者解决问题的思路。本文看点包括如何从 Docker 内部调用 Docker、创建 Docker 容器的 Docker 容器、Go 语言创建静态链接的可执行文件。 当在使用 Docker 的时">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.956Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="[转]制作更小的镜像">
+<meta name="twitter:description" content="本文作者以一个使用 Go 语言编写的 Web 服务为例，重点介绍了如何通过 Scratch 创建一个尽可能小的 Docker 容器。在尝试过程中，作 者也发现了很多问题，也逐一得到解决，感兴趣的读者一定要看看作者解决问题的思路。本文看点包括如何从 Docker 内部调用 Docker、创建 Docker 容器的 Docker 容器、Go 语言创建静态链接的可执行文件。 当在使用 Docker 的时">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/06/13/docker/image/制作更小的镜像/">
+
+
+
+
+
+  <title>[转]制作更小的镜像 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/06/13/docker/image/制作更小的镜像/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">[转]制作更小的镜像</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-06-13T00:00:00+00:00">
+                2019-06-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index">
+                    <span itemprop="name">docker</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文作者以一个使用 Go 语言编写的 Web 服务为例，重点介绍了如何通过 Scratch 创建一个尽可能小的 Docker 容器。在尝试过程中，作 者也发现了很多问题，也逐一得到解决，感兴趣的读者一定要看看作者解决问题的思路。本文看点包括如何从 Docker 内部调用 Docker、创建 Docker 容器的 Docker 容器、Go 语言创建静态链接的可执行文件。</p>
+<p>当在使用 Docker 的时候，如果想使用预先配置好的容器，就需要下载很大的镜像包。一个简单的 Ubuntu 的容器就有 200 多兆，如果安装了相关的软件，还会更大。在很多情况下，你并不需要 Ubuntu 容器内的所有功能模块，例如，如果你只想运行简单的 Go 语言编写的 Web 服务，而它并不需要任何其他工具。</p>
+<p>我一直在寻找尽可能小的容器，然后发现了这个：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker pull scratch</span><br></pre></td></tr></table></figure></p>
+<p>Scratch 镜像很赞，它简洁、小巧而且快速， 它没有 bug、安全漏洞、延缓的代码或技术债务。这是因为它基本上是空的。除了有点儿被 Docker 添加的 metadata (译注：元数据为描述数据的数据)。你可以用以下命令创建这个 scratch 镜像（官方文档上有描述）：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tar cv --files-from /dev/null | docker import - scratch</span><br></pre></td></tr></table></figure></p>
+<p>这是它，非常小的一个 Docker 镜像。到此结束!</p>
+<p>… 或许我们还可以来探讨更多的东西。例如，如何使用 scratch 镜像呢？这又带来了一些挑战。</p>
+<p>为 Scratch 镜像创建内容</p>
+<p>我们可以在一个空的 Scratch 镜像里运行什么？无依赖的可执行文件。你有没有不需要依赖的可执行文件吗？</p>
+<p>我曾经用 Python、Java 和 JavaScript 编写过代码。这些语言 / 平台需要安装运行环境。最近，我开始研究 Go(如果你喜欢话用 GoLang) 语言平台。看起来 Go 是静态链接的。所以我尝试编写一个简单的 hello world Web 服务器，并在 Scratch 容器中运行它。下面是 Hello World Web 服务器的代码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">package main </span><br><span class="line">import ( </span><br><span class="line">&quot;fmt&quot; </span><br><span class="line">&quot;net/http&quot; </span><br><span class="line">) </span><br><span class="line">func helloHandler(w http.ResponseWriter， r *http.Request) &#123; </span><br><span class="line">fmt.Fprintln(w， &quot;Hello World from Go in minimal Docker container&quot;) </span><br><span class="line">&#125; </span><br><span class="line">func main() &#123; </span><br><span class="line">http.HandleFunc(&quot;/&quot;， helloHandler) </span><br><span class="line">fmt.Println(&quot;Started， serving at 8080&quot;) </span><br><span class="line">err := http.ListenAndServe(&quot;:8080&quot;， nil) </span><br><span class="line">if err != nil &#123; </span><br><span class="line">    panic(&quot;ListenAndServe: &quot; + err.Error()) </span><br><span class="line">&#125; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>很显然，我不能在 Scratch 容器内编译我的 Web 服务，因为此容器内没 Go 编译器。并且，因为我的工作是在 Mac 上，我也不能编译的 Linux 二进制。 （其实，交叉编译 GoLang 源到不同的平台是可能的，但是这是另一篇文章的资料）</p>
+<p>因此，首先我需要一个包含 Go 编译器的 Docker 容器。先从简单的开始：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -ti google/golang /bin/bash</span><br></pre></td></tr></table></figure></p>
+<p>在这个容器内，我可以构建 Go Web 服务，我已经将代码提交到 GitHub 仓库：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go get github.com/adriaandejonge/helloworld</span><br></pre></td></tr></table></figure></p>
+<p>go get 命令和 go build有点像，它允许获取远程代码包并构建远程依赖。你可以通过运行可执行文件来启动服务：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$GOPATH/bin/helloworld</span><br></pre></td></tr></table></figure></p>
+<p>很棒，它执行了。但这不是我们期待的，我们想让 hello world Web 服务运行在 Scratch 容器内。所以，我们需要编写 Dockerfile：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">FROM scratch ADD bin/helloworld /helloworld </span><br><span class="line">CMD [&quot;/helloworld&quot;]</span><br></pre></td></tr></table></figure></p>
+<p>然后启动。不幸的是，我们使用 google/golang 容器的方式是没有办法建立这个 Dockerfile 的。因此，我们首先需要找到一种可以从容器内访问 Docker 的方法。</p>
+<p>从容器内调用 Docker</p>
+<p>使用 Docker 的时候，你迟早会有从 Docker 内部控制 Docker 的需求。有许多方法可以做到这一点。你可以使用递归的方式，在 Docker 内运行 Docker。然而，这似乎过于复杂，并且又回到了原点：容量大的容器。</p>
+<p>你还可以用一些额外的命令参数来提供访问外部 Docker 给实例：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -v /var/run/docker.sock:/var/run/docker.sock -v $(which docker):$(which docker) -ti google/golang /bin/bash</span><br></pre></td></tr></table></figure></p>
+<p>在讲到下一步之前，请重新运行 Go 编译器，因为重新启动一个容器 Docker 会忘记之前的编译内容：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go get github.com/adriaandejonge/helloworld</span><br></pre></td></tr></table></figure></p>
+<p>当启动容器时，-v 参数在 Docker 容器内创建一个卷，并允许提供从 Docker 上的文件作为输入。/var/run/docker.sock 是 Unix 套接字，允许访问 Docker 服务器。$(which docker) 可 以为容器提供 Docker 可执行文件的路径。但是，当在 Apple 的 boot2docker 上运行 Docker 时，使用该命令需要注意，如果 Docker 可执行文件被安装在不同的路径上相对于安装在 boot2docker 的虚拟机，这将会导致不匹配错误：它将是 boot2docker 虚拟服务器内的可执行 文件被导入容器内。所以，你可能要替换 $(which docker) 为 / usr/local/bin/docker。同样，如果你运行在不同的系统，/var/run/docker.sock 有一个不同的位置，你需要相应地调整。</p>
+<p>现在，你可以在 google/golang 容器内使用在 $GOPATH 路径下的 Dockerfile，例子中，它指向 / gopath 。其实，我已经提交 Dockerfile 到 GitHub 上。因此，你可以在 Go build 目录中复制它，命令如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cp $GOPATH/src/github.com/adriaandejonge/helloworld/Dockerfile $GOPATH</span><br></pre></td></tr></table></figure></p>
+<p>编译好的二进制文件位于 $GOPATH/bin 目录下，当构建 Dockerfile 时它不可能从父目录中 include 文件。所以在复制后，下一步是：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t adejonge/helloworld $GOPATH</span><br></pre></td></tr></table></figure></p>
+<p>如果一切顺利，那么，Docker 会有类似输出：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Successfully built 6ff3fd5a381d</span><br></pre></td></tr></table></figure></p>
+<p>然后您可以运行容器：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -ti --name hellobroken adejonge/helloworld</span><br></pre></td></tr></table></figure></p>
+<p>但不幸的是，Docker 会输出类似于：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">2014/07/02 17:06:48 no such file or directory</span><br></pre></td></tr></table></figure></p>
+<p>那么到底是怎么回事？我们的 Scratch 容器内已经有静态链接的可执行文件。难道我们犯了什么错误？</p>
+<p>事实证明，Go 不是静态链接库的，或者至少不是所有的库。在 Linux 下，我们可以看到动态链接库用以下命令：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ldd $GOPATH/bin/helloworld</span><br></pre></td></tr></table></figure></p>
+<p>其中输入类似以下内容：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">linux-vdso.so.1 =&gt; (0x00007fff039fe000) </span><br><span class="line">libpthread.so.0 =&gt; /lib/x86_64-linux-gnu/libpthread.so.0 (0x00007f61df30f000) </span><br><span class="line">libc.so.6 =&gt; /lib/x86_64-linux-gnu/libc.so.6 (0x00007f61def84000) </span><br><span class="line">/lib64/ld-linux-x86-64.so.2 (0x00007f61df530000)</span><br></pre></td></tr></table></figure></p>
+<p>所以，在我们才可以运行的 Hello World Web 服务器之前，我们需要告诉 Go 编译器真正的做静态链接。</p>
+<p>Go 语言创建静态链接的可执行文件</p>
+<p>为了创建静态链接的可执行文件，我们需要使用 cgo 编译器，而不是 Go 编译器。命令如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CGO_ENABLED=0 go get -a -ldflags &apos;-s&apos; github.com/adriaandejonge/helloworld</span><br></pre></td></tr></table></figure></p>
+<p>CGO_ENABLED 环境变量表示使用 cgo 编译器，而不是 Go 编译器。-a 参数表示要重建所有的依赖。否则，还是以动态链接依赖为结果。-ldflags -s 一个不错的额外标志，它可以缩减生成的可执行文件约 50％的大小，没有 cgo 编译器你也可以使用该命令，50% 是除去了调试信息的结果。</p>
+<p>重新运行 ldd 命令：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ldd $GOPATH/bin/helloworld</span><br></pre></td></tr></table></figure></p>
+<p>现在应该有类似输出：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">not a dynamic executable</span><br></pre></td></tr></table></figure></p>
+<p>然后重新运行用 Scratch 镜像构建 Docker 容器那一步：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t adejonge/helloworld $GOPATH</span><br></pre></td></tr></table></figure></p>
+<p>如果一切顺利，Docker 会有类似输出：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Successfully built 6ff3fd5a381d</span><br></pre></td></tr></table></figure></p>
+<p>接着运行容器：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -ti --name helloworld adejonge/helloworld</span><br></pre></td></tr></table></figure></p>
+<p>而这个时候会输出：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Started,serving at 8080</span><br></pre></td></tr></table></figure></p>
+<p>目前为止，有许多步骤，会有很多错误的余地。让我们退出 google/golang 容器：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;Press Ctrl-C&gt; exit</span><br></pre></td></tr></table></figure></p>
+<p>您可以检查容器和镜像的存在或不存在：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker ps -a docker images -a</span><br></pre></td></tr></table></figure></p>
+<p>并且您可以清理 Docker：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker rm -f hello world docker rmi -f adejonge/helloworld</span><br></pre></td></tr></table></figure></p>
+<p>创建 Docker 容器的 Docker 容器</p>
+<p>到目前为止我们已经敲了这么多命令，我们可以把这些步骤写在 Dockerfile 中，Docker 会帮我们自动处理：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">FROM google/golang RUN CGO_ENABLED=0 go get -a -ldflags &apos;-s&apos; github.com/adriaandejonge/helloworld </span><br><span class="line">RUN cp /gopath/src/github.com/adriaandejonge/helloworld/Dockerfile /gopath </span><br><span class="line">CMD docker build -t adejonge/helloworld gopath</span><br></pre></td></tr></table></figure></p>
+<p>我提交了这个 Dockerfile 到另一个 GitHub 库。它可以用这个命令构建：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t adejonge/hellobuild github.com/adriaandejonge/hellobuild</span><br></pre></td></tr></table></figure></p>
+<p>-t 表示镜像的标签名为 adejonge/hellobuild 和隐式标签名为 latest。这些名称会在之后的删除镜像中用到。</p>
+<p>接下来，你可以创建容器用刚才提供的标签：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -v /var/run/docker.sock:/var/run/docker.sock -v $(which docker):$(which docker) -ti --name hellobuild adejonge/hellobuild</span><br></pre></td></tr></table></figure></p>
+<p>提供 –name hellobuild 参数使得在运行后更容易移除容器。事实上，你现在就可以这样做，因为在运行此命令后，你已经创建了 adejonge/helloworld 的镜像：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker rm -f hellobuild docker rmi -f adejonge/hellobuild</span><br></pre></td></tr></table></figure></p>
+<p>现在你可以运行新的 helloworld 容器：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -ti --name helloworld adejonge/helloworld</span><br></pre></td></tr></table></figure></p>
+<p>因为所有这些步骤都出自同一命令行运行，而无需在 Docker 容器内打开 bash shell，你可以将这些步骤添加到一个 bash 脚本，并自动运行。我已经将 bash 脚本提交到了 GitHub 库。</p>
+<p>另外，如果你想尝试一个尽可能小的容器，但是又不想遵循博客中的步骤，你也可以用我提交到 Docker Hub 库的镜像：</p>
+<p>docker pull adejonge/helloworld<br>docker images -a 你可以看到大小为 3.6MB。当然，如果你能创建一个比我使用 Go 编写的 Web 服务还小的可执行文件，那就可以让它更小。使用 C 语言或者是汇编，你可以这样做到。尽管如此，你不可能使得它比 scratch 镜像还小。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/docker/" rel="tag"># docker</a>
+          
+            <a href="/tags/image/" rel="tag"># image</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/06/08/k8s/服务发现/metallb/" rel="next" title="metallb">
+                <i class="fa fa-chevron-left"></i> metallb
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/06/13/dev/python/pip/" rel="prev" title="pip 相关操作">
+                pip 相关操作 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview sidebar-panel sidebar-panel-active">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

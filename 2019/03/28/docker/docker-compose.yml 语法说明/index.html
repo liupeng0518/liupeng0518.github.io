@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="docker,docker-compose,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="docker compose 在 Docker 容器运用中具有很大的学习意义，docker compose 是一个整合发布应用的利器。而使用 docker compose 时，懂得如何编排 docker compose 配置文件是很重要的。 Docker Compose 配置文件的构建参数说明首先，官方提供了一个 yaml Docker Compose 配置文件的标准例子1234567891011">
+<meta name="keywords" content="docker,docker-compose">
+<meta property="og:type" content="article">
+<meta property="og:title" content="docker-compose.yml 语法说明">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/03/28/docker/docker-compose.yml 语法说明/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="docker compose 在 Docker 容器运用中具有很大的学习意义，docker compose 是一个整合发布应用的利器。而使用 docker compose 时，懂得如何编排 docker compose 配置文件是很重要的。 Docker Compose 配置文件的构建参数说明首先，官方提供了一个 yaml Docker Compose 配置文件的标准例子1234567891011">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.956Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="docker-compose.yml 语法说明">
+<meta name="twitter:description" content="docker compose 在 Docker 容器运用中具有很大的学习意义，docker compose 是一个整合发布应用的利器。而使用 docker compose 时，懂得如何编排 docker compose 配置文件是很重要的。 Docker Compose 配置文件的构建参数说明首先，官方提供了一个 yaml Docker Compose 配置文件的标准例子1234567891011">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/03/28/docker/docker-compose.yml 语法说明/">
+
+
+
+
+
+  <title>docker-compose.yml 语法说明 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/03/28/docker/docker-compose.yml 语法说明/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">docker-compose.yml 语法说明</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-28T09:47:19+00:00">
+                2019-03-28
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index">
+                    <span itemprop="name">docker</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>docker compose 在 Docker 容器运用中具有很大的学习意义，docker compose 是一个整合发布应用的利器。而使用 docker compose 时，懂得如何编排 docker compose 配置文件是很重要的。</p>
+<h1 id="Docker-Compose-配置文件的构建参数说明"><a href="#Docker-Compose-配置文件的构建参数说明" class="headerlink" title="Docker Compose 配置文件的构建参数说明"></a>Docker Compose 配置文件的构建参数说明</h1><p>首先，官方提供了一个 yaml Docker Compose 配置文件的标准例子<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><span class="line">version: &quot;3&quot;</span><br><span class="line">services:</span><br><span class="line"></span><br><span class="line">  redis:</span><br><span class="line">    image: redis:alpine</span><br><span class="line">    ports:</span><br><span class="line">      - &quot;6379&quot;</span><br><span class="line">    networks:</span><br><span class="line">      - frontend</span><br><span class="line">    deploy:</span><br><span class="line">      replicas: 2</span><br><span class="line">      update_config:</span><br><span class="line">        parallelism: 2</span><br><span class="line">        delay: 10s</span><br><span class="line">      restart_policy:</span><br><span class="line">        condition: on-failure</span><br><span class="line"></span><br><span class="line">  db:</span><br><span class="line">    image: postgres:9.4</span><br><span class="line">    volumes:</span><br><span class="line">      - db-data:/var/lib/postgresql/data</span><br><span class="line">    networks:</span><br><span class="line">      - backend</span><br><span class="line">    deploy:</span><br><span class="line">      placement:</span><br><span class="line">        constraints: [node.role == manager]</span><br><span class="line"></span><br><span class="line">  vote:</span><br><span class="line">    image: dockersamples/examplevotingapp_vote:before</span><br><span class="line">    ports:</span><br><span class="line">      - 5000:80</span><br><span class="line">    networks:</span><br><span class="line">      - frontend</span><br><span class="line">    depends_on:</span><br><span class="line">      - redis</span><br><span class="line">    deploy:</span><br><span class="line">      replicas: 2</span><br><span class="line">      update_config:</span><br><span class="line">        parallelism: 2</span><br><span class="line">      restart_policy:</span><br><span class="line">        condition: on-failure</span><br><span class="line"></span><br><span class="line">  result:</span><br><span class="line">    image: dockersamples/examplevotingapp_result:before</span><br><span class="line">    ports:</span><br><span class="line">      - 5001:80</span><br><span class="line">    networks:</span><br><span class="line">      - backend</span><br><span class="line">    depends_on:</span><br><span class="line">      - db</span><br><span class="line">    deploy:</span><br><span class="line">      replicas: 1</span><br><span class="line">      update_config:</span><br><span class="line">        parallelism: 2</span><br><span class="line">        delay: 10s</span><br><span class="line">      restart_policy:</span><br><span class="line">        condition: on-failure</span><br><span class="line"></span><br><span class="line">  worker:</span><br><span class="line">    image: dockersamples/examplevotingapp_worker</span><br><span class="line">    networks:</span><br><span class="line">      - frontend</span><br><span class="line">      - backend</span><br><span class="line">    deploy:</span><br><span class="line">      mode: replicated</span><br><span class="line">      replicas: 1</span><br><span class="line">      labels: [APP=VOTING]</span><br><span class="line">      restart_policy:</span><br><span class="line">        condition: on-failure</span><br><span class="line">        delay: 10s</span><br><span class="line">        max_attempts: 3</span><br><span class="line">        window: 120s</span><br><span class="line">      placement:</span><br><span class="line">        constraints: [node.role == manager]</span><br><span class="line"></span><br><span class="line">  visualizer:</span><br><span class="line">    image: dockersamples/visualizer:stable</span><br><span class="line">    ports:</span><br><span class="line">      - &quot;8080:8080&quot;</span><br><span class="line">    stop_grace_period: 1m30s</span><br><span class="line">    volumes:</span><br><span class="line">      - &quot;/var/run/docker.sock:/var/run/docker.sock&quot;</span><br><span class="line">    deploy:</span><br><span class="line">      placement:</span><br><span class="line">        constraints: [node.role == manager]</span><br><span class="line"></span><br><span class="line">networks:</span><br><span class="line">  frontend:</span><br><span class="line">  backend:</span><br><span class="line"></span><br><span class="line">volumes:</span><br><span class="line">  db-data:</span><br></pre></td></tr></table></figure></p>
+<p>此文件配置了多个服务，关于此配置文件的各个语句含义就需要弄懂配置选项的含义了</p>
+<p>文件配置</p>
+<p>compose 文件是一个定义服务、 网络和卷的 YAML 文件 。Compose 文件的默认路径是 ./docker-compose.yml</p>
+<p>提示：可以是用 .yml 或 .yaml 作为文件扩展名</p>
+<p>服务定义包含应用于为该服务启动的每个容器的配置，就像传递命令行参数一样 docker container create。同样，网络和卷的定义类似于 docker network create 和 docker volume create。</p>
+<p>正如 docker container create 在 Dockerfile 指定选项，如 CMD、 EXPOSE、VOLUME、ENV，在默认情况下，你不需要再次指定它们docker-compose.yml。</p>
+<p>可以使用 Bash 类 ${VARIABLE} 语法在配置值中使用环境变量。</p>
+<p>配置选项</p>
+<p>１.bulid<br>服务除了可以基于指定的镜像，还可以基于一份 Dockerfile，在使用 up 启动之时执行构建任务，这个构建标签就是 build，它可以指定 Dockerfile 所在文件夹的路径。Compose 将会利用它自动构建这个镜像，然后使用这个镜像启动服务容器</p>
+<p>build: /path/to/build/dir</p>
+<p>也可以是相对路径</p>
+<p>build: ./dir</p>
+<p>设定上下文根目录，然后以该目录为准指定 Dockerfile</p>
+<p>build:<br>  context: ../<br>  dockerfile: path/of/Dockerfile</p>
+<p>例子</p>
+<p>version: ‘3’<br>services:<br>  webapp:<br>    build: ./dir</p>
+<p>如果 context 中有指定的路径，并且可以选定 Dockerfile 和 args。那么 arg 这个标签，就像 Dockerfile 中的 ARG 指令，它可以在构建过程中指定环境变量，但是在构建成功后取消，在 docker-compose.yml 文件中也支持这样的写法：</p>
+<p>version: ‘3’<br>services:<br>  webapp:<br>    build:<br>      context: ./dir<br>      dockerfile: Dockerfile-alternate<br>      args:<br>        buildno: 1</p>
+<p>与 ENV 不同的是，ARG 可以为空值</p>
+<p>args:</p>
+<ul>
+<li>buildno</li>
+<li>password</li>
+</ul>
+<p>如果要指定 image 以及 build ，选项格式为</p>
+<p>build: ./dir<br>image: webapp:tag</p>
+<p>这会在 ./dir 目录生成一个名为 webaapp 和标记为 tag 的镜像</p>
+<p>Note:当用(Version 3) Compose 文件在群集模式下部署堆栈时，该选项被忽略。因为 docker stack 命令只接受预先构建的镜像</p>
+<ol start="2">
+<li>context<br>context 选项可以是 Dockerfile 的文件路径，也可以是到链接到 git 仓库的 url</li>
+</ol>
+<p>当提供的值是相对路径时，它被解析为相对于撰写文件的路径，此目录也是发送到 Docker 守护进程的 context</p>
+<p>build:<br>  context: ./dir</p>
+<ol start="3">
+<li>dockerfile<br>使用此 dockerfile 文件来构建，必须指定构建路径</li>
+</ol>
+<p>build:<br>  context: .<br>  dockerfile: Dockerfile-alternate</p>
+<ol start="4">
+<li>args<br>添加构建参数，这些参数是仅在构建过程中可访问的环境变量</li>
+</ol>
+<p>首先， 在Dockerfile中指定参数：</p>
+<p>ARG buildno<br>ARG password</p>
+<p>RUN echo “Build number: $buildno”<br>RUN script-requiring-password.sh “$password”</p>
+<p>然后指定 build 下的参数,可以传递映射或列表</p>
+<p>build:<br>  context: .<br>  args:<br>    buildno: 1<br>    password: secret</p>
+<p>或</p>
+<p>build:<br>  context: .<br>  args:</p>
+<pre><code>- buildno=1
+- password=secret
+</code></pre><p>指定构建参数时可以省略该值，在这种情况下，构建时的值默认构成运行环境中的值</p>
+<p>args:</p>
+<ul>
+<li>buildno</li>
+<li>password</li>
+</ul>
+<p>Note： YAML 布尔值（true，false，yes，no，on，off）必须使用引号括起来，以为了能够正常被解析为字符串</p>
+<ol start="5">
+<li>cache_from<br>编写缓存解析镜像列表</li>
+</ol>
+<p>build:<br>  context: .<br>  cache_from:</p>
+<pre><code>- alpine:latest
+- corp/web_app:3.14
+</code></pre><ol start="6">
+<li>labels<br>使用 Docker标签 将元数据添加到生成的镜像中，可以使用数组或字典。</li>
+</ol>
+<p>建议使用反向 DNS 标记来防止签名与其他软件所使用的签名冲突</p>
+<p>build:<br>  context: .<br>  labels:<br>    com.example.description: “Accounting webapp”<br>    com.example.department: “Finance”<br>    com.example.label-with-empty-value: “”</p>
+<p>或</p>
+<p>build:<br>  context: .<br>  labels:</p>
+<pre><code>- &quot;com.example.description=Accounting webapp&quot;
+- &quot;com.example.department=Finance&quot;
+- &quot;com.example.label-with-empty-value&quot;
+</code></pre><p>7.shm_size<br>设置容器 /dev/shm 分区的大小，值为表示字节的整数值或表示字符的字符串</p>
+<p>build:<br>  context: .<br>  shm_size: ‘2gb’</p>
+<p>或</p>
+<p>build:<br>  context: .<br>  shm_size: 10000000</p>
+<ol start="8">
+<li>target<br>根据对应的 Dockerfile 构建指定 Stage</li>
+</ol>
+<p>build:<br>    context: .<br>    target: prod</p>
+<ol start="9">
+<li>cap_add、cap_drop<br>添加或删除容器功能，可查看 man 7 capabilities</li>
+</ol>
+<p>cap_add:</p>
+<ul>
+<li>ALL</li>
+</ul>
+<p>cap_drop:</p>
+<ul>
+<li>NET_ADMIN</li>
+<li>SYS_ADMIN</li>
+</ul>
+<p>Note:当用(Version 3) Compose 文件在群集模式下部署堆栈时，该选项被忽略。因为 docker stack 命令只接受预先构建的镜像</p>
+<ol start="10">
+<li>command<br>覆盖容器启动后默认执行的命令</li>
+</ol>
+<p>command: bundle exec thin -p 3000</p>
+<p>该命令也可以是一个列表，方法类似于 dockerfile:</p>
+<p>command: [“bundle”, “exec”, “thin”, “-p”, “3000”]</p>
+<ol start="11">
+<li>configs<br>使用服务 configs 配置为每个服务赋予相应的访问权限，支持两种不同的语法。</li>
+</ol>
+<p>Note: 配置必须存在或在 configs 此堆栈文件的顶层中定义，否则堆栈部署失效</p>
+<p>1.SHORT 语法<br>SHORT 语法只能指定配置名称，这允许容器访问配置并将其安装在 /&lt;config_name&gt; 容器内，源名称和目标装入点都设为配置名称。</p>
+<p>version: “3.3”<br>services:<br>  redis:<br>    image: redis:latest<br>    deploy:<br>      replicas: 1<br>    configs:</p>
+<pre><code>- my_config
+- my_other_config
+</code></pre><p>configs:<br>  my_config:<br>    file: ./my_config.txt<br>  my_other_config:<br>    external: true</p>
+<p>以上实例使用 SHORT 语法将 redis 服务访问授予 my_config 和 my_other_config ,并被 my_other_config 定义为外部资源，这意味着它已经在 Docker 中定义。可以通过 docker config create 命令或通过另一个堆栈部署。如果外部部署配置都不存在，则堆栈部署会失败并出现 config not found 错误。</p>
+<p>Note: config 定义仅在 3.3 版本或在更高版本的撰写文件格式中受支持，YAML 的布尔值（true, false, yes, no, on, off）必须要使用引号引起来（单引号、双引号均可），否则会当成字符串解析。</p>
+<ol start="2">
+<li>LONG 语法<br>LONG 语法提供了创建服务配置的更加详细的信息</li>
+</ol>
+<p>source:Docker 中存在的配置的名称<br>target:要在服务的任务中装载的文件的路径或名称。如果未指定则默认为 /<source><br>uid 和 gid:在服务的任务容器中拥有安装的配置文件的数字 UID 或 GID。如果未指定，则默认为在Linux上。Windows不支持。<br>mode:在服务的任务容器中安装的文件的权限，以八进制表示法。例如，0444 代表文件可读的。默认是 0444。如果配置文件无法写入，是因为它们安装在临时文件系统中，所以如果设置了可写位，它将被忽略。可执行位可以设置。如果您不熟悉 UNIX 文件权限模式，Unix Permissions Calculator<br>下面示例在容器中将 my_config 名称设置为 redis_config，将模式设置为 0440（group-readable）并将用户和组设置为 103。该　｀redis　服务无法访问 my_other_config 配置。</p>
+<p>version: “3.3”<br>services:<br>  redis:<br>    image: redis:latest<br>    deploy:<br>      replicas: 1<br>    configs:</p>
+<pre><code>- source: my_config
+  target: /redis_config
+  uid: &apos;103&apos;
+  gid: &apos;103&apos;
+  mode: 0440
+</code></pre><p>configs:<br>  my_config:<br>    file: ./my_config.txt<br>  my_other_config:<br>    external: true</p>
+<p>可以同时授予多个配置的服务相应的访问权限，也可以混合使用 LONG 和 SHORT 语法。定义配置并不意味着授予服务访问权限。</p>
+<ol start="12">
+<li>cgroup_parent<br>可以为容器选择一个可选的父 cgroup</li>
+</ol>
+<p>cgroup_parent: m-executor-abcd</p>
+<p>注意：当 使用（Version 3）Compose 文件在群集模式下部署堆栈时，忽略此选项</p>
+<ol start="13">
+<li>container_name<br>为自定义的容器指定一个名称，而不是使用默认的名称</li>
+</ol>
+<p>container_name: my-web-container</p>
+<p>因为 docker 容器名称必须是唯一的，所以如果指定了一个自定义的名称，不能扩展一个服务超过 1 个容器</p>
+<ol start="14">
+<li>credential_spec<br>为托管服务账户配置凭据规范，此选项仅适用于 Windows 容器服务</li>
+</ol>
+<p>在 credential_spec 上的配置列表格式为 file://<filename> 或 registry://<value-name></value-name></filename></p>
+<p>使用 file: 应该注意引用的文件必须存在于　CredentialSpecs,docker 数据目录的子目录中。在 Windows 上，该目录默认为 C:\ProgramData\Docker\。以下示例从名为C:\ProgramData\Docker\CredentialSpecs\my-credential-spec.json 的文件加载凭证规范 ：</p>
+<p>credential_spec:<br>  file: my-credential-spec.json</p>
+<p>使用 registry: 将从守护进程主机上的 Windows 注册表中读取凭据规范。其注册表值必须位于：</p>
+<p>HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Virtualization\Containers\CredentialSpecs</p>
+<p>下面的示例通过 my-credential-spec 注册表中指定的值加载凭证规范：</p>
+<p>credential_spec:<br>  registry: my-credential-spec</p>
+<ol start="15">
+<li>deploy<br>指定与部署和运行服务相关的配置</li>
+</ol>
+<p>version: ‘3’<br>services:<br>  redis:<br>    image: redis:alpine<br>    deploy:<br>      replicas: 6<br>      update_config:<br>        parallelism: 2<br>        delay: 10s<br>      restart_policy:<br>        condition: on-failure</p>
+<p>这里有几个子选项</p>
+<ol>
+<li>endpoint_mode<br>指定连接到群组外部客户端服务发现方法</li>
+</ol>
+<p>endpoint_mode:vip ：Docker 为该服务分配了一个虚拟 IP(VIP),作为客户端的 “前端“ 部位用于访问网络上的服务。<br>endpoint_mode: dnsrr : DNS轮询（DNSRR）服务发现不使用单个虚拟 IP。Docker为服务设置 DNS 条目，使得服务名称的 DNS 查询返回一个 IP 地址列表，并且客户端直接连接到其中的一个。如果想使用自己的负载平衡器，或者混合 Windows 和 Linux 应用程序，则 DNS 轮询调度（round-robin）功能就非常实用。<br>version: “3.3”</p>
+<p>services:<br>  wordpress:<br>    image: wordpress<br>    ports:</p>
+<pre><code>  - 8080:80
+networks:
+  - overlay
+deploy:
+  mode: replicated
+  replicas: 2
+  endpoint_mode: vip
+</code></pre><p>  mysql:<br>    image: mysql<br>    volumes:</p>
+<pre><code>   - db-data:/var/lib/mysql/data
+networks:
+   - overlay
+deploy:
+  mode: replicated
+  replicas: 2
+  endpoint_mode: dnsrr
+</code></pre><p>volumes:<br>  db-data:</p>
+<p>networks:<br>  overlay:</p>
+<p>相关信息：Swarm 模式 CLI 命令 、Configure 服务发现</p>
+<p>2.labels<br>指定服务的标签，这些标签仅在服务上设置。</p>
+<p>version: “3”<br>services:<br>  web:<br>    image: web<br>    deploy:<br>      labels:<br>        com.example.description: “This label will appear on the web service”</p>
+<p>通过将 deploy 外面的 labels 标签来设置容器上的 labels</p>
+<p>version: “3”<br>services:<br>  web:<br>    image: web<br>    labels:<br>      com.example.description: “This label will appear on all containers for the web service”</p>
+<p>3.mode<br>global:每个集节点只有一个容器<br>replicated:指定容器数量（默认）<br>version: ‘3’<br>services:<br>  worker:<br>    image: dockersamples/examplevotingapp_worker<br>    deploy:<br>      mode: global</p>
+<ol start="4">
+<li>placement<br>指定 constraints 和 preferences</li>
+</ol>
+<p>version: ‘3’<br>services:<br>  db:<br>    image: postgres<br>    deploy:<br>      placement:<br>        constraints:</p>
+<pre><code>  - node.role == manager
+  - engine.labels.operatingsystem == ubuntu 14.04
+preferences:
+  - spread: node.labels.zone
+</code></pre><p>5.replicas<br>如果服务是 replicated（默认)，需要指定运行的容器数量</p>
+<p>version: ‘3’<br>services:<br>  worker:<br>    image: dockersamples/examplevotingapp_worker<br>    networks:</p>
+<pre><code>  - frontend
+  - backend
+deploy:
+  mode: replicated
+  replicas: 6
+</code></pre><ol start="6">
+<li>resources<br>配置资源限制</li>
+</ol>
+<p>version: ‘3’<br>services:<br>  redis:<br>    image: redis:alpine<br>    deploy:<br>      resources:<br>        limits:<br>          cpus: ‘0.50’<br>          memory: 50M<br>        reservations:<br>          cpus: ‘0.25’<br>          memory: 20M</p>
+<p>此例子中，redis 服务限制使用不超过 50M 的内存和 0.50（50％）可用处理时间（CPU），并且 保留 20M 了内存和 0.25 CPU时间</p>
+<ol start="7">
+<li>restart_policy<br>配置容器的重新启动，代替 restart</li>
+</ol>
+<p>condition:值可以为 none 、on-failure 以及 any(默认)<br>delay: 尝试重启的等待时间，默认为 0<br>max_attempts:在放弃之前尝试重新启动容器次数（默认：从不放弃）。如果重新启动在配置中没有成功 window，则此尝试不计入配置max_attempts 值。例如，如果 max_attempts 值为 2，并且第一次尝试重新启动失败，则可能会尝试重新启动两次以上。<br>windows:在决定重新启动是否成功之前的等时间，指定为持续时间（默认值：立即决定）。<br>version: “3”<br>services:<br>  redis:<br>    image: redis:alpine<br>    deploy:<br>      restart_policy:<br>        condition: on-failure<br>        delay: 5s<br>        max_attempts: 3<br>        window: 120s</p>
+<ol start="8">
+<li>update_config<br>配置更新服务，用于无缝更新应用（rolling update)</li>
+</ol>
+<p>parallelism：一次性更新的容器数量<br>delay：更新一组容器之间的等待时间。<br>failure_action：如果更新失败，可以执行的的是 continue、rollback 或 pause （默认）<br>monitor：每次任务更新后监视失败的时间(ns|us|ms|s|m|h)（默认为0）<br>max_failure_ratio：在更新期间能接受的失败率<br>order：更新次序设置，top-first（旧的任务在开始新任务之前停止）、start-first（新的任务首先启动，并且正在运行的任务短暂重叠）（默认 stop-first）<br>version: ‘3.4’<br>services:<br>  vote:<br>    image: dockersamples/examplevotingapp_vote:before<br>    depends_on:</p>
+<pre><code>  - redis
+deploy:
+  replicas: 2
+  update_config:
+    parallelism: 2
+    delay: 10s
+    order: stop-first
+</code></pre><p>不支持 Docker stack desploy 的几个子选项<br>build、cgroup_parent、container_name、devices、tmpfs、external_links、inks、network_mode、restart、security_opt、stop_signal、sysctls、userns_mode</p>
+<ol start="16">
+<li>devices<br>设置映射列表，与 Docker 客户端的 –device 参数类似 :</li>
+</ol>
+<p>devices:</p>
+<ul>
+<li>“/dev/ttyUSB0:/dev/ttyUSB0”</li>
+</ul>
+<ol start="17">
+<li>depends_on<br>此选项解决了启动顺序的问题</li>
+</ol>
+<p>在使用 Compose 时，最大的好处就是少打启动命令，但是一般项目容器启动的顺序是有要求的，如果直接从上到下启动容器，必然会因为容器依赖问题而启动失败。例如在没启动数据库容器的时候启动了应用容器，这时候应用容器会因为找不到数据库而退出，为了避免这种情况我们需要加入一个标签，就是 depends_on，这个标签解决了容器的依赖、启动先后的问题。</p>
+<p>指定服务之间的依赖关系，有两种效果</p>
+<p>docker-compose up 以依赖顺序启动服务，下面例子中 redis 和 db 服务在 web 启动前启动<br>docker-compose up SERVICE 自动包含 SERVICE 的依赖性，下面例子中，例如下面容器会先启动 redis 和 db<br>两个服务，最后才启动 web 服务：<br>version: ‘3’<br>services:<br>  web:<br>    build: .<br>    depends_on:</p>
+<pre><code>- db
+- redis
+</code></pre><p>  redis:<br>    image: redis<br>  db:<br>    image: postgres</p>
+<p>注意的是，默认情况下使用 docker-compose up web 这样的方式启动 web 服务时，也会启动 redis 和 db 两个服务，因为在配置文件中定义了依赖关系</p>
+<ol start="18">
+<li>dns<br>自定义 DNS 服务器，与 –dns 具有一样的用途，可以是单个值或列表</li>
+</ol>
+<p>dns: 8.8.8.8<br>dns:</p>
+<ul>
+<li>8.8.8.8</li>
+<li>9.9.9.9</li>
+</ul>
+<ol start="19">
+<li>dns_search<br>自定义 DNS 搜索域，可以是单个值或列表</li>
+</ol>
+<p>dns_search: example.com<br>dns_search:</p>
+<ul>
+<li>dc1.example.com</li>
+<li>dc2.example.com</li>
+</ul>
+<ol start="20">
+<li>tmpfs<br>挂载临时文件目录到容器内部，与 run 的参数一样效果，可以是单个值或列表</li>
+</ol>
+<p>tmpfs: /run<br>tmpfs:</p>
+<ul>
+<li>/run</li>
+<li>/tmp</li>
+</ul>
+<ol start="21">
+<li>entrypoint<br>在 Dockerfile 中有一个指令叫做 ENTRYPOINT 指令，用于指定接入点。在 docker-compose.yml 中可以定义接入点，覆盖 Dockerfile 中的定义：</li>
+</ol>
+<p>entrypoint: /code/entrypoint.sh</p>
+<p>entrypoint 也可以是一个列表，方法类似于 dockerfile</p>
+<p>entrypoint:</p>
+<pre><code>- php
+- -d
+- zend_extension=/usr/local/lib/php/extensions/no-debug-non-zts-20100525/xdebug.so
+- -d
+- memory_limit=-1
+- vendor/bin/phpunit
+</code></pre><ol start="21">
+<li>env_file<br>从文件中添加环境变量。可以是单个值或是列表<br>如果已经用 docker-compose -f FILE 指定了 Compose 文件，那么 env_file 路径值为相对于该文件所在的目录</li>
+</ol>
+<p>但 environment 环境中的设置的变量会会覆盖这些值，无论这些值未定义还是为 None</p>
+<p>env_file: .env</p>
+<p>或者根据 docker-compose.yml 设置多个：</p>
+<p>env_file:</p>
+<ul>
+<li>./common.env</li>
+<li>./apps/web.env</li>
+<li>/opt/secrets.env</li>
+</ul>
+<p>环境配置文件 env_file 中的声明每行都是以 VAR=VAL 格式，其中以 # 开头的被解析为注释而被忽略</p>
+<p>注意环境变量配置列表的顺序*,例如下面例子</p>
+<p>docker_compose.yml</p>
+<p>services:<br>  some-service:<br>    env_file:</p>
+<pre><code>- a.env
+- b.env
+</code></pre><p>a.env 文件</p>
+<h1 id="a-env"><a href="#a-env" class="headerlink" title="a.env"></a>a.env</h1><p>VAR=1</p>
+<p>b.env文件</p>
+<p>对于在文件a.env 中指定的相同变量但在文件 b.env 中分配了不同的值，如果 b.env 像下面列在 a.env 之后，则刚在 a.env 设置的值被 b.env 相同变量的值覆盖，此时 $VAR 值为 hello。此外，这里所说的环境变量是对宿主机的 Compose 而言的，如果在配置文件中有 build 操作，这些变量并不会进入构建过程中，如果要在构建中使用变量还是首选 arg 标签</p>
+<ol start="22">
+<li>environment<br>添加环境变量，可以使用数组或字典。与上面的 env_file 选项完全不同，反而和 arg 有几分类似，这个标签的作用是设置镜像变量，它可以保存变量到镜像里面，也就是说启动的容器也会包含这些变量设置，这是与 arg 最大的不同。<br>一般 arg 标签的变量仅用在构建过程中。而 environment 和 Dockerfile 中的 ENV 指令一样会把变量一直保存在镜像、容器中，类似 docker run -e 的效果</li>
+</ol>
+<p>environment:<br>  RACK_ENV: development<br>  SHOW: ‘true’<br>  SESSION_SECRET:</p>
+<p>或</p>
+<p>environment:</p>
+<ul>
+<li>RACK_ENV=development</li>
+<li>SHOW=true</li>
+<li>SESSION_SECRET</li>
+</ul>
+<ol start="23">
+<li>expose<br>暴露端口，但不映射到宿主机，只被连接的服务访问。这个标签与 Dockerfile 中的 EXPOSE 指令一样，用于指定暴露的端口，但是只是作为一种参考，实际上 docker-compose.yml 的端口映射还得 ports 这样的标签</li>
+</ol>
+<p>expose:</p>
+<ul>
+<li>“3000”</li>
+<li>“8000”</li>
+</ul>
+<ol start="24">
+<li>external_links<br>链接到 docker-compose.yml 外部的容器，甚至 并非 Compose 项目文件管理的容器。参数格式跟 links 类似</li>
+</ol>
+<p>在使用Docker过程中，会有许多单独使用 docker run 启动的容器的情况，为了使 Compose 能够连接这些不在docker-compose.yml 配置文件中定义的容器，那么就需要一个特殊的标签，就是 external_links，它可以让Compose 项目里面的容器连接到那些项目配置外部的容器（前提是外部容器中必须至少有一个容器是连接到与项目内的服务的同一个网络里面）。</p>
+<p>格式如下</p>
+<p>external_links:</p>
+<ul>
+<li>redis_1</li>
+<li>project_db_1:mysql</li>
+<li>project_db_1:postgresql</li>
+</ul>
+<ol start="25">
+<li>extra_hosts<br>添加主机名的标签，就是往 /etc/hosts 文件中添加一些记录，与 Docker 客户端 中的 –add-host 类似：</li>
+</ol>
+<p>extra_hosts:</p>
+<ul>
+<li>“somehost:162.242.195.82”</li>
+<li>“otherhost:50.31.209.229”</li>
+</ul>
+<p>具有 IP 地址和主机名的条目在 /etc/hosts 内部容器中创建。启动之后查看容器内部 hosts ，例如：</p>
+<p>162.242.195.82  somehost<br>50.31.209.229   otherhost</p>
+<p>26.healthcheck<br>用于检查测试服务使用的容器是否正常</p>
+<p>healthcheck:<br>  test: [“CMD”, “curl”, “-f”, “<a href="http://localhost&quot;]" target="_blank" rel="noopener">http://localhost&quot;]</a><br>  interval: 1m30s<br>  timeout: 10s<br>  retries: 3<br>  start_period: 40s</p>
+<p>interval，timeout 以及 start_period 都定为持续时间</p>
+<p>test 必须是字符串或列表，如果它是一个列表，第一项必须是 NONE，CMD 或 CMD-SHELL ；如果它是一个字符串，则相当于指定CMD-SHELL 后跟该字符串。</p>
+<h1 id="Hit-the-local-web-app"><a href="#Hit-the-local-web-app" class="headerlink" title="Hit the local web app"></a>Hit the local web app</h1><p>test: [“CMD”, “curl”, “-f”, “<a href="http://localhost&quot;]" target="_blank" rel="noopener">http://localhost&quot;]</a></p>
+<h1 id="As-above-but-wrapped-in-bin-sh-Both-forms-below-are-equivalent"><a href="#As-above-but-wrapped-in-bin-sh-Both-forms-below-are-equivalent" class="headerlink" title="As above, but wrapped in /bin/sh. Both forms below are equivalent."></a>As above, but wrapped in /bin/sh. Both forms below are equivalent.</h1><p>test: [“CMD-SHELL”, “curl -f <a href="http://localhost" target="_blank" rel="noopener">http://localhost</a> || exit 1”]<br>test: curl -f <a href="https://localhost" target="_blank" rel="noopener">https://localhost</a> || exit 1</p>
+<p>如果需要禁用镜像的所有检查项目，可以使用 disable:true,相当于 test:[“NONE”]</p>
+<p>healthcheck:<br>  disable: true</p>
+<ol start="27">
+<li>image<br>从指定的镜像中启动容器，可以是存储仓库、标签以及镜像 ID</li>
+</ol>
+<p>image: redis<br>image: ubuntu:14.04<br>image: tutum/influxdb<br>image: example-registry.com:4000/postgresql<br>image: a4bc65fd</p>
+<p>如果镜像不存在，Compose 会自动拉去镜像</p>
+<ol start="28">
+<li><p>isolation<br>Linux 上仅仅支持 default 值</p>
+</li>
+<li><p>labels<br>使用 Docker 标签将元数据添加到容器，可以使用数组或字典。与 Dockerfile 中的 LABELS 类似：</p>
+</li>
+</ol>
+<p>labels:<br>  com.example.description: “Accounting webapp”<br>  com.example.department: “Finance”<br>  com.example.label-with-empty-value: “”</p>
+<p>labels:</p>
+<ul>
+<li>“com.example.description=Accounting webapp”</li>
+<li>“com.example.department=Finance”</li>
+<li>“com.example.label-with-empty-value”</li>
+</ul>
+<p>30.links<br>链接到其它服务的中的容器，可以指定服务名称也可以指定链接别名（SERVICE：ALIAS)，与 Docker 客户端的 –link 有一样效果，会连接到其它服务中的容器</p>
+<p>web:<br>  links:</p>
+<ul>
+<li>db</li>
+<li>db:database</li>
+<li>redis</li>
+</ul>
+<p>使用的别名将会自动在服务容器中的 /etc/hosts 里创建。例如：</p>
+<p>172.12.2.186  db<br>172.12.2.186  database<br>172.12.2.187  redis</p>
+<p>相应的环境变量也将被创建</p>
+<ol start="31">
+<li>logging<br>配置日志服务</li>
+</ol>
+<p>logging:<br>  driver: syslog<br>  options:<br>    syslog-address: “tcp://192.168.0.42:123”</p>
+<p>该 driver值是指定服务器的日志记录驱动程序，默认值为 json-file,与 –log-diver 选项一样</p>
+<p>driver: “json-file”<br>driver: “syslog”<br>driver: “none”</p>
+<p>注意：只有驱动程序 json-file 和 journald 驱动程序可以直接从 docker-compose up 和 docker-compose logs 获取日志。使用任何其他方式不会显示任何日志。</p>
+<p>对于可选值，可以使用 options 指定日志记录中的日志记录选项</p>
+<p>driver: “syslog”<br>options:<br>  syslog-address: “tcp://192.168.0.42:123”</p>
+<p>默认驱动程序 json-file 具有限制存储日志量的选项，所以，使用键值对来获得最大存储大小以及最小存储数量</p>
+<p>options:<br>  max-size: “200k”<br>  max-file: “10”</p>
+<p>上面实例将存储日志文件，直到它们达到max-size:200kB，存储的单个日志文件的数量由该 max-file 值指定。随着日志增长超出最大限制，旧日志文件将被删除以存储新日志</p>
+<p>docker-compose.yml 限制日志存储的示例</p>
+<p>services:<br>  some-service:<br>    image: some-service<br>    logging:<br>      driver: “json-file”<br>      options:<br>        max-size: “200k”<br>        max-file: “10”</p>
+<ol start="32">
+<li>network_mode<br>网络模式，用法类似于 Docke 客户端的 –net 选项，格式为：service:[service name]</li>
+</ol>
+<p>network_mode: “bridge”<br>network_mode: “host”<br>network_mode: “none”<br>network_mode: “service:[service name]”<br>network_mode: “container:[container name/id]”</p>
+<p>可以指定使用服务或者容器的网络</p>
+<ol start="33">
+<li>networks<br>加入指定网络</li>
+</ol>
+<p>services:<br>  some-service:<br>    networks:</p>
+<pre><code>- some-network
+- other-network
+</code></pre><ol start="34">
+<li>aliases<br>同一网络上的其他容器可以使用服务器名称或别名来连接到其他服务的容器</li>
+</ol>
+<p>services:<br>  some-service:<br>    networks:<br>      some-network:<br>        aliases:</p>
+<pre><code>   - alias1
+   - alias3
+other-network:
+  aliases:
+   - alias2
+</code></pre><p>下面实例中，提供 web 、worker以及db 服务，伴随着两个网络 new 和 legacy 。</p>
+<p>version: ‘2’</p>
+<p>services:<br>  web:<br>    build: ./web<br>    networks:</p>
+<pre><code>- new
+</code></pre><p>  worker:<br>    build: ./worker<br>    networks:</p>
+<pre><code>- legacy
+</code></pre><p>  db:<br>    image: mysql<br>    networks:<br>      new:<br>        aliases:</p>
+<pre><code>    - database
+legacy:
+  aliases:
+    - mysql
+</code></pre><p>networks:<br>  new:<br>  legacy:</p>
+<p>相同的服务可以在不同的网络有不同的别名</p>
+<ol start="35">
+<li>ipv4_address、ipv6_address<br>为服务的容器指定一个静态 IP 地址</li>
+</ol>
+<p>version: ‘2.1’</p>
+<p>services:<br>  app:<br>    image: busybox<br>    command: ifconfig<br>    networks:<br>      app_net:<br>        ipv4_address: 172.16.238.10<br>        ipv6_address: 2001:3984:3989::10</p>
+<p>networks:<br>  app_net:<br>    driver: bridge<br>    enable_ipv6: true<br>    ipam:<br>      driver: default<br>      config:<br>      -<br>        subnet: 172.16.238.0/24<br>      -<br>        subnet: 2001:3984:3989::/64</p>
+<ol start="36">
+<li><p>PID<br>pid: “host”<br>1<br>将 PID 模式设置为主机 PID 模式，可以打开容器与主机操作系统之间的共享 PID 地址空间。使用此标志启动的容器可以访问和操作宿主机的其他容器，反之亦然。</p>
+</li>
+<li><p>ports<br>映射端口</p>
+</li>
+<li><p>SHORT 语法<br>可以使用 HOST:CONTAINER 的方式指定端口，也可以指定容器端口（选择临时主机端口），宿主机会随机映射端口</p>
+</li>
+</ol>
+<p>ports:</p>
+<ul>
+<li>“3000”</li>
+<li>“3000-3005”</li>
+<li>“8000:8000”</li>
+<li>“9090-9091:8080-8081”</li>
+<li>“49100:22”</li>
+<li>“127.0.0.1:8001:8001”</li>
+<li>“127.0.0.1:5000-5010:5000-5010”</li>
+<li>“6060:6060/udp”</li>
+</ul>
+<p>注意：当使用 HOST:CONTAINER 格式来映射端口时，如果使用的容器端口小于 60 可能会得到错误得结果，因为YAML 将会解析 xx:yy 这种数字格式为 60 进制，所以建议采用字符串格式。</p>
+<ol start="2">
+<li>LONG 语法<br>LONG 语法支持 SHORT 语法不支持的附加字段</li>
+</ol>
+<p>target：容器内的端口<br>published：公开的端口<br>protocol： 端口协议（tcp 或 udp）<br>mode：通过host 用在每个节点还是哪个发布的主机端口或使用 ingress 用于集群模式端口进行平衡负载，<br>ports:</p>
+<ul>
+<li>target: 80<br>published: 8080<br>protocol: tcp<br>mode: host</li>
+</ul>
+<ol start="38">
+<li><p>secrets<br>通过 secrets为每个服务授予相应的访问权限</p>
+</li>
+<li><p>SHORT 语法<br>version: “3.1”<br>services:<br>redis:<br> image: redis:latest<br> deploy:<br>   replicas: 1<br> secrets:</p>
+<ul>
+<li>my_secret</li>
+<li>my_other_secret<br>secrets:<br>my_secret:<br>file: ./my_secret.txt<br>my_other_secret:<br>external: true</li>
+</ul>
+</li>
+</ol>
+<p>2.. LONG 语法<br>LONG 语法可以添加其他选项</p>
+<p>source：secret 名称<br>target：在服务任务容器中需要装载在 /run/secrets/ 中的文件名称，如果 source 未定义，那么默认为此值<br>uid&amp;gid：在服务的任务容器中拥有该文件的 UID 或 GID 。如果未指定，两者都默认为 0。<br>mode：以八进制表示法将文件装载到服务的任务容器中 /run/secrets/ 的权限。例如，0444 代表可读。<br>version: “3.1”<br>services:<br>  redis:<br>    image: redis:latest<br>    deploy:<br>      replicas: 1<br>    secrets:</p>
+<pre><code>- source: my_secret
+  target: redis_secret
+  uid: &apos;103&apos;
+  gid: &apos;103&apos;
+  mode: 0440
+</code></pre><p>secrets:<br>  my_secret:<br>    file: ./my_secret.txt<br>  my_other_secret:<br>    external: true</p>
+<ol start="39">
+<li>security_opt<br>为每个容器覆盖默认的标签。简单说来就是管理全部服务的标签，比如设置全部服务的 user 标签值为 USER</li>
+</ol>
+<p>security_opt:</p>
+<ul>
+<li>label:user:USER</li>
+<li>label:role:ROLE</li>
+</ul>
+<ol start="40">
+<li>stop_grace_period<br>在发送 SIGKILL 之前指定 stop_signal ，如果试图停止容器（如果它没有处理 SIGTERM（或指定的任何停止信号）），则需要等待的时间</li>
+</ol>
+<p>stop_grace_period: 1s<br>stop_grace_period: 1m30s</p>
+<p>默认情况下，stop 在发送SIGKILL之前等待10秒钟容器退出</p>
+<ol start="41">
+<li>stop_signal<br>设置另一个信号来停止容器。在默认情况下使用的 SIGTERM 来停止容器。设置另一个信号可以使用 stop_signal 标签：</li>
+</ol>
+<p>stop_signal: SIGUSR1</p>
+<ol start="42">
+<li>sysctls<br>在容器中设置的内核参数，可以为数组或字典</li>
+</ol>
+<p>sysctls:<br>  net.core.somaxconn: 1024<br>  net.ipv4.tcp_syncookies: 0</p>
+<p>sysctls:</p>
+<ul>
+<li>net.core.somaxconn=1024</li>
+<li>net.ipv4.tcp_syncookies=0</li>
+</ul>
+<ol start="43">
+<li>ulimits<br>覆盖容器的默认限制，可以单一地将限制值设为一个整数，也可以将soft/hard 限制指定为映射</li>
+</ol>
+<p>ulimits:<br>  nproc: 65535<br>  nofile:<br>    soft: 20000<br>    hard: 40000</p>
+<ol start="44">
+<li>userns_mode<br>userns_mode: “host”<br>1</li>
+<li>volumes<br>挂载一个目录或者一个已存在的数据卷容器，可以直接使用 HOST:CONTAINER 这样的格式，或者使用 HOST:CONTAINER:ro 这样的格式，后者对于容器来说，数据卷是只读的，这样可以有效保护宿主机的文件系统</li>
+</ol>
+<p>version: “3.2”<br>services:<br>  web:<br>    image: nginx:alpine<br>    volumes:</p>
+<pre><code>- type: volume
+  source: mydata
+  target: /data
+  volume:
+    nocopy: true
+- type: bind
+  source: ./static
+  target: /opt/app/static
+</code></pre><p>  db:<br>    image: postgres:latest<br>    volumes:</p>
+<pre><code>- &quot;/var/run/postgres/postgres.sock:/var/run/postgres/postgres.sock&quot;
+- &quot;dbdata:/var/lib/postgresql/data&quot;
+</code></pre><p>volumes:<br>  mydata:<br>  dbdata:</p>
+<p>Compose 的数据卷指定路径可以是相对路径，使用 . 或者 .. 来指定相对目录。</p>
+<p>数据卷的格式可以是下面多种形式：</p>
+<p>volumes:</p>
+<h1 id="只是指定一个路径，Docker-会自动在创建一个数据卷（这个路径是容器内部的）。"><a href="#只是指定一个路径，Docker-会自动在创建一个数据卷（这个路径是容器内部的）。" class="headerlink" title="只是指定一个路径，Docker 会自动在创建一个数据卷（这个路径是容器内部的）。"></a>只是指定一个路径，Docker 会自动在创建一个数据卷（这个路径是容器内部的）。</h1><ul>
+<li><p>/var/lib/mysql</p>
+<h1 id="使用绝对路径挂载数据卷"><a href="#使用绝对路径挂载数据卷" class="headerlink" title="使用绝对路径挂载数据卷"></a>使用绝对路径挂载数据卷</h1></li>
+<li><p>/opt/data:/var/lib/mysql</p>
+<h1 id="以-Compose-配置文件为中心的相对路径作为数据卷挂载到容器。"><a href="#以-Compose-配置文件为中心的相对路径作为数据卷挂载到容器。" class="headerlink" title="以 Compose 配置文件为中心的相对路径作为数据卷挂载到容器。"></a>以 Compose 配置文件为中心的相对路径作为数据卷挂载到容器。</h1></li>
+<li><p>./cache:/tmp/cache</p>
+<h1 id="使用用户的相对路径（-表示的目录是-home-lt-用户目录-gt-或者-root-）。"><a href="#使用用户的相对路径（-表示的目录是-home-lt-用户目录-gt-或者-root-）。" class="headerlink" title="使用用户的相对路径（~/ 表示的目录是 /home/&lt;用户目录&gt;/ 或者 /root/）。"></a>使用用户的相对路径（~/ 表示的目录是 /home/&lt;用户目录&gt;/ 或者 /root/）。</h1></li>
+<li><p>~/configs:/etc/configs/:ro</p>
+<h1 id="已经存在的命名的数据卷。"><a href="#已经存在的命名的数据卷。" class="headerlink" title="已经存在的命名的数据卷。"></a>已经存在的命名的数据卷。</h1></li>
+<li>datavolume:/var/lib/mysql</li>
+</ul>
+<p>如果你不使用宿主机的路径，可以指定一个 volume_driver</p>
+<p>volume_driver: mydriver</p>
+<ol>
+<li>SHORT 语法<br>可以选择在主机（HOST:CONTAINER）或访问模式（HOST:CONTAINER:ro）上指定路径。</li>
+</ol>
+<p>可以在主机上挂载相对路径，该路径相对于正在使用的 Compose 配置文件的目录进行扩展。相对路径应始终以 . 或 .. 开头</p>
+<p>volumes:</p>
+<h1 id="Just-specify-a-path-and-let-the-Engine-create-a-volume"><a href="#Just-specify-a-path-and-let-the-Engine-create-a-volume" class="headerlink" title="Just specify a path and let the Engine create a volume"></a>Just specify a path and let the Engine create a volume</h1><ul>
+<li><p>/var/lib/mysql</p>
+<h1 id="Specify-an-absolute-path-mapping"><a href="#Specify-an-absolute-path-mapping" class="headerlink" title="Specify an absolute path mapping"></a>Specify an absolute path mapping</h1></li>
+<li><p>/opt/data:/var/lib/mysql</p>
+<h1 id="Path-on-the-host-relative-to-the-Compose-file"><a href="#Path-on-the-host-relative-to-the-Compose-file" class="headerlink" title="Path on the host, relative to the Compose file"></a>Path on the host, relative to the Compose file</h1></li>
+<li><p>./cache:/tmp/cache</p>
+<h1 id="User-relative-path"><a href="#User-relative-path" class="headerlink" title="User-relative path"></a>User-relative path</h1></li>
+<li><p>~/configs:/etc/configs/:ro</p>
+<h1 id="Named-volume"><a href="#Named-volume" class="headerlink" title="Named volume"></a>Named volume</h1></li>
+<li>datavolume:/var/lib/mysql</li>
+</ul>
+<ol start="2">
+<li>LONG 语法<br>LONG 语法有些附加字段</li>
+</ol>
+<p>type：安装类型，可以为 volume、bind 或 tmpfs<br>source：安装源，主机上用于绑定安装的路径或定义在顶级 volumes密钥中卷的名称 ,不适用于 tmpfs 类型安装。<br>target：卷安装在容器中的路径<br>read_only：标志将卷设置为只读<br>bind：配置额外的绑定选项<br>propagation：用于绑定的传播模式<br>volume：配置额外的音量选项<br>nocopy：创建卷时禁止从容器复制数据的标志<br>tmpfs：配置额外的 tmpfs 选项<br>size：tmpfs 的大小，以字节为单位<br>version: “3.2”<br>services:<br>  web:<br>    image: nginx:alpine<br>    ports:</p>
+<pre><code>  - &quot;80:80&quot;
+volumes:
+  - type: volume
+    source: mydata
+    target: /data
+    volume:
+      nocopy: true
+  - type: bind
+    source: ./static
+    target: /opt/app/static
+</code></pre><p>networks:<br>  webnet:</p>
+<p>volumes:<br>  mydata:</p>
+<ol start="46">
+<li>volumes_from<br>从其它容器或者服务挂载数据卷，可选的参数是 :ro 或 :rw，前者表示容器只读，后者表示容器对数据卷是可读可写的（默认情况为可读可写的）。</li>
+</ol>
+<p>volumes_from:</p>
+<ul>
+<li>service_name</li>
+<li>service_name:ro</li>
+<li>container:container_name</li>
+<li>container:container_name:rw</li>
+</ul>
+<ol start="47">
+<li>用于服务、群集以及堆栈文件的卷<br>在使用服务，群集和 docker-stack.yml 文件时，请记住支持服务的任务（容器）可以部署在群集中的任何节点上，并且每次更新服务时都可能是不同的节点。</li>
+</ol>
+<p>在缺少指定源的命名卷的情况下，Docker 为支持服务的每个任务创建一个匿名卷。关联的容器被移除后，匿名卷不会保留。</p>
+<p>如果希望数据持久存在，请使用可识别多主机的命名卷和卷驱动程序，以便可以从任何节点访问数据。或者，对该服务设置约束，以便将其任务部署在具有该卷的节点上。</p>
+<p>下面一个例子，Docker Labs 中 votingapp 示例的 docker-stack.yml文件中定义了一个称为 db 的服务。它被配置为一个命名卷来保存群体上的数据， 并且仅限于在节点上运行。下面是来自该文件的部分内容：db postgres manager</p>
+<p>version: “3”<br>services:<br>  db:<br>    image: postgres:9.4<br>    volumes:</p>
+<pre><code>  - db-data:/var/lib/postgresql/data
+networks:
+  - backend
+deploy:
+  placement:
+    constraints: [node.role == manager]
+</code></pre><ol start="48">
+<li>restart<br>默认值为 no ，即在任何情况下都不会重新启动容器；当值为 always 时，容器总是重新启动；当值为 on-failure 时，当出现 on-failure 报错容器退出时，容器重新启动。</li>
+</ol>
+<p>restart: “no”<br>restart: always<br>restart: on-failure<br>restart: unless-stopped</p>
+<ol start="49">
+<li>其他选项<br>关于标签：cpu_shares、cpu_quota、 cpuse、domainname、hostname、 ipc、 mac_address、privileged、 read_only、 shm_size、stdin_open、tty、 user、 working_dir</li>
+</ol>
+<p>上面这些都是一个单值的标签，类似于使用 docker run 的效果</p>
+<p>cpu_shares: 73<br>cpu_quota: 50000<br>cpuset: 0,1</p>
+<p>user: postgresql<br>working_dir: /code</p>
+<p>domainname: foo.com<br>hostname: foo<br>ipc: host<br>mac_address: 02:42:ac:11:65:43</p>
+<p>privileged: true</p>
+<p>read_only: true<br>shm_size: 64M<br>stdin_open: true<br>tty: true</p>
+<ol start="50">
+<li>持续时间<br>某些配置选项如 check 的子选项interval以及timeout 的设置格式</li>
+</ol>
+<p>2.5s<br>10s<br>1m30s<br>2h32m<br>5h34m56s</p>
+<p>支持的单位有 us、ms、s、m 以及 h</p>
+<ol start="51">
+<li>指定字节值<br>某些选项如 bulid 的子选项 shm_size</li>
+</ol>
+<p>2b<br>1024kb<br>2048k<br>300m<br>1gb</p>
+<p>支持的单位是 b，k，m 以及 g，或 kb， mb 和 gb。目前不支持十进制值</p>
+<ol start="52">
+<li>extends<br>这个标签可以扩展另一个服务，扩展内容可以是来自在当前文件，也可以是来自其他文件，相同服务的情况下，后来者会有选择地覆盖原有配置</li>
+</ol>
+<p>extends:<br>  file: common.yml<br>  service: webapp</p>
+<p>用户可以在任何地方使用这个标签，只要标签内容包含 file 和 service 两个值就可以了。file 的值可以是相对或者绝对路径，如果不指定 file 的值，那么 Compose 会读取当前 YML 文件的信息。</p>
+<p>原文：<a href="https://blog.csdn.net/qq_36148847/article/details/79427878" target="_blank" rel="noopener">https://blog.csdn.net/qq_36148847/article/details/79427878</a> </p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/docker/" rel="tag"># docker</a>
+          
+            <a href="/tags/docker-compose/" rel="tag"># docker-compose</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/27/linux/middleware/mysql/MySQL_Got an Error Reading Communication Packet_Errors/" rel="next" title="MySQL " got an error reading communication packet" errors">
+                <i class="fa fa-chevron-left"></i> MySQL "Got an Error Reading Communication Packet" Errors
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/03/28/docker/image/Multi Architecture Docker Builds/" rel="prev" title="多架构 CPU docker 镜像构建">
+                多架构 CPU docker 镜像构建 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Docker-Compose-配置文件的构建参数说明"><span class="nav-number">1.</span> <span class="nav-text">Docker Compose 配置文件的构建参数说明</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#a-env"><span class="nav-number">2.</span> <span class="nav-text">a.env</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Hit-the-local-web-app"><span class="nav-number">3.</span> <span class="nav-text">Hit the local web app</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#As-above-but-wrapped-in-bin-sh-Both-forms-below-are-equivalent"><span class="nav-number">4.</span> <span class="nav-text">As above, but wrapped in /bin/sh. Both forms below are equivalent.</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#只是指定一个路径，Docker-会自动在创建一个数据卷（这个路径是容器内部的）。"><span class="nav-number">5.</span> <span class="nav-text">只是指定一个路径，Docker 会自动在创建一个数据卷（这个路径是容器内部的）。</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用绝对路径挂载数据卷"><span class="nav-number">6.</span> <span class="nav-text">使用绝对路径挂载数据卷</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#以-Compose-配置文件为中心的相对路径作为数据卷挂载到容器。"><span class="nav-number">7.</span> <span class="nav-text">以 Compose 配置文件为中心的相对路径作为数据卷挂载到容器。</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用用户的相对路径（-表示的目录是-home-lt-用户目录-gt-或者-root-）。"><span class="nav-number">8.</span> <span class="nav-text">使用用户的相对路径（~/ 表示的目录是 /home/&lt;用户目录&gt;/ 或者 /root/）。</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#已经存在的命名的数据卷。"><span class="nav-number">9.</span> <span class="nav-text">已经存在的命名的数据卷。</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Just-specify-a-path-and-let-the-Engine-create-a-volume"><span class="nav-number">10.</span> <span class="nav-text">Just specify a path and let the Engine create a volume</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Specify-an-absolute-path-mapping"><span class="nav-number">11.</span> <span class="nav-text">Specify an absolute path mapping</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Path-on-the-host-relative-to-the-Compose-file"><span class="nav-number">12.</span> <span class="nav-text">Path on the host, relative to the Compose file</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#User-relative-path"><span class="nav-number">13.</span> <span class="nav-text">User-relative path</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Named-volume"><span class="nav-number">14.</span> <span class="nav-text">Named volume</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

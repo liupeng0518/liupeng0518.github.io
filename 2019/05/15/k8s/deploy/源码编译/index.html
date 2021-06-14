@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="mips64el,k8s,deploy,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="目前需要在mips64le上构建1.14版本的k8s 这里需要golang1.12.1以上的版本，首先要搭建golang环境 golang获取goang1.12.5这里我将golang1.12.5 mips64el做成了docker image，1docker pull liupeng0518/golang-1.12.5-stretch 这里可以将二进制golang包拷贝出来，或者直接在容器里构建">
+<meta name="keywords" content="mips64el,k8s,deploy">
+<meta property="og:type" content="article">
+<meta property="og:title" content="k8s源码编译方式">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/05/15/k8s/deploy/源码编译/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="目前需要在mips64le上构建1.14版本的k8s 这里需要golang1.12.1以上的版本，首先要搭建golang环境 golang获取goang1.12.5这里我将golang1.12.5 mips64el做成了docker image，1docker pull liupeng0518/golang-1.12.5-stretch 这里可以将二进制golang包拷贝出来，或者直接在容器里构建">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.984Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="k8s源码编译方式">
+<meta name="twitter:description" content="目前需要在mips64le上构建1.14版本的k8s 这里需要golang1.12.1以上的版本，首先要搭建golang环境 golang获取goang1.12.5这里我将golang1.12.5 mips64el做成了docker image，1docker pull liupeng0518/golang-1.12.5-stretch 这里可以将二进制golang包拷贝出来，或者直接在容器里构建">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/05/15/k8s/deploy/源码编译/">
+
+
+
+
+
+  <title>k8s源码编译方式 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/05/15/k8s/deploy/源码编译/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">k8s源码编译方式</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-05-15T10:47:19+00:00">
+                2019-05-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>目前需要在mips64le上构建1.14版本的k8s</p>
+<p>这里需要golang1.12.1以上的版本，首先要搭建golang环境</p>
+<h1 id="golang"><a href="#golang" class="headerlink" title="golang"></a>golang</h1><p>获取goang1.12.5<br>这里我将golang1.12.5 mips64el做成了docker image，<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker pull liupeng0518/golang-1.12.5-stretch</span><br></pre></td></tr></table></figure></p>
+<p>这里可以将二进制golang包拷贝出来，或者直接在容器里构建，这里为了提高性能，直接在mips物理机上构建，</p>
+<p>如果不是在容器里构建，需要配置环境变量<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">export GOROOT=/home/gowork/golang</span><br><span class="line">export PATH=$PATH:$GOROOT/bin:</span><br><span class="line">export GOPATH=/home/gowork</span><br></pre></td></tr></table></figure></p>
+<p>克隆源代码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cd $GOPATH</span><br><span class="line">git clone https://github.com/kubernetes/kubernetes.git</span><br><span class="line">git checkout v1.14.1</span><br></pre></td></tr></table></figure></p>
+<h1 id="修改源码内容"><a href="#修改源码内容" class="headerlink" title="修改源码内容"></a>修改源码内容</h1><p>修改添加编译内容<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br></pre></td><td class="code"><pre><span class="line">Subject: [PATCH] k8s add mips64le support</span><br><span class="line"></span><br><span class="line">---</span><br><span class="line"> src/k8s.io/kubernetes/build/common.sh                         |  9 +++++++++</span><br><span class="line"> src/k8s.io/kubernetes/cluster/clientbin.sh                    |  5 ++++-</span><br><span class="line"> src/k8s.io/kubernetes/hack/lib/golang.sh                      |  8 ++++++++</span><br><span class="line"> src/k8s.io/kubernetes/hack/lib/util.sh                        |  5 ++++-</span><br><span class="line"> src/k8s.io/kubernetes/hack/local-up-cluster.sh                |  5 ++++-</span><br><span class="line"> src/k8s.io/kubernetes/test/images/image-util.sh               |  2 +-</span><br><span class="line"> .../kubernetes/vendor/github.com/google/cadvisor/fs/fs.go     | 10 +++++-----</span><br><span class="line"> .../vendor/github.com/vishvananda/netns/netns_linux.go        |  1 +</span><br><span class="line"> .../vendor/golang.org/x/sys/unix/zsyscall_linux_mips64le.go   | 11 +++++++++++</span><br><span class="line"> 9 files changed, 47 insertions(+), 9 deletions(-)</span><br><span class="line"></span><br><span class="line">diff --git a/src/k8s.io/kubernetes/build/common.sh b/src/k8s.io/kubernetes/build/common.sh</span><br><span class="line">index 6ace6a0..e5ebf7b 100755</span><br><span class="line">--- a/src/k8s.io/kubernetes/build/common.sh</span><br><span class="line">+++ b/src/k8s.io/kubernetes/build/common.sh</span><br><span class="line">@@ -132,6 +132,14 @@ kube::build::get_docker_wrapped_binaries() &#123;</span><br><span class="line">           kube-scheduler,s390x/busybox</span><br><span class="line">           kube-proxy,k8s.gcr.io/debian-iptables-s390x:$&#123;debian_iptables_version&#125;</span><br><span class="line">         );;</span><br><span class="line">+    &quot;mips64le&quot;)</span><br><span class="line">+        local targets=(</span><br><span class="line">+          cloud-controller-manager,mips64le/busybox</span><br><span class="line">+          kube-apiserver,mips64le/busybox</span><br><span class="line">+          kube-controller-manager,mips64le/busybox</span><br><span class="line">+          kube-scheduler,mips64le/busybox</span><br><span class="line">+          kube-proxy,k8s.gcr.io/debian-iptables-mips64le:$&#123;debian_iptables_version&#125;</span><br><span class="line">+        );;</span><br><span class="line">   esac</span><br><span class="line"> </span><br><span class="line">   echo &quot;$&#123;targets[@]&#125;&quot;</span><br><span class="line">@@ -529,6 +537,7 @@ function kube::build::ensure_data_container() &#123;</span><br><span class="line">       --volume /usr/local/go/pkg/linux_arm_cgo</span><br><span class="line">       --volume /usr/local/go/pkg/linux_arm64_cgo</span><br><span class="line">       --volume /usr/local/go/pkg/linux_ppc64le_cgo</span><br><span class="line">+      --volume /usr/local/go/pkg/linux_mips64le_cgo</span><br><span class="line">       --volume /usr/local/go/pkg/darwin_amd64_cgo</span><br><span class="line">       --volume /usr/local/go/pkg/darwin_386_cgo</span><br><span class="line">       --volume /usr/local/go/pkg/windows_amd64_cgo</span><br><span class="line">diff --git a/src/k8s.io/kubernetes/cluster/clientbin.sh b/src/k8s.io/kubernetes/cluster/clientbin.sh</span><br><span class="line">index a403571..3c72b0c 100755</span><br><span class="line">--- a/src/k8s.io/kubernetes/cluster/clientbin.sh</span><br><span class="line">+++ b/src/k8s.io/kubernetes/cluster/clientbin.sh</span><br><span class="line">@@ -59,8 +59,11 @@ case &quot;$(uname -m)&quot; in</span><br><span class="line">   ppc64le*)</span><br><span class="line">     host_arch=ppc64le</span><br><span class="line">     ;;</span><br><span class="line">+  mips64*)</span><br><span class="line">+    host_arch=mips64le</span><br><span class="line">+    ;;</span><br><span class="line">   *)</span><br><span class="line">-    echo &quot;Unsupported host arch. Must be x86_64, 386, arm, s390x or ppc64le.&quot; &gt;&amp;2</span><br><span class="line">+    echo &quot;Unsupported host arch. Must be x86_64, 386, arm, s390x, mips64le or ppc64le.&quot; &gt;&amp;2</span><br><span class="line">     exit 1</span><br><span class="line">     ;;</span><br><span class="line"> esac</span><br><span class="line">diff --git a/src/k8s.io/kubernetes/hack/lib/golang.sh b/src/k8s.io/kubernetes/hack/lib/golang.sh</span><br><span class="line">index 01501e7..76054d2 100755</span><br><span class="line">--- a/src/k8s.io/kubernetes/hack/lib/golang.sh</span><br><span class="line">+++ b/src/k8s.io/kubernetes/hack/lib/golang.sh</span><br><span class="line">@@ -107,6 +107,7 @@ else</span><br><span class="line">     linux/arm64</span><br><span class="line">     linux/s390x</span><br><span class="line">     linux/ppc64le</span><br><span class="line">+    linux/mips64le</span><br><span class="line">   )</span><br><span class="line"> </span><br><span class="line">   # The node platforms we build for</span><br><span class="line">@@ -116,6 +117,7 @@ else</span><br><span class="line">     linux/arm64</span><br><span class="line">     linux/s390x</span><br><span class="line">     linux/ppc64le</span><br><span class="line">+    linux/mips64le</span><br><span class="line">     windows/amd64</span><br><span class="line">   )</span><br><span class="line"> </span><br><span class="line">@@ -127,6 +129,7 @@ else</span><br><span class="line">     linux/arm64</span><br><span class="line">     linux/s390x</span><br><span class="line">     linux/ppc64le</span><br><span class="line">+    linux/mips64le</span><br><span class="line">     darwin/amd64</span><br><span class="line">     darwin/386</span><br><span class="line">     windows/amd64</span><br><span class="line">@@ -140,6 +143,7 @@ else</span><br><span class="line">     linux/arm64</span><br><span class="line">     linux/s390x</span><br><span class="line">     linux/ppc64le</span><br><span class="line">+    linux/mips64le</span><br><span class="line">     darwin/amd64</span><br><span class="line">     windows/amd64</span><br><span class="line">   )</span><br><span class="line">@@ -316,6 +320,10 @@ kube::golang::set_platform_envs() &#123;</span><br><span class="line">         export CGO_ENABLED=1</span><br><span class="line">         export CC=s390x-linux-gnu-gcc</span><br><span class="line">         ;;</span><br><span class="line">+      &quot;linux/mips64le&quot;)</span><br><span class="line">+        export CGO_ENABLED=1</span><br><span class="line">+        export CC=mips64el-linux-gnu-gcc</span><br><span class="line">+        ;;</span><br><span class="line">     esac</span><br><span class="line">   fi</span><br><span class="line"> &#125;</span><br><span class="line">diff --git a/src/k8s.io/kubernetes/hack/lib/util.sh b/src/k8s.io/kubernetes/hack/lib/util.sh</span><br><span class="line">index 19220c9..ffa7a75 100755</span><br><span class="line">--- a/src/k8s.io/kubernetes/hack/lib/util.sh</span><br><span class="line">+++ b/src/k8s.io/kubernetes/hack/lib/util.sh</span><br><span class="line">@@ -145,8 +145,11 @@ kube::util::host_platform() &#123;</span><br><span class="line">     ppc64le*)</span><br><span class="line">       host_arch=ppc64le</span><br><span class="line">       ;;</span><br><span class="line">+    mips64*)</span><br><span class="line">+      host_arch=mips64le</span><br><span class="line">+      ;;</span><br><span class="line">     *)</span><br><span class="line">-      kube::log::error &quot;Unsupported host arch. Must be x86_64, 386, arm, arm64, s390x or ppc64le.&quot;</span><br><span class="line">+      kube::log::error &quot;Unsupported host arch. Must be x86_64, 386, arm, arm64, s390x,mips64le or ppc64le.&quot;</span><br><span class="line">       exit 1</span><br><span class="line">       ;;</span><br><span class="line">   esac</span><br><span class="line">diff --git a/src/k8s.io/kubernetes/hack/local-up-cluster.sh b/src/k8s.io/kubernetes/hack/local-up-cluster.sh</span><br><span class="line">index bcf988b..cd26c6f 100755</span><br><span class="line">--- a/src/k8s.io/kubernetes/hack/local-up-cluster.sh</span><br><span class="line">+++ b/src/k8s.io/kubernetes/hack/local-up-cluster.sh</span><br><span class="line">@@ -316,8 +316,11 @@ function detect_binary &#123;</span><br><span class="line">       ppc64le*)</span><br><span class="line">         host_arch=ppc64le</span><br><span class="line">         ;;</span><br><span class="line">+      mips64*)</span><br><span class="line">+        host_arch=mips64le</span><br><span class="line">+        ;;</span><br><span class="line">       *)</span><br><span class="line">-        echo &quot;Unsupported host arch. Must be x86_64, 386, arm, arm64, s390x or ppc64le.&quot; &gt;&amp;2</span><br><span class="line">+        echo &quot;Unsupported host arch. Must be x86_64, 386, arm, arm64, s390x mips64le or ppc64le.&quot; &gt;&amp;2</span><br><span class="line">         exit 1</span><br><span class="line">         ;;</span><br><span class="line">     esac</span><br><span class="line">diff --git a/src/k8s.io/kubernetes/test/images/image-util.sh b/src/k8s.io/kubernetes/test/images/image-util.sh</span><br><span class="line">index dcfd361..6ccafe1 100755</span><br><span class="line">--- a/src/k8s.io/kubernetes/test/images/image-util.sh</span><br><span class="line">+++ b/src/k8s.io/kubernetes/test/images/image-util.sh</span><br><span class="line">@@ -25,7 +25,7 @@ KUBE_ROOT=&quot;$(cd &quot;$(dirname &quot;$&#123;BASH_SOURCE&#125;&quot;)/../..&quot; &amp;&amp; pwd -P)&quot;</span><br><span class="line"> source &quot;$&#123;KUBE_ROOT&#125;/hack/lib/util.sh&quot;</span><br><span class="line"> </span><br><span class="line"> # Mapping of go ARCH to actual architectures shipped part of multiarch/qemu-user-static project</span><br><span class="line">-declare -A QEMUARCHS=( [&quot;amd64&quot;]=&quot;x86_64&quot; [&quot;arm&quot;]=&quot;arm&quot; [&quot;arm64&quot;]=&quot;aarch64&quot; [&quot;ppc64le&quot;]=&quot;ppc64le&quot; [&quot;s390x&quot;]=&quot;s390x&quot; )</span><br><span class="line">+declare -A QEMUARCHS=( [&quot;amd64&quot;]=&quot;x86_64&quot; [&quot;arm&quot;]=&quot;arm&quot; [&quot;arm64&quot;]=&quot;aarch64&quot; [&quot;ppc64le&quot;]=&quot;ppc64le&quot; [&quot;s390x&quot;]=&quot;s390x&quot; [&quot;mips64le&quot;]=&quot;mips64&quot;)</span><br><span class="line"> </span><br><span class="line"> # Returns list of all supported architectures from BASEIMAGE file</span><br><span class="line"> listArchs() &#123;</span><br><span class="line">diff --git a/src/k8s.io/kubernetes/vendor/github.com/google/cadvisor/fs/fs.go b/src/k8s.io/kubernetes/vendor/github.com/google/cadvisor/fs/fs.go</span><br><span class="line">index 7d0ead9..42a6a02 100644</span><br><span class="line">--- a/src/k8s.io/kubernetes/vendor/github.com/google/cadvisor/fs/fs.go</span><br><span class="line">+++ b/src/k8s.io/kubernetes/vendor/github.com/google/cadvisor/fs/fs.go</span><br><span class="line">@@ -524,8 +524,8 @@ func (self *RealFsInfo) GetDirFsDevice(dir string) (*DeviceInfo, error) &#123;</span><br><span class="line"> 		return nil, fmt.Errorf(&quot;stat failed on %s with error: %s&quot;, dir, err)</span><br><span class="line"> 	&#125;</span><br><span class="line"> </span><br><span class="line">-	major := major(buf.Dev)</span><br><span class="line">-	minor := minor(buf.Dev)</span><br><span class="line">+	major := major(uint64(buf.Dev))</span><br><span class="line">+	minor := minor(uint64(buf.Dev))</span><br><span class="line"> 	for device, partition := range self.partitions &#123;</span><br><span class="line"> 		if partition.major == major &amp;&amp; partition.minor == minor &#123;</span><br><span class="line"> 			return &amp;DeviceInfo&#123;device, major, minor&#125;, nil</span><br><span class="line">@@ -771,10 +771,10 @@ func getBtrfsMajorMinorIds(mount *mount.Info) (int, int, error) &#123;</span><br><span class="line"> 			return 0, 0, err</span><br><span class="line"> 		&#125;</span><br><span class="line"> </span><br><span class="line">-		glog.V(4).Infof(&quot;btrfs dev major:minor %d:%d\n&quot;, int(major(buf.Dev)), int(minor(buf.Dev)))</span><br><span class="line">-		glog.V(4).Infof(&quot;btrfs rdev major:minor %d:%d\n&quot;, int(major(buf.Rdev)), int(minor(buf.Rdev)))</span><br><span class="line">+		glog.V(4).Infof(&quot;btrfs dev major:minor %d:%d\n&quot;, int(major(uint64(buf.Dev))), int(minor(uint64(buf.Dev))))</span><br><span class="line">+		glog.V(4).Infof(&quot;btrfs rdev major:minor %d:%d\n&quot;, int(major(uint64(buf.Rdev))), int(minor(uint64(buf.Rdev))))</span><br><span class="line"> </span><br><span class="line">-		return int(major(buf.Dev)), int(minor(buf.Dev)), nil</span><br><span class="line">+		return int(major(uint64(buf.Dev))), int(minor(uint64(buf.Dev))), nil</span><br><span class="line"> 	&#125; else &#123;</span><br><span class="line"> 		return 0, 0, fmt.Errorf(&quot;%s is not a block device&quot;, mount.Source)</span><br><span class="line"> 	&#125;</span><br><span class="line">diff --git a/src/k8s.io/kubernetes/vendor/github.com/vishvananda/netns/netns_linux.go b/src/k8s.io/kubernetes/vendor/github.com/vishvananda/netns/netns_linux.go</span><br><span class="line">index 34af6e2..691ba2e 100644</span><br><span class="line">--- a/src/k8s.io/kubernetes/vendor/github.com/vishvananda/netns/netns_linux.go</span><br><span class="line">+++ b/src/k8s.io/kubernetes/vendor/github.com/vishvananda/netns/netns_linux.go</span><br><span class="line">@@ -24,6 +24,7 @@ var SYS_SETNS = map[string]uintptr&#123;</span><br><span class="line"> 	&quot;ppc64&quot;:   350,</span><br><span class="line"> 	&quot;ppc64le&quot;: 350,</span><br><span class="line"> 	&quot;s390x&quot;:   339,</span><br><span class="line">+	&quot;mips64le&quot;:   5303,</span><br><span class="line"> &#125;[runtime.GOARCH]</span><br><span class="line"> </span><br><span class="line"> // Deprecated: use syscall pkg instead (go &gt;= 1.5 needed).</span><br><span class="line">diff --git a/src/k8s.io/kubernetes/vendor/golang.org/x/sys/unix/zsyscall_linux_mips64le.go b/src/k8s.io/kubernetes/vendor/golang.org/x/sys/unix/zsyscall_linux_mips64le.go</span><br><span class="line">index f302670..0d14130 100644</span><br><span class="line">--- a/src/k8s.io/kubernetes/vendor/golang.org/x/sys/unix/zsyscall_linux_mips64le.go</span><br><span class="line">+++ b/src/k8s.io/kubernetes/vendor/golang.org/x/sys/unix/zsyscall_linux_mips64le.go</span><br><span class="line">@@ -1608,6 +1608,17 @@ func Getuid() (uid int) &#123;</span><br><span class="line"> </span><br><span class="line"> // THIS FILE IS GENERATED BY THE COMMAND AT THE TOP; DO NOT EDIT</span><br><span class="line"> </span><br><span class="line">+func InotifyInit() (fd int, err error) &#123;</span><br><span class="line">+	r0, _, e1 := RawSyscall(SYS_INOTIFY_INIT, 0, 0, 0)</span><br><span class="line">+	fd = int(r0)</span><br><span class="line">+	if e1 != 0 &#123;</span><br><span class="line">+		err = errnoErr(e1)</span><br><span class="line">+	&#125;</span><br><span class="line">+	return</span><br><span class="line">+&#125;</span><br><span class="line">+</span><br><span class="line">+// THIS FILE IS GENERATED BY THE COMMAND AT THE TOP; DO NOT EDIT</span><br><span class="line">+</span><br><span class="line"> func Lchown(path string, uid int, gid int) (err error) &#123;</span><br><span class="line"> 	var _p0 *byte</span><br><span class="line"> 	_p0, err = BytePtrFromString(path)</span><br><span class="line">-- </span><br><span class="line">2.1.0</span><br></pre></td></tr></table></figure></p>
+<p>对于1.13/1.14版本之后无需修改<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">diff --git a/src/k8s.io/kubernetes/build/common.sh b/src/k8s.io/kubernetes/build/common.sh</span><br><span class="line">index 6ace6a0..e5ebf7b 100755</span><br><span class="line">--- a/src/k8s.io/kubernetes/build/common.sh</span><br><span class="line">+++ b/src/k8s.io/kubernetes/build/common.sh</span><br><span class="line">@@ -132,6 +132,14 @@ kube::build::get_docker_wrapped_binaries() &#123;</span><br><span class="line">           kube-scheduler,s390x/busybox</span><br><span class="line">           kube-proxy,k8s.gcr.io/debian-iptables-s390x:$&#123;debian_iptables_version&#125;</span><br><span class="line">         );;</span><br><span class="line">+    &quot;mips64le&quot;)</span><br><span class="line">+        local targets=(</span><br><span class="line">+          cloud-controller-manager,mips64le/busybox</span><br><span class="line">+          kube-apiserver,mips64le/busybox</span><br><span class="line">+          kube-controller-manager,mips64le/busybox</span><br><span class="line">+          kube-scheduler,mips64le/busybox</span><br><span class="line">+          kube-proxy,k8s.gcr.io/debian-iptables-mips64le:$&#123;debian_iptables_version&#125;</span><br><span class="line">+        );;</span><br><span class="line">   esac</span><br></pre></td></tr></table></figure></p>
+<h1 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h1><p>执行make<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">[root@node03 kubernetes]# make</span><br><span class="line">+++ [0515 08:30:35] Building go targets for linux/mips64le:</span><br><span class="line">    ./vendor/k8s.io/code-generator/cmd/deepcopy-gen</span><br><span class="line">+++ [0515 08:31:12] Building go targets for linux/mips64le:</span><br><span class="line">    ./vendor/k8s.io/code-generator/cmd/defaulter-gen</span><br><span class="line">+++ [0515 08:31:40] Building go targets for linux/mips64le:</span><br><span class="line">    ./vendor/k8s.io/code-generator/cmd/conversion-gen</span><br><span class="line">+++ [0515 08:32:51] Building go targets for linux/mips64le:</span><br><span class="line">    ./vendor/k8s.io/kube-openapi/cmd/openapi-gen</span><br><span class="line">+++ [0515 08:33:35] Building go targets for linux/mips64le:</span><br><span class="line">    ./vendor/github.com/jteeuwen/go-bindata/go-bindata</span><br><span class="line">+++ [0515 08:33:40] Building go targets for linux/mips64le:</span><br><span class="line">    cmd/kube-proxy</span><br><span class="line">    cmd/kube-apiserver</span><br><span class="line">    cmd/kube-controller-manager</span><br><span class="line">    cmd/cloud-controller-manager</span><br><span class="line">    cmd/kubelet</span><br><span class="line">    cmd/kubeadm</span><br><span class="line">    cmd/hyperkube</span><br><span class="line">    cmd/kube-scheduler</span><br><span class="line">    vendor/k8s.io/apiextensions-apiserver</span><br><span class="line">    cluster/gce/gci/mounter</span><br><span class="line">    cmd/kubectl</span><br><span class="line">    cmd/gendocs</span><br><span class="line">    cmd/genkubedocs</span><br><span class="line">    cmd/genman</span><br><span class="line">    cmd/genyaml</span><br><span class="line">    cmd/genswaggertypedocs</span><br><span class="line">    cmd/linkcheck</span><br><span class="line">    vendor/github.com/onsi/ginkgo/ginkgo</span><br><span class="line">    test/e2e/e2e.test</span><br><span class="line">    cmd/kubemark</span><br><span class="line">    vendor/github.com/onsi/ginkgo/ginkgo</span><br><span class="line">    test/e2e_node/e2e_node.test</span><br></pre></td></tr></table></figure></p>
+<p>查看编译的二进制文件<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@node03 bin]# ls</span><br><span class="line">apiextensions-apiserver   deepcopy-gen   e2e.test     genman              ginkgo      hyperkube       kube-controller-manager  kubemark        linkcheck</span><br><span class="line">cloud-controller-manager  defaulter-gen  gendocs      genswaggertypedocs  go2make     kubeadm         kubectl                  kube-proxy      mounter</span><br><span class="line">conversion-gen            e2e_node.test  genkubedocs  genyaml             go-bindata  kube-apiserver  kubelet                  kube-scheduler  openapi-gen</span><br></pre></td></tr></table></figure></p>
+<h1 id="编译UOS-20-mips64-hyperkube"><a href="#编译UOS-20-mips64-hyperkube" class="headerlink" title="编译UOS 20-mips64 hyperkube"></a>编译UOS 20-mips64 hyperkube</h1><p><a href="https://github.com/kubernetes/kubernetes/blob/master/vendor/github.com/google/cadvisor/machine/machine.go" target="_blank" rel="noopener">https://github.com/kubernetes/kubernetes/blob/master/vendor/github.com/google/cadvisor/machine/machine.go</a><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">func GetClockSpeed(procInfo []byte) (uint64, error) &#123;</span><br><span class="line">	// s390/s390x, aarch64 and arm32 changes</span><br><span class="line">	if isMips64() || isSystemZ() || isAArch64() || isArm32() &#123;</span><br><span class="line">		return 0, nil</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	// First look through sys to find a max supported cpu frequency.</span><br><span class="line">	if utils.FileExists(maxFreqFile) &#123;</span><br><span class="line">		val, err := ioutil.ReadFile(maxFreqFile)</span><br><span class="line">		if err != nil &#123;</span><br><span class="line">			return 0, err</span><br><span class="line">		&#125;</span><br><span class="line">		var maxFreq uint64</span><br><span class="line">		n, err := fmt.Sscanf(string(val), &quot;%d&quot;, &amp;maxFreq)</span><br><span class="line">		if err != nil || n != 1 &#123;</span><br><span class="line">			return 0, fmt.Errorf(&quot;could not parse frequency %q&quot;, val)</span><br><span class="line">		&#125;</span><br><span class="line">		return maxFreq, nil</span><br><span class="line">	&#125;</span><br><span class="line">	// Fall back to /proc/cpuinfo</span><br><span class="line">	matches := cpuClockSpeedMHz.FindSubmatch(procInfo)</span><br><span class="line">	if len(matches) != 2 &#123;</span><br><span class="line">		return 0, fmt.Errorf(&quot;could not detect clock speed from output: %q&quot;, string(procInfo))</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	speed, err := strconv.ParseFloat(string(matches[1]), 64)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return 0, err</span><br><span class="line">	&#125;</span><br><span class="line">	// Convert to kHz</span><br><span class="line">	return uint64(speed * 1000), nil</span><br><span class="line">&#125;</span><br><span class="line">...</span><br><span class="line">// mipsx changes</span><br><span class="line">func isMips64() bool &#123;</span><br><span class="line">	arch, err := getMachineArch()</span><br><span class="line">	if err == nil &#123;</span><br><span class="line">		return strings.Contains(arch, &quot;mips64&quot;)</span><br><span class="line">	&#125;</span><br><span class="line">	return false</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里已经提交pr：<a href="https://github.com/google/cadvisor/pull/2376" target="_blank" rel="noopener">https://github.com/google/cadvisor/pull/2376</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mips64el/" rel="tag"># mips64el</a>
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/deploy/" rel="tag"># deploy</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/04/09/k8s/概念/service/source ip/" rel="next" title="source ip">
+                <i class="fa fa-chevron-left"></i> source ip
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/05/16/k8s/deploy/mips64el平台上容器相关工作/" rel="prev" title="mips64el平台上容器相关工作">
+                mips64el平台上容器相关工作 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#golang"><span class="nav-number">1.</span> <span class="nav-text">golang</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#修改源码内容"><span class="nav-number">2.</span> <span class="nav-text">修改源码内容</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#编译"><span class="nav-number">3.</span> <span class="nav-text">编译</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#编译UOS-20-mips64-hyperkube"><span class="nav-number">4.</span> <span class="nav-text">编译UOS 20-mips64 hyperkube</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

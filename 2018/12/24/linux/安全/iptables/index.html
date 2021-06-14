@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="linux,iptables,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="Netfilter 与 iptables 的关系Linux 系统在内核中提供了对报文数据包过滤和修改的官方项目名为 Netfilter，它指的是 Linux 内核中的一个框架，它可以用于在不同阶段将某些钩子函数（hook）作用域网络协议栈。Netfilter 本身并不对数据包进行过滤，它只是允许可以过滤数据包或修改数据包的函数挂接到内核网络协议栈中的适当位置。这些函数是可以自定义的。 iptabl">
+<meta name="keywords" content="linux,iptables">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iptables">
+<meta property="og:url" content="http://liupeng0518.github.io/2018/12/24/linux/安全/iptables/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="Netfilter 与 iptables 的关系Linux 系统在内核中提供了对报文数据包过滤和修改的官方项目名为 Netfilter，它指的是 Linux 内核中的一个框架，它可以用于在不同阶段将某些钩子函数（hook）作用域网络协议栈。Netfilter 本身并不对数据包进行过滤，它只是允许可以过滤数据包或修改数据包的函数挂接到内核网络协议栈中的适当位置。这些函数是可以自定义的。 iptabl">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://raw.githubusercontent.com/liupeng0518/e-book/master/linux/.images/iptables.png">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.996Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="iptables">
+<meta name="twitter:description" content="Netfilter 与 iptables 的关系Linux 系统在内核中提供了对报文数据包过滤和修改的官方项目名为 Netfilter，它指的是 Linux 内核中的一个框架，它可以用于在不同阶段将某些钩子函数（hook）作用域网络协议栈。Netfilter 本身并不对数据包进行过滤，它只是允许可以过滤数据包或修改数据包的函数挂接到内核网络协议栈中的适当位置。这些函数是可以自定义的。 iptabl">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/liupeng0518/e-book/master/linux/.images/iptables.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2018/12/24/linux/安全/iptables/">
+
+
+
+
+
+  <title>iptables | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2018/12/24/linux/安全/iptables/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">iptables</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-24T09:47:19+00:00">
+                2018-12-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/linux/" itemprop="url" rel="index">
+                    <span itemprop="name">linux</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="Netfilter-与-iptables-的关系"><a href="#Netfilter-与-iptables-的关系" class="headerlink" title="Netfilter 与 iptables 的关系"></a>Netfilter 与 iptables 的关系</h1><p>Linux 系统在内核中提供了对报文数据包过滤和修改的官方项目名为 Netfilter，它指的是 Linux 内核中的一个框架，它可以用于在不同阶段将某些钩子函数（hook）作用域网络协议栈。Netfilter 本身并不对数据包进行过滤，它只是允许可以过滤数据包或修改数据包的函数挂接到内核网络协议栈中的适当位置。这些函数是可以自定义的。</p>
+<p>iptables 是用户层的工具，它提供命令行接口，能够向 Netfilter 中添加规则策略，从而实现报文过滤，修改等功能。Linux 系统中并不止有 iptables 能够生成防火墙规则，其他的工具如 firewalld 等也能实现类似的功能。</p>
+<h1 id="使用-iptables-进行包过滤"><a href="#使用-iptables-进行包过滤" class="headerlink" title="使用 iptables 进行包过滤"></a>使用 iptables 进行包过滤</h1><p>iptables 策略是由一组有序的规则建立的，它告诉内核应该如何处理某些类别的数据包。每一个 iptables 规则应用于一个表中的一个链。一个 iptables 链就是一个规则集，这些规则按序与包含某种特征的数据包进行比较匹配。</p>
+<h1 id="表"><a href="#表" class="headerlink" title="表"></a>表</h1><p>iptables 根据功能分类，iptables 的内建有多个表，如包过滤（filter）或者网络地址转换（NAT）。iptables 中共有 4 个表：filter，nat，mangle 和 raw。filter 表主要实现过滤功能，nat 表实现 NAT 功能，mangle 表用于修改分组数据，raw 表用于修改俩节追踪的功能。</p>
+<h1 id="链"><a href="#链" class="headerlink" title="链"></a>链</h1><p>每个表都有一组内置链，用户还可以添加自定义的链。最重要的内置链是 filter 表中的 INPUT、OUTPUT 和 FORWARD 链。</p>
+<ul>
+<li>INPUT 链：发往本机的报文</li>
+<li>OUTPUT 链：由本机发出的报文</li>
+<li>FORWARD 链：经由本机转发的报文P</li>
+<li>PREROUTING 链：报文到达本机，进行路由决策之前</li>
+<li>POSTROUTING 链：报文由本机发出，进行路由决策之后<br>下图展现了一个数据包是如何通过内核中的 net 和 filter 表的：</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/liupeng0518/e-book/master/linux/.images/iptables.png" alt="**iptables**"></p>
+<h1 id="匹配"><a href="#匹配" class="headerlink" title="匹配"></a>匹配</h1><p>每个 iptables 规则都包含一组匹配和一个目标动作，后者定义了复合规则的数据包应该采取什么处理行为。iptables 匹配指定是数据包必须匹配的条件，只有当数据包满足所有的匹配条件时，iptables 才能根据规则的目标所指定的动作来处理该数据包。</p>
+<p>每个匹配都在 iptables 的命令行中指定。下面是一些常用的基本匹配：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">-s                  匹配源 IP 地址或网络</span><br><span class="line">-d                  匹配目标 IP 地址或网络</span><br><span class="line">-p                  匹配协议类型（如 tcp，udp，icmp）</span><br><span class="line">-i                  流入接口（如 eth0）</span><br><span class="line">-o                  流出接口</span><br></pre></td></tr></table></figure></p>
+<p>在使用 -p {tcp|udp|icmp} 进行匹配时，还可以使用隐含的扩展匹配，这些功能是由 iptables 的模块提供的，但是这里可以省去指明模块：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">-p tcp</span><br><span class="line">	--sport [!] port[:port]		匹配源端口</span><br><span class="line">	--dport [!] port[:port]		匹配目标端口</span><br><span class="line">	--tcp-flags [!] mask comp</span><br><span class="line">		检查 TCP 标志位，各标志以逗号分隔，comp 中指定的标记必须为 1，comp 中没出现，而 mask 中出现的，必须为 0</span><br><span class="line"></span><br><span class="line">-p icmp</span><br><span class="line">	--icmp-type [!] TYPENAME	匹配 ICMP 类型</span><br><span class="line"></span><br><span class="line">-p udp</span><br><span class="line">	--sport [!] port[:port]		匹配源端口</span><br><span class="line">	--dport [!] port[:port]		匹配目标端口</span><br></pre></td></tr></table></figure></p>
+<h2 id="使用扩展模块进行匹配"><a href="#使用扩展模块进行匹配" class="headerlink" title="使用扩展模块进行匹配"></a>使用扩展模块进行匹配</h2><p>使用模块扩展进行匹配时，必须使用 -m 指明由哪个模块进行的扩展</p>
+<h2 id="多端口匹配"><a href="#多端口匹配" class="headerlink" title="多端口匹配"></a>多端口匹配</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">-m multiport</span><br><span class="line">	--sports [!] port[,port[,port:port...]]	匹配多个源端口</span><br><span class="line">	--dports [!] port[,port[,port:port...]] 匹配多个目标端口</span><br><span class="line">	--ports	匹配多个端口（无论源还是目标端口）</span><br></pre></td></tr></table></figure>
+<h2 id="范围-IP-地址匹配"><a href="#范围-IP-地址匹配" class="headerlink" title="范围 IP 地址匹配"></a>范围 IP 地址匹配</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">-m iprange</span><br><span class="line">	[!] --src-range IPADDR-IPADDR	匹配一个范围的源 IP 地址</span><br><span class="line">	[!] --dst-range IPADDR-IPADDR	匹配一个范围的目标 IP 地址</span><br></pre></td></tr></table></figure>
+<h2 id="连接数限制"><a href="#连接数限制" class="headerlink" title="连接数限制"></a>连接数限制</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-m connlimit</span><br><span class="line">	[!] --connlimit-above N		限制同时连接数量</span><br></pre></td></tr></table></figure>
+<h2 id="连接速率限制"><a href="#连接速率限制" class="headerlink" title="连接速率限制"></a>连接速率限制</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">-m limit</span><br><span class="line">	--limit RATE		单位时间连接控制，使用 &apos;/second&apos;，&apos;/minute&apos;，&apos;/hour&apos;，&apos;/day&apos; 等单位为后缀，默认是 3/hour</span><br><span class="line">	--limit-burst N		同一时间的连接的并发连接控制，默认为 5</span><br></pre></td></tr></table></figure>
+<h2 id="报文内容字符串匹配"><a href="#报文内容字符串匹配" class="headerlink" title="报文内容字符串匹配"></a>报文内容字符串匹配</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">-m string</span><br><span class="line">	--algo &#123;bm|kmp&#125;		字符串匹配算法，可以选择 bm 或 kmp</span><br><span class="line">	--string &quot;STRING&quot;	匹配的字符串</span><br><span class="line">	--hex-string &quot;STRING&quot;	十六进制格式的字符串</span><br></pre></td></tr></table></figure>
+<h2 id="基于时间的控制"><a href="#基于时间的控制" class="headerlink" title="基于时间的控制"></a>基于时间的控制</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">-m time</span><br><span class="line">	--datestart YYYY[-MM[[-DD[Thh[:mm[:ss]]]]]</span><br><span class="line">	--datestop YYYY[-MM[-DD[Thh[:mm[:ss]]]]]</span><br><span class="line">		匹配起始时间与结束时间</span><br><span class="line"></span><br><span class="line">	--timestart hh:mm[:ss]</span><br><span class="line">	--timestop hh:mm[:ss]</span><br><span class="line">		[!] --monthdays day[,day...]</span><br><span class="line">		[!] --weekdays day[,day...]</span><br><span class="line">	根据时间和星期几来匹配</span><br></pre></td></tr></table></figure>
+<h1 id="目标动作"><a href="#目标动作" class="headerlink" title="目标动作"></a>目标动作</h1><p>iptables 对匹配的数据包执行一个目标动作，目标动作由 -j 来指定<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">ACCEPT：		放行</span><br><span class="line">DROP：		丢弃报文</span><br><span class="line">REJECT：		发送一个 ICMP 报文拒绝</span><br><span class="line">DNAT：		目标地址转换（即修改报文的目标地址）</span><br><span class="line">	--to-destination ipaddr[:port]	</span><br><span class="line">	指定修改的目标地址和端口</span><br><span class="line">SNAT：		源地址转换（修改报文的源地址）</span><br><span class="line">	--to-source	ipaddr[-ipaddr][:port-port]</span><br><span class="line">	指定修改的源地址和端口</span><br><span class="line">REDIRECT：	端口重定向</span><br><span class="line">MASQUERADE：	地址伪装</span><br><span class="line">LOG：		记录日志</span><br><span class="line">	--log-prefix &quot;STRING&quot;</span><br><span class="line">	记录日志的前缀</span><br></pre></td></tr></table></figure></p>
+<h1 id="管理类命令"><a href="#管理类命令" class="headerlink" title="管理类命令"></a>管理类命令</h1><p>管理规则<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">-A：				附加一条规则，添加在链的尾部</span><br><span class="line">-I CHAIN [n]：	插入一条规则，插入对应 CHAIN 上的第 n 条，默认插到第一条</span><br><span class="line">-D CHAIN [n]：	删除指定链中的第 n 条规则</span><br><span class="line">-R CHAIN [num]: 替换指定的规则</span><br></pre></td></tr></table></figure></p>
+<p>管理链<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">-F [CHAIN]：		清空指定规则链，如果省略 CHAIN，则清空对应表中的所有链</span><br><span class="line">-P CHAIN TARGE：	设定指定链的默认策略</span><br><span class="line">-N：				自定义一个新的空链</span><br><span class="line">-X：				删除一个自定义的空链</span><br></pre></td></tr></table></figure></p>
+<p>查看规则：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">-L：				显式指定表中的规则</span><br><span class="line">-n：				以数字格式显式主机地址和端口号</span><br><span class="line">-v：				显式链及规则的详细信息</span><br><span class="line">--line-numbers：	显式规则号码</span><br></pre></td></tr></table></figure></p>
+<h1 id="范例"><a href="#范例" class="headerlink" title="范例"></a>范例</h1><p>设置 filter 表 INPUT 链的默认策略为 DROP<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -P INPUT DROP</span><br></pre></td></tr></table></figure></p>
+<p>允许源地址为 172.16.0.0/16 网段的主机连接本机 SSH<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -A INPUT -s 172.16.0.0/16 -p tcp --dport 22 -j ACCEPT</span><br></pre></td></tr></table></figure></p>
+<p>允许 ICMP 请求报文<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -A INPUT -p icmp --icmp-type 8</span><br></pre></td></tr></table></figure></p>
+<p>允许 80 的 443 端口的访问（使用离散端口扩展模块）<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -A INPUT -p tcp -m multiport --dports 80,443 -j ACCEPT</span><br></pre></td></tr></table></figure></p>
+<p>允许 Telnet 的 23 端口访问，并限制同时只能有 5 个连接<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -A INPUT -p tcp --dport 23 -m connlimit --connlimit-above 5 -j REJECT</span><br></pre></td></tr></table></figure></p>
+<p>拒绝本地端口 80 发出的，含有 “communist” 关键字的响应报文的发出<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -A OUTPUT -p tcp --sport 80 -m string --algo kmp --string &quot;communist&quot; -j DROP</span><br></pre></td></tr></table></figure></p>
+<p>仅允许工作日的工作时间访问本机 UDP 53 端口<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -A INPUT -p udp --dport 53 -m time --timestart 08:00 --timestop 18:00 --weekdays Mon,Tue,Wen,Thu,Fri -j ACCEPT</span><br></pre></td></tr></table></figure></p>
+<p>允许 172.16.0.1 ~ 172.16.0.100 的主机访问本机 TCP 3306 端口<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -A INPUT -p tcp --dport 3306 -m iprange --src-range 172.16.0.1-172.16.0.100 -j ACCEPT</span><br></pre></td></tr></table></figure></p>
+<h1 id="iptables-的状态追踪"><a href="#iptables-的状态追踪" class="headerlink" title="iptables 的状态追踪"></a>iptables 的状态追踪</h1><p>iptables中连接追踪的功能叫做 ip_conntrack，ip_conntrack 是个内核模块，能够实时记录当前主机上客户端和服务器端彼此正在建立的连接关系，并且能够追踪到连接所处的状态和连接之间的关系</p>
+<p>查看状态追踪模块是否启用：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># lsmod | grep &quot;ip_conntrack&quot;</span><br></pre></td></tr></table></figure></p>
+<p>ip_conntrack是根据ip报文实现的追踪，能够根据客户端来源随时追踪连接会话处于什么过程。</p>
+<p>/proc/net/ip_conntrack 保存了当前系统上每一个客户端和当前主机建立的tcp和udp连接关系，一个条目记录一个连接的两个会话通道以及连接的状态</p>
+<p>/proc/sys/net/ipv4/ip_conntrack_max 记录了最多可以记录的连接条目数，一旦超出后续的连接将会被丢弃。</p>
+<p>在非常繁忙的服务器上，尽量不要启用ip_conntrack模块</p>
+<p>显式当前系统的所有连接<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># ipstate -t</span><br></pre></td></tr></table></figure></p>
+<p>ip_conntrack 模块被 iptable_nat 和 ip_nat 模块所依赖，ip_nat 和 iptable_nat 是被 nat 表所使用的，因此即使停止 iptables 服务，一旦查看了 nat 表，就会自动激活 ip_conntrack 模块</p>
+<p>使用状态扩展模块进行匹配：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">-m state</span><br><span class="line">	--state STATE		根据连接状态进行匹配</span><br><span class="line">		NEW：			新连接请求</span><br><span class="line">		ESTABLISHED：	已建立的连接</span><br><span class="line">		INVALID：		非法连接报文</span><br><span class="line">		RELATED：		向关联的裂解（如 FTP 的命令连接和数据连接）， 当一个连接和某个已处于 ESTABLISHED 状态的连接有关系时，就被认为是 RELATED 的了。换句话说，一个连接要想 是RELATED的，首先要有一个 ESTABLISHED 的连接。</span><br></pre></td></tr></table></figure></p>
+<p>例子</p>
+<p>允许本机的 TCP 21 端口被访问，且允许任何 RELATED 和 ESTABLISHED 的报文访问本机<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">iptables -A INPUT -p tcp --dport 21 -j ACCEPT</span><br><span class="line">iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT</span><br></pre></td></tr></table></figure></p>
+<h1 id="保存规则"><a href="#保存规则" class="headerlink" title="保存规则"></a>保存规则</h1><p>可以使用 iptables 服务保存规则<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># service iptables save</span><br><span class="line">	规则将被保存至  /etc/sysconfig/iptables</span><br></pre></td></tr></table></figure></p>
+<p>使用 iptables-save 和 iptables-restore 来保存规则和还原规则<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># iptables-save &gt; /etc/sysconfig/iptables.20150520</span><br><span class="line"># iptables-restore &lt; /etc/sysconfig/iptables.20150520</span><br></pre></td></tr></table></figure></p>
+<h1 id="iptables-的错误恢复"><a href="#iptables-的错误恢复" class="headerlink" title="iptables 的错误恢复"></a>iptables 的错误恢复</h1><p>定制 iptables 规则是非常危险的，尤其是在服务器位于异地的情况下，iptables 规则写入的失误就可能造成服务器无法访问，因此在定制iptables规则之前，先做好测试，并使用 at 启动计划任务，在错误情况下恢复iptables 规则。</p>
+<ol>
+<li><p>在修改iptables规则之前，备份原有的规则</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># iptables-save &gt; /etc/sysconfig/iptables.bak</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>将要修改的规则写入脚本文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># vim ~/iptables.sh</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>添加计划任务，防止 iptables 的错误规则导致服务器无法访问</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># at now + 2 minite</span><br><span class="line">at&gt; /sbin/iptables-restore &lt; /etc/sysconfig/iptables.bak          </span><br><span class="line">at&gt; &lt;EOT&gt;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>使用预定义的脚本修改防火墙规则</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># sh ~/iptables.sh</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>如果规则没问题，则取消掉定时任务</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># atrm N（N表示at队列号）</span><br></pre></td></tr></table></figure></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+            <a href="/tags/iptables/" rel="tag"># iptables</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/24/linux/安全/ipset/" rel="next" title="ipset">
+                <i class="fa fa-chevron-left"></i> ipset
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/24/k8s/deploy/kubeadm部署1.11.x_HA集群/" rel="prev" title="kubeadm部署1.11.x_HA集群">
+                kubeadm部署1.11.x_HA集群 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Netfilter-与-iptables-的关系"><span class="nav-number">1.</span> <span class="nav-text">Netfilter 与 iptables 的关系</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用-iptables-进行包过滤"><span class="nav-number">2.</span> <span class="nav-text">使用 iptables 进行包过滤</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#表"><span class="nav-number">3.</span> <span class="nav-text">表</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#链"><span class="nav-number">4.</span> <span class="nav-text">链</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#匹配"><span class="nav-number">5.</span> <span class="nav-text">匹配</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#使用扩展模块进行匹配"><span class="nav-number">5.1.</span> <span class="nav-text">使用扩展模块进行匹配</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#多端口匹配"><span class="nav-number">5.2.</span> <span class="nav-text">多端口匹配</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#范围-IP-地址匹配"><span class="nav-number">5.3.</span> <span class="nav-text">范围 IP 地址匹配</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#连接数限制"><span class="nav-number">5.4.</span> <span class="nav-text">连接数限制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#连接速率限制"><span class="nav-number">5.5.</span> <span class="nav-text">连接速率限制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#报文内容字符串匹配"><span class="nav-number">5.6.</span> <span class="nav-text">报文内容字符串匹配</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#基于时间的控制"><span class="nav-number">5.7.</span> <span class="nav-text">基于时间的控制</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#目标动作"><span class="nav-number">6.</span> <span class="nav-text">目标动作</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#管理类命令"><span class="nav-number">7.</span> <span class="nav-text">管理类命令</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#范例"><span class="nav-number">8.</span> <span class="nav-text">范例</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#iptables-的状态追踪"><span class="nav-number">9.</span> <span class="nav-text">iptables 的状态追踪</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#保存规则"><span class="nav-number">10.</span> <span class="nav-text">保存规则</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#iptables-的错误恢复"><span class="nav-number">11.</span> <span class="nav-text">iptables 的错误恢复</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

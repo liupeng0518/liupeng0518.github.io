@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="docker,runtime,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="High-level runtimes相较于low-level runtimes位于堆栈的上层。low-level runtimes负责实际运行容器，而High-level runtimes负责传输和管理容器镜像，解压镜像，并传递给low-level runtimes来运行容器。通常，High-level runtimes提供一个守护进程和一个API，上层应用可以通过它们运行容器并监视容器，但是它">
+<meta name="keywords" content="docker,runtime">
+<meta property="og:type" content="article">
+<meta property="og:title" content="容器运行时 3 - High-Level Runtimes剖析">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/10/09/docker/runtimes/Container Runtimes Part 3/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="High-level runtimes相较于low-level runtimes位于堆栈的上层。low-level runtimes负责实际运行容器，而High-level runtimes负责传输和管理容器镜像，解压镜像，并传递给low-level runtimes来运行容器。通常，High-level runtimes提供一个守护进程和一个API，上层应用可以通过它们运行容器并监视容器，但是它">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://raw.githubusercontent.com/liupeng0518/e-book/master/docker/.images/runtime-architecture.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/liupeng0518/e-book/master/docker/.images/docker.png">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.956Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="容器运行时 3 - High-Level Runtimes剖析">
+<meta name="twitter:description" content="High-level runtimes相较于low-level runtimes位于堆栈的上层。low-level runtimes负责实际运行容器，而High-level runtimes负责传输和管理容器镜像，解压镜像，并传递给low-level runtimes来运行容器。通常，High-level runtimes提供一个守护进程和一个API，上层应用可以通过它们运行容器并监视容器，但是它">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/liupeng0518/e-book/master/docker/.images/runtime-architecture.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/10/09/docker/runtimes/Container Runtimes Part 3/">
+
+
+
+
+
+  <title>容器运行时 3 - High-Level Runtimes剖析 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/10/09/docker/runtimes/Container Runtimes Part 3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">容器运行时 3 - High-Level Runtimes剖析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-10-09T09:47:19+00:00">
+                2019-10-09
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index">
+                    <span itemprop="name">docker</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>High-level runtimes相较于low-level runtimes位于堆栈的上层。low-level runtimes负责实际运行容器，而High-level runtimes负责传输和管理容器镜像，解压镜像，并传递给low-level runtimes来运行容器。通常，High-level runtimes提供一个守护进程和一个API，上层应用可以通过它们运行容器并监视容器，但是它们位于容器之上，并将实际工作委派给low-level runtimes或其他high-level runtimes。</p>
+<p>High-level runtimes还可以提供一些low-level的功能，他可以供主机上各个容器使用。 例如，一个管理network namespaces的功能，可以允许某个容器加入另一个容器的network namespace。</p>
+<p>这里有一个概念图，以了解如何将这些组件组合在一起:</p>
+<p><img src="https://raw.githubusercontent.com/liupeng0518/e-book/master/docker/.images/runtime-architecture.png" alt="runtime-architecture"></p>
+<h1 id="Examples-of-High-Level-Runtimes"><a href="#Examples-of-High-Level-Runtimes" class="headerlink" title="Examples of High-Level Runtimes"></a>Examples of High-Level Runtimes</h1><p>通过几个例子可以更好地理解high-level runtimes。与low-level runtimes类似，每个运行时实现的功能不同。</p>
+<h2 id="Docker"><a href="#Docker" class="headerlink" title="Docker"></a>Docker</h2><p>Docker是第一个开源的容器运行时。它由platform-as-a-service公司dotCloud开发，用于在容器中运行用户的web应用程序。</p>
+<p>Docker是一个包含 building, packaging, sharing和 running containers的 container runtime。Docker是client/server架构，最初是由一个单一的守护进程、dockerd和Docker client构建。这个守护进程提供了构建容器、管理镜像和运行容器的大部分逻辑，以及一个API。可以通过客户端来发送命令并从守护进程获取信息。</p>
+<p>Docker是第一个流行的运行时，它融合了构建和运行容器的生命周期中所需的所有功能。</p>
+<p>Docker最初包含了实现high-level 和low-level runtime的特性，但是这些特性后来被分解为runc和containerd两个独立的项目。Docker现在由dockerd守护进程、Docker -containerd守护进程和Docker -runc组成。Docker-containerd和Docker-runc只是Docker打包了 containerd和runc。</p>
+<p><img src="https://raw.githubusercontent.com/liupeng0518/e-book/master/docker/.images/docker.png" alt="docker"></p>
+<p>dockerd提供了构建镜像等功能，dockerd使用了docker-containerd提供的镜像管理和运行容器等功能。例如，Docker的构建步骤实际上只是一些逻辑，这些逻辑解释Dockerfile，使用containerd在容器中运行必要的命令，并将生成的容器文件系统保存为镜像。</p>
+<h2 id="containerd"><a href="#containerd" class="headerlink" title="containerd"></a>containerd</h2><p><a href="https://containerd.io/" target="_blank" rel="noopener">containerd</a>是一个从docker中拆分出去的high-level runtime。就像runc一样，它作为为low-level runtime组件，containered也被作为Docker的high-level runtime组件。</p>
+<p>containerd还提供了可用于与其交互的API和客户端应用程序。containerd命令行是ctr。</p>
+<p>ctr可以拉去镜像：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ sudo ctr images pull docker.io/library/redis:latest</span><br></pre></td></tr></table></figure>
+<p>列出镜像:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ sudo ctr images list</span><br></pre></td></tr></table></figure>
+<p>运行一个容器:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ sudo ctr container create docker.io/library/redis:latest redis</span><br></pre></td></tr></table></figure>
+<p>查看运行中的容器:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ sudo ctr container list</span><br></pre></td></tr></table></figure>
+<p>停止一个容器:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ sudo ctr container delete redis</span><br></pre></td></tr></table></figure>
+<p>这些命令类似于用户与Docker的交互方式。然而，与Docker不同的是，containerd只专注于运行容器，因此它不提供构建容器的机制。Docker专注于前端用户；而containerd专注于实际执行，比如在服务器上运行容器，它将构建容器镜像之类的任务留给了其他工具。</p>
+<h2 id="rkt"><a href="#rkt" class="headerlink" title="rkt"></a>rkt</h2><p>在前一篇文章中，我提到rkt是一个既有 low-level 又有 high-level 的运行时。与Docker非常相似，例如，rkt允许您构建容器镜像，在本地repository中拉取和管理容器镜像，并可以通过单个命令运行。但是，rkt相比于Docker的功能，它没有提供长时间运行的守护进程和远程API。</p>
+<p>可以 fetch remote images:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ sudo rkt fetch coreos.com/etcd:v3.3.10</span><br></pre></td></tr></table></figure>
+<p>列出本地image:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ sudo rkt image list</span><br><span class="line">ID                      NAME                                    SIZE    IMPORT TIME     LAST USED</span><br><span class="line">sha512-07738c36c639     coreos.com/rkt/stage1-fly:1.30.0        44MiB   2 minutes ago   2 minutes ago</span><br><span class="line">sha512-51ea8f513d06     coreos.com/oem-gce:1855.5.0             591MiB  2 minutes ago   2 minutes ago</span><br><span class="line">sha512-2ba519594e47     coreos.com/etcd:v3.3.10                 69MiB   25 seconds ago  24 seconds ago</span><br></pre></td></tr></table></figure>
+<p>删除images:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo rkt image rm coreos.com/etcd:v3.3.10                       </span><br><span class="line">successfully removed aci <span class="keyword">for</span> image: <span class="string">"sha512-2ba519594e4783330ae14e7691caabfb839b5f57c0384310a7ad5fa2966d85e3"</span></span><br><span class="line">rm: 1 image(s) successfully removed</span><br></pre></td></tr></table></figure>
+<p>虽然rkt社区并不活跃，但它是一个有趣的工具，是容器技术历史的重要组成部分。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/docker/" rel="tag"># docker</a>
+          
+            <a href="/tags/runtime/" rel="tag"># runtime</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/10/08/docker/runtimes/Container Runtimes Part 2/" rel="next" title="容器运行时 2 - Low-Level Container Runtime剖析">
+                <i class="fa fa-chevron-left"></i> 容器运行时 2 - Low-Level Container Runtime剖析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/10/09/docker/runtimes/Container Runtimes Part 4/" rel="prev" title="容器运行时 4 - Kubernetes Container Runtimes & CRI">
+                容器运行时 4 - Kubernetes Container Runtimes & CRI <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Examples-of-High-Level-Runtimes"><span class="nav-number">1.</span> <span class="nav-text">Examples of High-Level Runtimes</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Docker"><span class="nav-number">1.1.</span> <span class="nav-text">Docker</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#containerd"><span class="nav-number">1.2.</span> <span class="nav-text">containerd</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rkt"><span class="nav-number">1.3.</span> <span class="nav-text">rkt</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

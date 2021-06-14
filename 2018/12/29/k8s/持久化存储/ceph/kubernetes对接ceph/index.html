@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="ceph,k8s,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="kubernetes持久化存储Ceph RBD静态PV创建ceph secret在ceph mon节点运行ceph auth get-key client.admin命令获取admin的key。定义一个ceph secret文件。 123456apiVersion: v1kind: Secretmetadata:  name: ceph-secretdata:  key: QVFBOFF2SlZh">
+<meta name="keywords" content="ceph,k8s">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kubernetes对接ceph">
+<meta property="og:url" content="http://liupeng0518.github.io/2018/12/29/k8s/持久化存储/ceph/kubernetes对接ceph/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="kubernetes持久化存储Ceph RBD静态PV创建ceph secret在ceph mon节点运行ceph auth get-key client.admin命令获取admin的key。定义一个ceph secret文件。 123456apiVersion: v1kind: Secretmetadata:  name: ceph-secretdata:  key: QVFBOFF2SlZh">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kubernetes对接ceph">
+<meta name="twitter:description" content="kubernetes持久化存储Ceph RBD静态PV创建ceph secret在ceph mon节点运行ceph auth get-key client.admin命令获取admin的key。定义一个ceph secret文件。 123456apiVersion: v1kind: Secretmetadata:  name: ceph-secretdata:  key: QVFBOFF2SlZh">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2018/12/29/k8s/持久化存储/ceph/kubernetes对接ceph/">
+
+
+
+
+
+  <title>kubernetes对接ceph | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2018/12/29/k8s/持久化存储/ceph/kubernetes对接ceph/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">kubernetes对接ceph</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-29T09:47:19+00:00">
+                2018-12-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="kubernetes持久化存储Ceph-RBD"><a href="#kubernetes持久化存储Ceph-RBD" class="headerlink" title="kubernetes持久化存储Ceph RBD"></a>kubernetes持久化存储Ceph RBD</h1><h2 id="静态PV"><a href="#静态PV" class="headerlink" title="静态PV"></a>静态PV</h2><h3 id="创建ceph-secret"><a href="#创建ceph-secret" class="headerlink" title="创建ceph secret"></a>创建ceph secret</h3><p>在ceph mon节点运行<code>ceph auth get-key client.admin</code>命令获取admin的key。定义一个ceph secret文件。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Secret</span><br><span class="line">metadata:</span><br><span class="line">  name: ceph-secret</span><br><span class="line">data:</span><br><span class="line">  key: QVFBOFF2SlZheUJQRVJBQWgvS2cwT1laQUhPQno3akZwekxxdGc9PQ==</span><br></pre></td></tr></table></figure>
+<p>注意: 文件中的key需要在ceph mon节点使用<code>ceph auth get-key client.admin | base64</code>命令对获取的key进行base64。</p>
+<p>保存定义的文件，如<code>ceph-secret.yaml</code>, 之后创建一个secret:<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># kubectl create -f ceph-secret.yaml </span></span><br><span class="line">secret <span class="string">"ceph-secret"</span> created</span><br></pre></td></tr></table></figure></p>
+<h3 id="创建Persistent-Volume"><a href="#创建Persistent-Volume" class="headerlink" title="创建Persistent Volume"></a>创建Persistent Volume</h3><p>创建一个PV对象，使用下面文件的定义:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: PersistentVolume</span><br><span class="line">metadata:</span><br><span class="line">  name: ceph-pv </span><br><span class="line">spec:</span><br><span class="line">  capacity:</span><br><span class="line">    storage: 2Gi </span><br><span class="line">  accessModes:</span><br><span class="line">    - ReadWriteOnce </span><br><span class="line">  rbd: </span><br><span class="line">    monitors: </span><br><span class="line">      - mon-hosts:6789</span><br><span class="line">    pool: rbd </span><br><span class="line">    image: ceph-image</span><br><span class="line">    user: admin</span><br><span class="line">    secretRef:</span><br><span class="line">      name: ceph-secret </span><br><span class="line">    fsType: ext4 </span><br><span class="line">    readOnly: false</span><br><span class="line">  persistentVolumeReclaimPolicy: Recycle</span><br></pre></td></tr></table></figure>
+<p>注意： 我们这里直接使用了ceph默认的pool rbd, 由于文件中使用了ceph-image，所以需要在ceph集群中创建该镜像。<code>rbd create ceph-image -s 128</code>。</p>
+<p>保存定义的PV文件，如ceph-pv.yaml,并创建一个PV:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># kubectl create -f ceph-pv.yaml</span><br><span class="line">persistentvolume &quot;ceph-pv&quot; created</span><br></pre></td></tr></table></figure>
+<p>查看PV的状态是否正常，如果获取的状态是Available则说明该PV处于可用状态，并且没有被PVC绑定。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># kubectl get pv</span><br><span class="line">NAME        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM                     STORAGECLASS   REASON    AGE</span><br><span class="line">ceph-pv     1Gi        RWO            Recycle          Available                                                      56s</span><br></pre></td></tr></table></figure>
+<h3 id="创建Persistent-Volume-Claim"><a href="#创建Persistent-Volume-Claim" class="headerlink" title="创建Persistent Volume Claim"></a>创建Persistent Volume Claim</h3><p>PVC需要指定访问模式和存储的大小，当前只支持这两个属性，一个PVC绑定到一个PV上。一旦PV被绑定到PVC上就不能被其它的PVC所绑定。它们是一对一的关系。但是多个Pod可以使用同一个PVC进行卷的挂载。</p>
+<p>PVC的定义文件如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">kind: PersistentVolumeClaim</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  name: ceph-claim</span><br><span class="line">spec:</span><br><span class="line">  accessModes:</span><br><span class="line">    - ReadWriteOnce</span><br><span class="line">  resources:</span><br><span class="line">    requests:</span><br><span class="line">      storage: 2Gi</span><br></pre></td></tr></table></figure>
+<p>保存定义的文件，并基于该文件创建PVC，并检查其状态，如果状态为Bound则说明该PVC已经绑定到PV,如果状态为Pending或Failed则表示PVC绑定PV失败,可用通过查看PVC事件或者kubernetes各个组件日志进行错误排查。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">#  kubectl create -f task-claim.yaml</span><br><span class="line">persistentvolumeclaim &quot;ceph-claim&quot; created</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Secret</span><br><span class="line">metadata:</span><br><span class="line">  name: ceph-kube-secret</span><br><span class="line">  namespace: default</span><br><span class="line">data:</span><br><span class="line">  key: QVFCbEV4OVpmaGJtQ0JBQW55d2Z0NHZtcS96cE42SW1JVUQvekE9PQ== </span><br><span class="line">type:</span><br><span class="line">  kubernetes.io/rbd</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># kubectl get pvc</span><br><span class="line">NAME              STATUS    VOLUME      CAPACITY   ACCESS MODES   STORAGECLASS   AGE</span><br><span class="line">ceph-claim        Bound     ceph-pv     1Gi        RWO                           6s</span><br></pre></td></tr></table></figure>
+<h3 id="创建Pod"><a href="#创建Pod" class="headerlink" title="创建Pod"></a>创建Pod</h3><p>定义一个Pod，在Pod里面启动一个container,并使用PVC去挂载Ceph RBD卷为读写模式。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: ceph-pod</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - name: ceph-busybox</span><br><span class="line">    image: busybox          </span><br><span class="line">    command: [&quot;sleep&quot;, &quot;60000&quot;]</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: ceph-vol1       </span><br><span class="line">      mountPath: /usr/share/busybox </span><br><span class="line">      readOnly: false</span><br><span class="line">  volumes:</span><br><span class="line">  - name: ceph-vol1         </span><br><span class="line">    persistentVolumeClaim:</span><br><span class="line">      claimName: ceph-claim</span><br></pre></td></tr></table></figure>
+<p>保存Pod的定义文件，如: ceph-pod.yaml。并创建该Pod。之后查看Pod的状态，如果Running则表示卷挂载成功，Pod正常运行。 这样便可以做个简单的操作，进行到该Pod的容器中，向<code>/usr/share/busybox</code>目录写入一些数据，之后删除该Pod，在创建一个新的Pod,看之前的数据是否还存在：）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">#kubectl create -f ceph-pod.yaml </span><br><span class="line">pod &quot;ceph-pod&quot; created</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kubectl get pods -o wide</span><br><span class="line">NAME                                READY     STATUS    RESTARTS   AGE       IP              NODE</span><br><span class="line">ceph-pod                           1/1       Running   0          20s       10.139.54.211   app31.add.bjdt.qihoo.net</span><br></pre></td></tr></table></figure>
+<h2 id="动态PV"><a href="#动态PV" class="headerlink" title="动态PV"></a>动态PV</h2><h3 id="创建RBD-pool"><a href="#创建RBD-pool" class="headerlink" title="创建RBD pool"></a>创建RBD pool</h3><p>虽然ceph提供了默认的pool rbd，但是建议创建一个新的pool为kubernetes持久化使用。在ceph的monitors节点创建一个名为<code>kube</code>的pool.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># ceph osd pool create kube 1024</span><br><span class="line"># ceph auth get-or-create client.kube mon &apos;allow r&apos; osd &apos;allow class-read object_prefix rbd_children, allow rwx pool=kube&apos; -o ceph.client.kube.keyring</span><br></pre></td></tr></table></figure>
+<p>####创建ceph secret</p>
+<p>与静态创建的ceph-secret是同一个，这里就不在重复创建。</p>
+<h3 id="创建kube用户的ceph-secret"><a href="#创建kube用户的ceph-secret" class="headerlink" title="创建kube用户的ceph secret"></a>创建kube用户的ceph secret</h3><p>如果没穿件ceph admin的secret的话 需要同时创建ceph admin secret（步骤相同）</p>
+<p>在ceph monitors节点运行命令<code>ceph auth get-key client.kube</code>获取kube用户的key。并对该用户key进行base64用于下面的文件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Secret</span><br><span class="line">metadata:</span><br><span class="line">  name: ceph-kube-secret</span><br><span class="line">  namespace: default</span><br><span class="line">data:</span><br><span class="line">  key: QVFCbEV4OVpmaGJtQ0JBQW55d2Z0NHZtcS96cE42SW1JVUQvekE9PQ== </span><br><span class="line">type:</span><br><span class="line">  kubernetes.io/rbd</span><br></pre></td></tr></table></figure>
+<p>保存定义的ceph secret文件，如ceph-kube-secret.yaml。执行如下命令创建secret:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># kubectl create -f ceph-kube-secret.yaml </span><br><span class="line">secret &quot;ceph-kube-secret&quot; created</span><br></pre></td></tr></table></figure>
+<p>查看secret是否创建成功。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># kubectl get secret ceph-kube-secret</span><br><span class="line">NAME               TYPE                DATA      AGE</span><br><span class="line">ceph-kube-secret   kubernetes.io/rbd   1         2m</span><br></pre></td></tr></table></figure>
+<h3 id="创建动态RBD-StorageClass"><a href="#创建动态RBD-StorageClass" class="headerlink" title="创建动态RBD StorageClass"></a>创建动态RBD StorageClass</h3><p>在创建StorageClass资源前,先介绍下StorageClass的概念:<code>StorageClass</code> 为管理员提供了描述存储<code>class</code>的方法。 不同的 <code>class</code> 可能会映射到不同的服务质量等级或备份策略，或由群集管理员确定的任意策略。 Kubernetes 本身不清楚各种 <code>class</code> 代表的什么。这个概念在其他存储系统中有时被称为“配置文件”。StorageClass不仅仅使用与ceph RBD还可以用于<code>Cinder</code>,<code>NFS</code>,<code>Glusterfs</code>等等。</p>
+<p>参考： <a href="https://kubernetes.io/docs/concepts/storage/storage-classes/" target="_blank" rel="noopener">https://kubernetes.io/docs/concepts/storage/storage-classes/</a></p>
+<p>好了，下面我们来创一个动态的storage class。定义文件如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">kind: StorageClass</span><br><span class="line">apiVersion: storage.k8s.io/v1</span><br><span class="line">metadata:</span><br><span class="line">  name: rbd</span><br><span class="line">  annotations:</span><br><span class="line">     storageclass.beta.kubernetes.io/is-default-class: &quot;true&quot;</span><br><span class="line">provisioner: kubernetes.io/rbd</span><br><span class="line">parameters:</span><br><span class="line">  monitors: 10.7.12.201:6789,10.7.12.202:6789,10.7.12.203:6789</span><br><span class="line">  adminId: admin</span><br><span class="line">  adminSecretName: ceph-secret</span><br><span class="line">  adminSecretNamespace: kube-system</span><br><span class="line">  pool: kube</span><br><span class="line">  userId: kube</span><br><span class="line">  userSecretName: ceph-kube-secret</span><br><span class="line">  userSecretNamespace: default</span><br><span class="line">  fsType: ext4</span><br><span class="line">  imageFormat: &quot;2&quot;</span><br><span class="line">  imageFeatures: &quot;layering&quot;</span><br></pre></td></tr></table></figure>
+<p>保存文件，并创建storage class。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># kubectl create -f rbd-storage-class.yaml </span><br><span class="line">storageclass &quot;rbd&quot; created</span><br></pre></td></tr></table></figure>
+<p>检查storage class是否创建成功。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># kubectl get storageclass</span><br><span class="line">NAME                PROVISIONER         AGE</span><br><span class="line">rbd (default)   kubernetes.io/rbd   54s</span><br></pre></td></tr></table></figure>
+<h3 id="创建Persistent-Volume-Claim-1"><a href="#创建Persistent-Volume-Claim-1" class="headerlink" title="创建Persistent Volume Claim"></a>创建Persistent Volume Claim</h3><p>具体的描述细节请看创建静态PV时，对PVC的描述。或查看官方文档。下面我们直接定义PVC文件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">kind: PersistentVolumeClaim</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  name: ceph-claim</span><br><span class="line">spec:</span><br><span class="line">  accessModes:</span><br><span class="line">    rs ReadOnlyMany</span><br><span class="line">  resources:</span><br><span class="line">    requests:</span><br><span class="line">      storage: 1Gi</span><br></pre></td></tr></table></figure>
+<p>保存定义的文件，并创建该PVC。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># kubectl create -f static-ceph-pvc.yaml </span><br><span class="line">persistentvolumeclaim &quot;ceph-claim&quot; created</span><br></pre></td></tr></table></figure>
+<p>检查PVC是否创建成功，并查看PVC的状态，如果PVC的状态为Bound则表示已经绑定到PV了。这里详细的说下，在kubernetes中一个指定访问模式和存储大小的PVC只能绑定到指定访问权限和存储大小的PV上，但是这样需要集群管理员手动的创建PV。这样就很麻烦，为了减少管理员的工作。管理员可以创建一个storageclass的资源，当指定规格的PVC请求的时候，StorageClass会动态的给该PVC提供一个PV。 我们查看下该PVC是否被该StorageClass绑定一个符合需求的PV上。我们执行下面的命令:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># kubectl get pvc</span><br><span class="line">NAME              STATUS    VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE</span><br><span class="line">ceph-claim        Bound     pvc-c32aca7e-38cd-11e8-af69-f0921c10a7bc   1Gi        ROX            rbd        6s</span><br></pre></td></tr></table></figure>
+<p>我们看到<code>ceph-claim</code>这个PVC已经绑定到了<code>pvc-c32aca7e-38cd-11e8-af69-f0921c10a7bc</code>这个PV,而该PV是由名为<code>rbd</code>的storageclass动态创建的。</p>
+<h3 id="创建Pod-1"><a href="#创建Pod-1" class="headerlink" title="创建Pod"></a>创建Pod</h3><p>我们定义一个Pod来将刚刚创建的PVC挂载到该Pod的容器中去。我们定义的Pod的文件内容如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: static-ceph-pod</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - name: ceph-busybox</span><br><span class="line">    image: busybox</span><br><span class="line">    command: [&quot;sleep&quot;, &quot;60000&quot;]</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: ceph-vol1</span><br><span class="line">      mountPath: /usr/share/busybox</span><br><span class="line">      readOnly: false</span><br><span class="line">  volumes:</span><br><span class="line">  - name: ceph-vol1</span><br><span class="line">    persistentVolumeClaim:</span><br><span class="line">      claimName: ceph-claim</span><br></pre></td></tr></table></figure>
+<p>保存定义Pod的文件，我们创建一个Pod:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># kubectl get pod static-ceph-pod</span><br><span class="line">NAME               READY     STATUS    RESTARTS   AGE</span><br><span class="line">static-ceph-pod   1/1       Running   0          40s</span><br></pre></td></tr></table></figure>
+<p>现在，我们已经成功的将该PVC挂载到了Pod中的容器中。<br>如果集群是二进制部署的话，至此可以完成对接工作，如果你的集群使用kubeadm部署的，那么你需要将ceph-comman的包封装到kube-controller-manager  的images里，因为此image没有包含ceph client。如果不封装，那么需要借助第三方组件，如下。</p>
+<h1 id="kubeadm-对接问题"><a href="#kubeadm-对接问题" class="headerlink" title="kubeadm 对接问题"></a>kubeadm 对接问题</h1><p>随着 k8s 1.13 发布， kubeadm 项目逐步进入GA，目前来看 kubeadm 极大简化了k8s部署，趋势已定。<br>k8s 可选持久化数据存储的方案比较多，像nfs ceph glusterfs等<br>在这里我们通过kubeadm部署完成k8s后，在对接ceph rbd时遇到创建 RBD PersistentVolume 失败:  </p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Failed to provision volume with StorageClass <span class="string">""</span>: failed to create rbd image: executable file not found <span class="keyword">in</span> <span class="variable">$PATH</span>, <span class="built_in">command</span> output:</span><br></pre></td></tr></table></figure>
+<p>根据这个 [issue] (<a href="https://github.com/kubernetes/kubernetes/issues/38923" target="_blank" rel="noopener">https://github.com/kubernetes/kubernetes/issues/38923</a>) 的描述，出错的原因是 kube-controller-manager  的images里，因为此image没有包含ceph client。如果不封装，那么需要借助第三方组件，如下。<br>容器中不包含 rbd 程序导致 RBD 卷无法正常创建。</p>
+<p>目前可以使用kubernetes-incubator/external-storage里的第三方 RBD Provisioner ，<a href="https://github.com/kubernetes-incubator/external-storage/tree/master/ceph/rbd/deploy" target="_blank" rel="noopener">github仓库地址</a></p>
+<p>按照说明：  </p>
+<h3 id="1-创建所需资源"><a href="#1-创建所需资源" class="headerlink" title="1. 创建所需资源"></a>1. 创建所需资源</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> ~/kubernetes-incubator/external-storage/ceph/rbd/deploy</span><br><span class="line">NAMESPACE=kube-system <span class="comment"># change this if you want to deploy it in another namespace</span></span><br><span class="line">sed -r -i <span class="string">"s/namespace: [^ ]+/namespace: <span class="variable">$NAMESPACE</span>/g"</span> ./rbac/clusterrolebinding.yaml ./rbac/rolebinding.yaml</span><br><span class="line">kubectl -n <span class="variable">$NAMESPACE</span> apply -f ./rbac</span><br></pre></td></tr></table></figure>
+<p>即可成功部署rbd Provisioner。</p>
+<h3 id="2-创建sc"><a href="#2-创建sc" class="headerlink" title="2. 创建sc"></a>2. 创建sc</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">kind: StorageClass</span><br><span class="line">apiVersion: storage.k8s.io/v1</span><br><span class="line">metadata:</span><br><span class="line">  name: dynamic</span><br><span class="line">  annotations:</span><br><span class="line">     storageclass.beta.kubernetes.io/is-default-class: <span class="string">"true"</span></span><br><span class="line"><span class="comment"># provisioner: kubernetes.io/rbd</span></span><br><span class="line">provisioner: ceph.com/rbd <span class="comment"># 这里修改为第三方的provisioner</span></span><br><span class="line">parameters:</span><br><span class="line">  monitors: x.x.x.x:6789,x.x.x.x:6789,x.x.x.x:6789</span><br><span class="line">  adminId: admin</span><br><span class="line">  adminSecretName: ceph-kube-secret</span><br><span class="line">  adminSecretNamespace: kube-system</span><br><span class="line">  userId: admin</span><br><span class="line">  userSecretName: ceph-kube-secret</span><br><span class="line">  pool: kube</span><br><span class="line">  imageFormat: <span class="string">"2"</span> <span class="comment"># 不支持 1 </span></span><br><span class="line">  imageFeatures: layering</span><br></pre></td></tr></table></figure>
+<h3 id="3-创建-secret"><a href="#3-创建-secret" class="headerlink" title="3. 创建 secret"></a>3. 创建 secret</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Secret</span><br><span class="line">metadata:</span><br><span class="line">  name: ceph-kube-secret</span><br><span class="line">  namespace: kube-system</span><br><span class="line">data:</span><br><span class="line">  <span class="comment"># ceph auth get-key client.admin | base64</span></span><br><span class="line">  key: QVFEZGhLQmJtY2JlTGhBQVE4MThLbEhIck90NjFMU3ZvQWJYZUE9PQ==</span><br><span class="line"><span class="built_in">type</span>:</span><br><span class="line">  kubernetes.io/rbd</span><br></pre></td></tr></table></figure>
+<h3 id="4-测试"><a href="#4-测试" class="headerlink" title="4. 测试"></a>4. 测试</h3><p>创建测试pvc<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">kind: PersistentVolumeClaim</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  name: ceph-claim</span><br><span class="line">spec:</span><br><span class="line">  accessModes:</span><br><span class="line">    - ReadOnlyMany</span><br><span class="line">  resources:</span><br><span class="line">    requests:</span><br><span class="line">      storage: 1Gi</span><br></pre></td></tr></table></figure></p>
+<p>这时会动态创建pvc<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@lab1 ceph-sc]<span class="comment"># kubectl get pvc</span></span><br><span class="line">NAME         STATUS    VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE</span><br><span class="line">ceph-claim   Bound     pvc-311c99c2-fc55-11e8-8dca-525400d5b8cc   1Gi        ROX            dynamic        38m</span><br></pre></td></tr></table></figure></p>
+<h3 id="5-创建pod"><a href="#5-创建pod" class="headerlink" title="5. 创建pod"></a>5. 创建pod</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">[root@lab1 ceph-sc]<span class="comment"># cat test-pod.yaml </span></span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: static-ceph-pod</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - name: ceph-busybox</span><br><span class="line">    image: busybox</span><br><span class="line">    <span class="built_in">command</span>: [<span class="string">"sleep"</span>, <span class="string">"60000"</span>]</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: ceph-vol1</span><br><span class="line">      mountPath: /usr/share/busybox</span><br><span class="line">      readOnly: <span class="literal">false</span></span><br><span class="line">  volumes:</span><br><span class="line">  - name: ceph-vol1</span><br><span class="line">    persistentVolumeClaim:</span><br><span class="line">      claimName: ceph-claim</span><br></pre></td></tr></table></figure>
+<p>这里需要注意：k8s node节点上同样需要安装ceph-common，不然会报错。</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p>本文链接：<a href="https://www.opsdev.cn/post/Ceph-RBD.html" target="_blank" rel="noopener">https://www.opsdev.cn/post/Ceph-RBD.html</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ceph/" rel="tag"># ceph</a>
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/29/工具/vscode/VS Code 快捷键/" rel="next" title="VS Code 快捷键">
+                <i class="fa fa-chevron-left"></i> VS Code 快捷键
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/29/k8s/持久化存储/PersistentVolume/" rel="prev" title="持久化存储卷 PersistentVolume">
+                持久化存储卷 PersistentVolume <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#kubernetes持久化存储Ceph-RBD"><span class="nav-number">1.</span> <span class="nav-text">kubernetes持久化存储Ceph RBD</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#静态PV"><span class="nav-number">1.1.</span> <span class="nav-text">静态PV</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#创建ceph-secret"><span class="nav-number">1.1.1.</span> <span class="nav-text">创建ceph secret</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建Persistent-Volume"><span class="nav-number">1.1.2.</span> <span class="nav-text">创建Persistent Volume</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建Persistent-Volume-Claim"><span class="nav-number">1.1.3.</span> <span class="nav-text">创建Persistent Volume Claim</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建Pod"><span class="nav-number">1.1.4.</span> <span class="nav-text">创建Pod</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#动态PV"><span class="nav-number">1.2.</span> <span class="nav-text">动态PV</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#创建RBD-pool"><span class="nav-number">1.2.1.</span> <span class="nav-text">创建RBD pool</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建kube用户的ceph-secret"><span class="nav-number">1.2.2.</span> <span class="nav-text">创建kube用户的ceph secret</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建动态RBD-StorageClass"><span class="nav-number">1.2.3.</span> <span class="nav-text">创建动态RBD StorageClass</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建Persistent-Volume-Claim-1"><span class="nav-number">1.2.4.</span> <span class="nav-text">创建Persistent Volume Claim</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建Pod-1"><span class="nav-number">1.2.5.</span> <span class="nav-text">创建Pod</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#kubeadm-对接问题"><span class="nav-number">2.</span> <span class="nav-text">kubeadm 对接问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-创建所需资源"><span class="nav-number">2.0.1.</span> <span class="nav-text">1. 创建所需资源</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-创建sc"><span class="nav-number">2.0.2.</span> <span class="nav-text">2. 创建sc</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-创建-secret"><span class="nav-number">2.0.3.</span> <span class="nav-text">3. 创建 secret</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-测试"><span class="nav-number">2.0.4.</span> <span class="nav-text">4. 测试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-创建pod"><span class="nav-number">2.0.5.</span> <span class="nav-text">5. 创建pod</span></a></li></ol></li></ol><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">3.</span> <span class="nav-text">参考</span></a></li></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

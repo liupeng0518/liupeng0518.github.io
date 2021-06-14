@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="docker,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="我们知道，在docker1.11之后，docker已经不再是简单的通过docker daemon来启动了，而是集成了containerd、runc等多个组件，这些组件是干什么的，在docker中扮演了什么角色？ 本文将会依次讲解。 环境信息操作系统12345678910111213root@node1:~# cat /etc/os-release NAME=&amp;quot;Ubuntu&amp;quot;VE">
+<meta name="keywords" content="docker">
+<meta property="og:type" content="article">
+<meta property="og:title" content="docker组件介绍">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/10/05/docker/runtimes/docker组件/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="我们知道，在docker1.11之后，docker已经不再是简单的通过docker daemon来启动了，而是集成了containerd、runc等多个组件，这些组件是干什么的，在docker中扮演了什么角色？ 本文将会依次讲解。 环境信息操作系统12345678910111213root@node1:~# cat /etc/os-release NAME=&amp;quot;Ubuntu&amp;quot;VE">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://github.com/containerd/containerd/blob/master/design/architecture.png">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.956Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="docker组件介绍">
+<meta name="twitter:description" content="我们知道，在docker1.11之后，docker已经不再是简单的通过docker daemon来启动了，而是集成了containerd、runc等多个组件，这些组件是干什么的，在docker中扮演了什么角色？ 本文将会依次讲解。 环境信息操作系统12345678910111213root@node1:~# cat /etc/os-release NAME=&amp;quot;Ubuntu&amp;quot;VE">
+<meta name="twitter:image" content="https://github.com/containerd/containerd/blob/master/design/architecture.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/10/05/docker/runtimes/docker组件/">
+
+
+
+
+
+  <title>docker组件介绍 | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/10/05/docker/runtimes/docker组件/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">docker组件介绍</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-10-05T09:47:19+00:00">
+                2019-10-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index">
+                    <span itemprop="name">docker</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>我们知道，在docker1.11之后，docker已经不再是简单的通过docker daemon来启动了，而是集成了containerd、runc等多个组件，这些组件是干什么的，在docker中扮演了什么角色？ 本文将会依次讲解。</p>
+<h1 id="环境信息"><a href="#环境信息" class="headerlink" title="环境信息"></a>环境信息</h1><p>操作系统<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~# cat /etc/os-release </span><br><span class="line">NAME=&quot;Ubuntu&quot;</span><br><span class="line">VERSION=&quot;18.04.3 LTS (Bionic Beaver)&quot;</span><br><span class="line">ID=ubuntu</span><br><span class="line">ID_LIKE=debian</span><br><span class="line">PRETTY_NAME=&quot;Ubuntu 18.04.3 LTS&quot;</span><br><span class="line">VERSION_ID=&quot;18.04&quot;</span><br><span class="line">HOME_URL=&quot;https://www.ubuntu.com/&quot;</span><br><span class="line">SUPPORT_URL=&quot;https://help.ubuntu.com/&quot;</span><br><span class="line">BUG_REPORT_URL=&quot;https://bugs.launchpad.net/ubuntu/&quot;</span><br><span class="line">PRIVACY_POLICY_URL=&quot;https://www.ubuntu.com/legal/terms-and-policies/privacy-policy&quot;</span><br><span class="line">VERSION_CODENAME=bionic</span><br><span class="line">UBUNTU_CODENAME=bionic</span><br></pre></td></tr></table></figure></p>
+<p>docker版本<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~# docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           19.03.2</span><br><span class="line"> API version:       1.39 (downgraded from 1.40)</span><br><span class="line"> Go version:        go1.12.8</span><br><span class="line"> Git commit:        6a30dfc</span><br><span class="line"> Built:             Thu Aug 29 05:29:11 2019</span><br><span class="line"> OS/Arch:           linux/amd64</span><br><span class="line"> Experimental:      false</span><br><span class="line"></span><br><span class="line">Server: Docker Engine - Community</span><br><span class="line"> Engine:</span><br><span class="line">  Version:          18.09.7</span><br><span class="line">  API version:      1.39 (minimum version 1.12)</span><br><span class="line">  Go version:       go1.10.8</span><br><span class="line">  Git commit:       2d0083d</span><br><span class="line">  Built:            Thu Jun 27 17:23:02 2019</span><br><span class="line">  OS/Arch:          linux/amd64</span><br><span class="line">  Experimental:     false</span><br></pre></td></tr></table></figure></p>
+<p>我们在ubuntu 18.04 安装docker.io 18.09，会有如下组件信息:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ ls /usr/bin/docker*</span><br><span class="line">/usr/bin/docker             /usr/bin/docker-containerd-ctr   /usr/bin/dockerd      /usr/bin/docker-proxy</span><br><span class="line">/usr/bin/docker-containerd  /usr/bin/docker-containerd-shim  /usr/bin/docker-init  /usr/bin/docker-runc</span><br></pre></td></tr></table></figure>
+<p>有时我们会安装docker分发的docker-ce 18.09，他会有如下组件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">-rwxr-xr-x 1 root root 88956192 Aug 29 05:27 /usr/bin/docker*</span><br><span class="line">lrwxrwxrwx 1 root root       25 Sep  9 06:26 /usr/bin/dockerd -&gt; /etc/alternatives/dockerd*</span><br><span class="line">-rwxr-xr-x 1 root root 81156400 Jun 27 17:56 /usr/bin/dockerd-ce*</span><br><span class="line">-rwxr-xr-x 1 root root   764144 Jun 27 17:56 /usr/bin/docker-init*</span><br><span class="line">-rwxr-xr-x 1 root root  3480912 Jun 27 17:56 /usr/bin/docker-proxy*</span><br><span class="line">-rwxr-xr-x 1 root root 13869512 Jun 12 19:42 /usr/bin/runc*</span><br><span class="line">-rwxr-xr-x 1 root root 28885312 Jun 12 19:42 /usr/bin/ctr*</span><br><span class="line">-rwxr-xr-x 1 root root 49357408 Jun 12 19:42 /usr/bin/containerd*</span><br><span class="line">-rwxr-xr-x 1 root root  5760616 Jun 12 19:42 /usr/bin/containerd-shim*</span><br></pre></td></tr></table></figure>
+<p>在介绍之前，我们应该先了解下container和oci是什么。</p>
+<h1 id="container"><a href="#container" class="headerlink" title="container"></a>container</h1><p>容器。容器本质上是受到资源限制，彼此间相互隔离的若干个linux进程的集合。这是有别于基于模拟的虚拟机的。一般来说，容器技术主要指代用于资源限制的cgroup，用于隔离的namespace，以及基础的linux kernel等。</p>
+<h1 id="OCI"><a href="#OCI" class="headerlink" title="OCI"></a>OCI</h1><p><a href="https://www.opencontainers.org" target="_blank" rel="noopener">Open Container Initiative</a>（OCI）是一个轻量级的，开放的治理组织（项目），由Linux Foundation主持形成，其明确目的是围绕容器格式和运行时（container formats and runtime）创建开放的行业标准。OCI由Docker，CoreOS和其他容器行业领导者于2015年6月22日启动。</p>
+<p>OCI当前包含两个规范：运行时规范（<a href="http://www.github.com/opencontainers/runtime-spec" target="_blank" rel="noopener">runtime-spec</a>）和镜像规范（<a href="http://www.github.com/opencontainers/image-spec" target="_blank" rel="noopener">image-spec</a>）。 运行时规范概述了如何运行在磁盘上解包的“文件系统包<a href="https://github.com/opencontainers/runtime-spec/blob/master/bundle.md" target="_blank" rel="noopener">(filesystem bundle)</a>”。 OCI将实现下载OCI映像，然后将该映像解压到OCI运行时文件系统包中。此时，OCI Runtime Bundle将由OCI运行时运行。</p>
+<p>整个工作流程应支持用户对Docker和rkt之类的容器引擎所期望的UX：主要是，无需附加参数即可运行镜像的能力：</p>
+<ul>
+<li>docker run example.com/org/app:v1.0.0</li>
+<li>rkt run example.com/org/app,version=v1.0.0</li>
+</ul>
+<p>为了支持此UX，OCI图像格式包含足够的信息以在目标平台上启动应用程序（例如，命令，参数，环境变量等）。该规范定义了如何创建OCI映像（通常由构建系统完成），并输出<a href="https://github.com/opencontainers/image-spec/blob/master/manifest.md" target="_blank" rel="noopener">image manifest</a>，<a href="https://github.com/opencontainers/image-spec/blob/master/layer.md" target="_blank" rel="noopener">filesystem (layer) serialization</a>和<a href="https://github.com/opencontainers/image-spec/blob/master/config.md" target="_blank" rel="noopener">image配置</a>。甚至，image manifest包含关于image的内容和依赖项的元数据，这包括一个或多个文件系统序列化归档文件的内容可寻址标识，这些文件将被解压缩以构成最终的可运行文件系统。image 配置包括诸如应用程序参数，环境等信息。 image清单(manifest), image配置(filesystem serializations)组合称为OCI 镜像。</p>
+<p>Docker将其容器格式和运行时<a href="https://github.com/opencontainers/runc" target="_blank" rel="noopener">runC</a>捐赠给OCI，以此作为这项新工作的基石。</p>
+<p>开放容器计划是一个开放的治理组织，目的是围绕容器格式和运行时创建开放的行业标准。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://linux.cn/article-8763-1.html" target="_blank" rel="noopener">https://linux.cn/article-8763-1.html</a></p>
+<h1 id="组件介绍"><a href="#组件介绍" class="headerlink" title="组件介绍"></a>组件介绍</h1><h2 id="docker-amp-dockerd"><a href="#docker-amp-dockerd" class="headerlink" title="docker &amp; dockerd"></a>docker &amp; dockerd</h2><p>Docker的架构是 client-server 模式，docker是命令行客户端，dockerd是daemon。</p>
+<h2 id="runc"><a href="#runc" class="headerlink" title="runc"></a>runc</h2><p><a href="https://github.com/opencontainers/runc" target="_blank" rel="noopener">runC</a> 是对于OCI标准的一个参考实现，是一个可以用于创建和运行容器的CLI(command-line interface)工具。runc直接与容器所依赖的cgroup/linux kernel等进行交互，负责为容器配置cgroup/namespace等启动容器所需的环境，创建启动容器的相关进程。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">root@dev:/home/dev/dev# runc --help</span><br><span class="line">NAME:</span><br><span class="line">   runc - Open Container Initiative runtime</span><br><span class="line"></span><br><span class="line">runc is a command line client for running applications packaged according to</span><br><span class="line">the Open Container Initiative (OCI) format and is a compliant implementation of the</span><br><span class="line">Open Container Initiative specification.</span><br><span class="line"></span><br><span class="line">runc integrates well with existing process supervisors to provide a production</span><br><span class="line">container runtime environment for applications. It can be used with your</span><br><span class="line">existing process monitoring tools and the container will be spawned as a</span><br><span class="line">direct child of the process supervisor.</span><br><span class="line"></span><br><span class="line">Containers are configured using bundles. A bundle for a container is a directory</span><br><span class="line">that includes a specification file named &quot;config.json&quot; and a root filesystem.</span><br><span class="line">The root filesystem contains the contents of the container.</span><br><span class="line"></span><br><span class="line">To start a new instance of a container:</span><br><span class="line"></span><br><span class="line">    # runc run [ -b bundle ] &lt;container-id&gt;</span><br><span class="line"></span><br><span class="line">Where &quot;&lt;container-id&gt;&quot; is your name for the instance of the container that you</span><br><span class="line">are starting. The name you provide for the container instance must be unique on</span><br><span class="line">your host. Providing the bundle directory using &quot;-b&quot; is optional. The default</span><br><span class="line">value for &quot;bundle&quot; is the current directory.</span><br><span class="line"></span><br><span class="line">USAGE:</span><br><span class="line">   runc [global options] command [command options] [arguments...]</span><br><span class="line">   </span><br><span class="line">VERSION:</span><br><span class="line">   spec: 1.0.1-dev</span><br><span class="line">   </span><br><span class="line">COMMANDS:</span><br><span class="line">     checkpoint  checkpoint a running container</span><br><span class="line">     create      create a container</span><br><span class="line">     delete      delete any resources held by the container often used with detached container</span><br><span class="line">     events      display container events such as OOM notifications, cpu, memory, and IO usage statistics</span><br><span class="line">     exec        execute new process inside the container</span><br><span class="line">     init        initialize the namespaces and launch the process (do not call it outside of runc)</span><br><span class="line">     kill        kill sends the specified signal (default: SIGTERM) to the container&apos;s init process</span><br><span class="line">     list        lists containers started by runc with the given root</span><br><span class="line">     pause       pause suspends all processes inside the container</span><br><span class="line">     ps          ps displays the processes running inside a container</span><br><span class="line">     restore     restore a container from a previous checkpoint</span><br><span class="line">     resume      resumes all processes that have been previously paused</span><br><span class="line">     run         create and run a container</span><br><span class="line">     spec        create a new specification file</span><br><span class="line">     start       executes the user defined process in a created container</span><br><span class="line">     state       output the state of a container</span><br><span class="line">     update      update container resource constraints</span><br><span class="line">     help, h     Shows a list of commands or help for one command</span><br><span class="line"></span><br><span class="line">GLOBAL OPTIONS:</span><br><span class="line">   --debug             enable debug output for logging</span><br><span class="line">   --log value         set the log file path where internal debug information is written (default: &quot;/dev/null&quot;)</span><br><span class="line">   --log-format value  set the format used by logs (&apos;text&apos; (default), or &apos;json&apos;) (default: &quot;text&quot;)</span><br><span class="line">   --root value        root directory for storage of container state (this should be located in tmpfs) (default: &quot;/run/runc&quot;)</span><br><span class="line">   --criu value        path to the criu binary used for checkpoint and restore (default: &quot;criu&quot;)</span><br><span class="line">   --systemd-cgroup    enable systemd cgroup support, expects cgroupsPath to be of form &quot;slice:prefix:name&quot; for e.g. &quot;system.slice:runc:434234&quot;</span><br><span class="line">   --rootless value    ignore cgroup permission errors (&apos;true&apos;, &apos;false&apos;, or &apos;auto&apos;) (default: &quot;auto&quot;)</span><br><span class="line">   --help, -h          show help</span><br><span class="line">   --version, -v       print the version</span><br></pre></td></tr></table></figure>
+<p>这里，我们可以直接使用runc来创建容器</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">root@dev:~$ mkdir -p  dev/rootfs</span><br><span class="line">root@dev:/home/dev/dev# docker export $(docker create busybox) | tar -C rootfs -xf -</span><br><span class="line"></span><br><span class="line"># 尝试使用普通用户</span><br><span class="line">dev@dev:~/dev$ runc spec</span><br><span class="line">dev@dev:~/dev$ runc run peng</span><br><span class="line">rootless container requires user namespaces</span><br></pre></td></tr></table></figure>
+<p>可见，默认情况下普通用户无法运行，我们尝试使用root用户<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@dev:/home/dev/dev# runc run dev</span><br><span class="line">/ #</span><br></pre></td></tr></table></figure></p>
+<p>如何使用普通用户运行容器，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dev@dev:~/dev$ runc spec --rootless</span><br><span class="line">dev@dev:~/dev$ runc run dev</span><br><span class="line">/ # ls</span><br></pre></td></tr></table></figure>
+<p>我们可以对这两次生成的config.json</p>
+<p>runc spec 生成的 config.json 默认会挂载 /sys 下的东西<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">        <span class="attr">"destination"</span>: <span class="string">"/sys"</span>,</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"sysfs"</span>,</span><br><span class="line">        <span class="attr">"source"</span>: <span class="string">"sysfs"</span>,</span><br><span class="line">        <span class="attr">"options"</span>: [</span><br><span class="line">                <span class="string">"nosuid"</span>,</span><br><span class="line">                <span class="string">"noexec"</span>,</span><br><span class="line">                <span class="string">"nodev"</span>,</span><br><span class="line">                <span class="string">"ro"</span></span><br><span class="line">        ]</span><br><span class="line">&#125;,</span><br></pre></td></tr></table></figure></p>
+<p>runc spec –rootless使用了user这个命名空间把容器里的root用户和容器外的非root用户对应起来：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">"namespaces": [</span><br><span class="line">        &#123;</span><br><span class="line">                <span class="attr">"type"</span>: <span class="string">"pid"</span></span><br><span class="line">        &#125;,</span><br><span class="line">        &#123;</span><br><span class="line">                <span class="attr">"type"</span>: <span class="string">"ipc"</span></span><br><span class="line">        &#125;,</span><br><span class="line">        &#123;</span><br><span class="line">                <span class="attr">"type"</span>: <span class="string">"uts"</span></span><br><span class="line">        &#125;,</span><br><span class="line">        &#123;</span><br><span class="line">                <span class="attr">"type"</span>: <span class="string">"mount"</span></span><br><span class="line">        &#125;,</span><br><span class="line">        &#123;</span><br><span class="line">                <span class="attr">"type"</span>: <span class="string">"user"</span></span><br><span class="line">        &#125;</span><br><span class="line">],</span><br></pre></td></tr></table></figure>
+<p>同时，rootless不会使用network namespace</p>
+<p>如果想要运行的dev容器在后台执行，那么需要修改 config.json, 把 terminal: true 改成 terminal: false，此外，还要修改 args 的值，使得容器执行的命令不含需要终端的命名：<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">"ociVersion": "1.0.1-dev",</span><br><span class="line">"process": &#123;</span><br><span class="line">        "terminal": false,</span><br><span class="line">        "user": &#123;</span><br><span class="line">                "uid": 0,</span><br><span class="line">                "gid": 0</span><br><span class="line">        &#125;,</span><br><span class="line">        "args": [</span><br><span class="line">                "sleep", "100"</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">dev@dev:~/dev$ runc list</span><br><span class="line">ID          PID         STATUS      BUNDLE      CREATED     OWNER</span><br><span class="line">dev@dev:~/dev$ vim config.json</span><br><span class="line">dev@dev:~/dev$ runc run -d dev</span><br><span class="line">dev@dev:~/dev$ runc list</span><br><span class="line">ID          PID         STATUS      BUNDLE          CREATED                          OWNER</span><br><span class="line">dev         26798       running     /home/dev/dev   2019-10-05T07:27:19.747922833Z   dev</span><br></pre></td></tr></table></figure>
+<p>我们会发现runc list可以列出信息，这些信息存储在什么地方？<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">runc --help</span><br><span class="line">...</span><br><span class="line">   --root value        root directory for storage of container state (this should be located in tmpfs) (default: &quot;/run/user/1000/runc&quot;)</span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure></p>
+<p>我们在帮助中会发现，这个位置是可配置的。普通用户默认会是/run/user/$userpid/runc，而root用户默认是/run/runc</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">dev@dev:~/dev$ tree /run/user/1000/runc/</span><br><span class="line">/run/user/1000/runc/</span><br><span class="line">└── dev</span><br><span class="line">    └── state.json</span><br><span class="line"></span><br><span class="line">1 directory, 1 file</span><br></pre></td></tr></table></figure>
+<p>我们可以指定位置任意<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">dev@dev:~/dev$ runc --root /tmp/runc run mycontainerid</span><br><span class="line"></span><br><span class="line">dev@dev:~$ ls /tmp/runc/mycontainerid/state.json </span><br><span class="line">/tmp/runc/mycontainerid/state.json</span><br><span class="line"></span><br><span class="line">dev@dev:~$ runc --root /tmp/runc/ list</span><br><span class="line">ID              PID         STATUS      BUNDLE          CREATED                          OWNER</span><br><span class="line">mycontainerid   5778        running     /home/dev/dev   2019-10-05T07:43:18.927936738Z   dev</span><br></pre></td></tr></table></figure></p>
+<h3 id="参考-1"><a href="#参考-1" class="headerlink" title="参考"></a>参考</h3><p><a href="https://github.com/opencontainers/runc/blob/master/README.md" target="_blank" rel="noopener">https://github.com/opencontainers/runc/blob/master/README.md</a></p>
+<p><a href="https://www.docker.com/blog/containerd-daemon-to-control-runc/" target="_blank" rel="noopener">https://www.docker.com/blog/containerd-daemon-to-control-runc/</a></p>
+<h2 id="containerd"><a href="#containerd" class="headerlink" title="containerd"></a>containerd</h2><p>为了兼容oci标准，docker也做了架构调整。将容器运行时相关的程序从docker daemon剥离出来，形成了containerd。containerd向docker提供运行容器的API，二者通过grpc进行交互。containerd最后会通过runc来实际运行容器。</p>
+<p><a href="https://github.com/containerd/containerd" target="_blank" rel="noopener">containerd</a>是真正管控容器的daemon，在执行容器的时候用的是runc。</p>
+<p><img src="https://github.com/containerd/containerd/blob/master/design/architecture.png" alt="containerd architecture"></p>
+<h3 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h3><p>我们先看看帮助命令:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~# containerd --help</span><br><span class="line">NAME:</span><br><span class="line">   containerd - </span><br><span class="line">                    __        _                     __</span><br><span class="line">  _________  ____  / /_____ _(_)___  ___  _________/ /</span><br><span class="line"> / ___/ __ \/ __ \/ __/ __ `/ / __ \/ _ \/ ___/ __  /</span><br><span class="line">/ /__/ /_/ / / / / /_/ /_/ / / / / /  __/ /  / /_/ /</span><br><span class="line">\___/\____/_/ /_/\__/\__,_/_/_/ /_/\___/_/   \__,_/</span><br><span class="line"></span><br><span class="line">high performance container runtime</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">USAGE:</span><br><span class="line">   containerd [global options] command [command options] [arguments...]</span><br><span class="line"></span><br><span class="line">VERSION:</span><br><span class="line">   1.2.6</span><br><span class="line"></span><br><span class="line">COMMANDS:</span><br><span class="line">     config    information on the containerd config</span><br><span class="line">     publish   binary to publish events to containerd</span><br><span class="line">     oci-hook  provides a base for OCI runtime hooks to allow arguments to be injected.</span><br><span class="line">     help, h   Shows a list of commands or help for one command</span><br><span class="line"></span><br><span class="line">GLOBAL OPTIONS:</span><br><span class="line">   --config value, -c value     path to the configuration file (default: &quot;/etc/containerd/config.toml&quot;)</span><br><span class="line">   --log-level value, -l value  set the logging level [trace, debug, info, warn, error, fatal, panic]</span><br><span class="line">   --address value, -a value    address for containerd&apos;s GRPC server</span><br><span class="line">   --root value                 containerd root directory</span><br><span class="line">   --state value                containerd state directory</span><br><span class="line">   --help, -h                   show help</span><br><span class="line">   --version, -v                print the version</span><br></pre></td></tr></table></figure></p>
+<p>介绍里看到了containerd是一个 <strong><em>高性能容器运行时</em></strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ps axjf</span><br></pre></td></tr></table></figure>
+<p>查看下进程信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1  4601  4601  4601 ?           -1 Ssl      0  46:13 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock</span><br></pre></td></tr></table></figure>
+<p>可见dockerd 指定了containerd grpc address为=/run/containerd/containerd.sock，</p>
+<p>这是我们启动一个容器：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">root@dev:~/harbor# docker run -d busybox sleep 1000</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">root@dev:~/harbor# docker ps </span><br><span class="line">CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES</span><br><span class="line">5ac48985e105        busybox             &quot;sleep 1000&quot;        11 minutes ago      Up 11 minutes                           awesome_wing</span><br></pre></td></tr></table></figure></p>
+<p>再查看一下进程信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">    1  3196  3196  3196 ?           -1 Ssl      0 167:13 /usr/bin/containerd</span><br><span class="line"> 3196  8078  8078  3196 ?           -1 Sl       0   0:00  \_ containerd-shim -namespace moby -workdir /var/lib/containerd/io.containerd.runtime.v1.linux/moby/5ac48985e</span><br><span class="line"> 8078  8098  8098  8098 ?           -1 Ss       0   0:00      \_ sleep 1000</span><br></pre></td></tr></table></figure>
+<p>除了刚才的dockerd进程，这次多了一个containerd 进程，它有一个子进程，就是刚才启动的busybox里的sleep</p>
+<p>其实containerd包含了我们常用的容器和镜像的增删改查操作了，我们使用ctr来操作下，先看看ctr如何使用<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">root@dev:~/harbor# ctr --help</span><br><span class="line">NAME:</span><br><span class="line">   ctr - </span><br><span class="line">        __</span><br><span class="line">  _____/ /______</span><br><span class="line"> / ___/ __/ ___/</span><br><span class="line">/ /__/ /_/ /</span><br><span class="line">\___/\__/_/</span><br><span class="line"></span><br><span class="line">containerd CLI</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">USAGE:</span><br><span class="line">   ctr [global options] command [command options] [arguments...]</span><br><span class="line"></span><br><span class="line">VERSION:</span><br><span class="line">   1.2.6-0ubuntu1~18.04.2</span><br><span class="line"></span><br><span class="line">COMMANDS:</span><br><span class="line">     plugins, plugin           provides information about containerd plugins</span><br><span class="line">     version                   print the client and server versions</span><br><span class="line">     containers, c, container  manage containers</span><br><span class="line">     content                   manage content</span><br><span class="line">     events, event             display containerd events</span><br><span class="line">     images, image, i          manage images</span><br><span class="line">     leases                    manage leases</span><br><span class="line">     namespaces, namespace     manage namespaces</span><br><span class="line">     pprof                     provide golang pprof outputs for containerd</span><br><span class="line">     run                       run a container</span><br><span class="line">     snapshots, snapshot       manage snapshots</span><br><span class="line">     tasks, t, task            manage tasks</span><br><span class="line">     install                   install a new package</span><br><span class="line">     shim                      interact with a shim directly</span><br><span class="line">     cri                       interact with cri plugin</span><br><span class="line">     help, h                   Shows a list of commands or help for one command</span><br><span class="line"></span><br><span class="line">GLOBAL OPTIONS:</span><br><span class="line">   --debug                      enable debug output in logs</span><br><span class="line">   --address value, -a value    address for containerd&apos;s GRPC server (default: &quot;/run/containerd/containerd.sock&quot;)</span><br><span class="line">   --timeout value              total timeout for ctr commands (default: 0s)</span><br><span class="line">   --connect-timeout value      timeout for connecting to containerd (default: 0s)</span><br><span class="line">   --namespace value, -n value  namespace to use with commands (default: &quot;default&quot;) [$CONTAINERD_NAMESPACE]</span><br><span class="line">   --help, -h                   show help</span><br><span class="line">   --version, -v                print the version</span><br></pre></td></tr></table></figure></p>
+<p>来下载一个镜像试试:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">root@dev:~/harbor# ctr --address=/run/containerd/containerd.sock   images pull docker.io/library/busybox:latest</span><br><span class="line">docker.io/library/busybox:latest:                                                 resolved       |++++++++++++++++++++++++++++++++++++++| </span><br><span class="line">index-sha256:fe301db49df08c384001ed752dff6d52b4305a73a7f608f21528048e8a08b51e:    done           |++++++++++++++++++++++++++++++++++++++| </span><br><span class="line">manifest-sha256:dd97a3fe6d721c5cf03abac0f50e2848dc583f7c4e41bf39102ceb42edfd1808: done           |++++++++++++++++++++++++++++++++++++++| </span><br><span class="line">layer-sha256:7c9d20b9b6cda1c58bc4f9d6c401386786f584437abbe87e58910f8a9a15386b:    done           |++++++++++++++++++++++++++++++++++++++| </span><br><span class="line">config-sha256:19485c79a9bbdca205fce4f791efeaa2a103e23431434696cc54fdd939e9198d:   done           |++++++++++++++++++++++++++++++++++++++| </span><br><span class="line">elapsed: 3.7 s                                                                    total:   0.0 B (0.0 B/s)                                         </span><br><span class="line">unpacking linux/amd64 sha256:fe301db49df08c384001ed752dff6d52b4305a73a7f608f21528048e8a08b51e...</span><br><span class="line">done</span><br></pre></td></tr></table></figure></p>
+<p>启动一个容器</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@dev:~/harbor# ctr --address=/run/containerd/containerd.sock  run -t  docker.io/library/busybox:latest sh</span><br><span class="line">/ #</span><br></pre></td></tr></table></figure>
+<h3 id="参考："><a href="#参考：" class="headerlink" title="参考："></a>参考：</h3><p><a href="https://medium.com/@alenkacz/whats-the-difference-between-runc-containerd-docker-3fc8f79d4d6e" target="_blank" rel="noopener">https://medium.com/@alenkacz/whats-the-difference-between-runc-containerd-docker-3fc8f79d4d6e</a></p>
+<p><a href="https://www.docker.com/blog/what-is-containerd-runtime/" target="_blank" rel="noopener">https://www.docker.com/blog/what-is-containerd-runtime/</a></p>
+<p><a href="https://www.docker.com/blog/containerd-ga-features-2/" target="_blank" rel="noopener">https://www.docker.com/blog/containerd-ga-features-2/</a></p>
+<p><a href="https://containerd.io/docs/getting-started/" target="_blank" rel="noopener">https://containerd.io/docs/getting-started/</a></p>
+<h2 id="shim"><a href="#shim" class="headerlink" title="shim"></a>shim</h2><p>shim的翻译是垫片，就是修自行车的时候，用来夹在螺丝和螺母之间的小铁片。关于shim本身，网上介绍的文章很少，但是作者在 <a href="https://groups.google.com/forum/#!topic/docker-dev/zaZFlvIx1_k" target="_blank" rel="noopener">Google Groups</a> 里有解释到shim的作用：</p>
+<ul>
+<li>允许runc在创建&amp;运行容器之后退出</li>
+<li>用shim作为容器的父进程，而不是直接用containerd作为容器的父进程，是为了防止这种情况：当containerd挂掉的时候，shim还在，因此可以保证容器打开的文件描述符不会被关掉</li>
+<li>依靠shim来收集&amp;报告容器的退出状态，这样就不需要containerd来wait子进程</li>
+</ul>
+<p>我们可以查看刚启动的busybox容器：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">   1  3196  3196  3196 ?           -1 Ssl      0 167:13 /usr/bin/containerd</span><br><span class="line">3196  8078  8078  3196 ?           -1 Sl       0   0:00  \_ containerd-shim -namespace moby -workdir /var/lib/containerd/io.containerd.runtime.v1.linux/moby/5ac48985e</span><br><span class="line">8078  8098  8098  8098 ?           -1 Ss       0   0:00      \_ sleep 1000</span><br></pre></td></tr></table></figure></p>
+<p>因此，使用shim的主要作用，就是将containerd和真实的容器（里的进程）解耦，这是第二点和第三点所描述的。而第一点，为什么要允许runc退出呢？ 因为，Go编译出来的二进制文件，默认是静态链接，因此，如果一个机器上起N个容器，那么就会占用M*N的内存，其中M是一个runc所消耗的内存。 但是出于上面描述的原因又不想直接让containerd来做容器的父进程，因此，就需要一个比runc占内存更小的东西来作父进程，也就是shim。但实际上， shim仍然比较占内存（[参考这里]<a href="https://github.com/moby/moby/issues/21737)），因此，比较好的方式是：" target="_blank" rel="noopener">https://github.com/moby/moby/issues/21737)），因此，比较好的方式是：</a></p>
+<ul>
+<li>用C重写并且默认使用动态链接库</li>
+<li>打开Go的动态链接支持然后重新编译</li>
+</ul>
+<h2 id="docker-init"><a href="#docker-init" class="headerlink" title="docker-init"></a>docker-init</h2><p>我们都知道UNIX系统中，1号进程是init进程，也是所有孤儿进程的父进程。而使用docker时，如果不加 –init 参数，容器中的1号进程 就是所给的ENTRYPOINT，例如下面例子中的 sh。而加上 –init 之后，1号进程就会是 <a href="https://github.com/krallin/tini" target="_blank" rel="noopener">tini</a>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">/ # root@dev:~/harbor# docker run -it busybox sh</span><br><span class="line">/ # ps aux</span><br><span class="line">PID   USER     TIME  COMMAND</span><br><span class="line">    1 root      0:00 sh</span><br><span class="line">    7 root      0:00 ps aux</span><br><span class="line">/ # root@dev:~/harbor# docker run -it --init busybox sh</span><br><span class="line">/ # ps aux</span><br><span class="line">PID   USER     TIME  COMMAND</span><br><span class="line">    1 root      0:00 /dev/init -- sh</span><br><span class="line">    6 root      0:00 sh</span><br><span class="line">    7 root      0:00 ps aux</span><br></pre></td></tr></table></figure>
+<h2 id="docker-proxy"><a href="#docker-proxy" class="headerlink" title="docker-proxy"></a>docker-proxy</h2><h3 id="参考-2"><a href="#参考-2" class="headerlink" title="参考"></a>参考</h3><p><a href="https://windsock.io/the-docker-proxy/" target="_blank" rel="noopener">https://windsock.io/the-docker-proxy/</a></p>
+<h1 id="来源"><a href="#来源" class="headerlink" title="来源"></a>来源</h1>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/docker/" rel="tag"># docker</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/10/05/k8s/编排/混合云编排工具terrafrom/" rel="next" title="混合云编排工具terraform">
+                <i class="fa fa-chevron-left"></i> 混合云编排工具terraform
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/10/06/docker/runtimes/Container Runtimes Part 1/" rel="prev" title="容器运行时 1 - 容器运行时简介">
+                容器运行时 1 - 容器运行时简介 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#环境信息"><span class="nav-number">1.</span> <span class="nav-text">环境信息</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#container"><span class="nav-number">2.</span> <span class="nav-text">container</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#OCI"><span class="nav-number">3.</span> <span class="nav-text">OCI</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">3.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#组件介绍"><span class="nav-number">4.</span> <span class="nav-text">组件介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#docker-amp-dockerd"><span class="nav-number">4.1.</span> <span class="nav-text">docker &amp; dockerd</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#runc"><span class="nav-number">4.2.</span> <span class="nav-text">runc</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-1"><span class="nav-number">4.2.1.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#containerd"><span class="nav-number">4.3.</span> <span class="nav-text">containerd</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#运行"><span class="nav-number">4.3.1.</span> <span class="nav-text">运行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考："><span class="nav-number">4.3.2.</span> <span class="nav-text">参考：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#shim"><span class="nav-number">4.4.</span> <span class="nav-text">shim</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#docker-init"><span class="nav-number">4.5.</span> <span class="nav-text">docker-init</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#docker-proxy"><span class="nav-number">4.6.</span> <span class="nav-text">docker-proxy</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考-2"><span class="nav-number">4.6.1.</span> <span class="nav-text">参考</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#来源"><span class="nav-number">5.</span> <span class="nav-text">来源</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

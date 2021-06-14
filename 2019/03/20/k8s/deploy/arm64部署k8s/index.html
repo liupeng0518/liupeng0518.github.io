@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="k8s,kubeadm,arm,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="准备3.1.1 仓库准备123456789sudo apt-get update &amp;amp;&amp;amp; sudo apt-get install -y apt-transport-https curlsudo curl -s https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | sudo apt-key add -sudo tee">
+<meta name="keywords" content="k8s,kubeadm,arm">
+<meta property="og:type" content="article">
+<meta property="og:title" content="arm64部署k8s">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/03/20/k8s/deploy/arm64部署k8s/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="准备3.1.1 仓库准备123456789sudo apt-get update &amp;amp;&amp;amp; sudo apt-get install -y apt-transport-https curlsudo curl -s https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | sudo apt-key add -sudo tee">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.984Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="arm64部署k8s">
+<meta name="twitter:description" content="准备3.1.1 仓库准备123456789sudo apt-get update &amp;amp;&amp;amp; sudo apt-get install -y apt-transport-https curlsudo curl -s https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | sudo apt-key add -sudo tee">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/03/20/k8s/deploy/arm64部署k8s/">
+
+
+
+
+
+  <title>arm64部署k8s | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/03/20/k8s/deploy/arm64部署k8s/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">arm64部署k8s</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-20T09:47:19+00:00">
+                2019-03-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h1><p>3.1.1 仓库准备<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get update &amp;&amp; sudo apt-get install -y apt-transport-https curl</span><br><span class="line"></span><br><span class="line">sudo curl -s https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | sudo apt-key add -</span><br><span class="line"></span><br><span class="line">sudo tee /etc/apt/sources.list.d/kubernetes.list &lt;&lt;-&apos;EOF&apos;</span><br><span class="line">deb https://mirrors.aliyun.com/kubernetes/apt kubernetes-xenial main</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">sudo apt-get update</span><br></pre></td></tr></table></figure></p>
+<p>3.1.2 安装kubeadm、kubelet、kubectl<br>1.查看可用软件版本：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ apt-cache madison kubeadm</span><br><span class="line">   kubeadm |  1.12.1-00 | https://mirrors.aliyun.com/kubernetes/apt kubernetes-xenial/main armhf Packages</span><br><span class="line">   kubeadm |  1.12.0-00 | https://mirrors.aliyun.com/kubernetes/apt kubernetes-xenial/main armhf Packages</span><br><span class="line">   kubeadm |  1.11.3-00 | https://mirrors.aliyun.com/kubernetes/apt kubernetes-xenial/main armhf Packages</span><br><span class="line">   kubeadm |  1.11.2-00 | https://mirrors.aliyun.com/kubernetes/apt kubernetes-xenial/main armhf Packages</span><br><span class="line">   ......</span><br></pre></td></tr></table></figure></p>
+<p>2.安装指定版本：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ sudo apt-get install -y kubelet=1.12.6-00 kubeadm=1.12.6-00 kubectl=1.12.6-00</span><br><span class="line">$ sudo apt-mark hold kubelet=1.12.6-00 kubeadm=1.12.6-00 kubectl=1.12.6-00</span><br></pre></td></tr></table></figure></p>
+<p>3.设置开机自启动并运行kubelet：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo systemctl enable kubelet &amp;&amp; sudo systemctl start kubelet</span><br></pre></td></tr></table></figure></p>
+<ol start="4">
+<li>Kubernetes集群安装</li>
+</ol>
+<p>4.1 master节点部署</p>
+<p>4.1.1 提前下载所需镜像</p>
+<p>看一下kubernetes v1.12.6需要哪些镜像：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">kubeadm config images list --kubernetes-version=v1.12.6 --feature-gates CoreDNS=false</span><br><span class="line"></span><br><span class="line">k8s.gcr.io/kube-apiserver:v1.12.6</span><br><span class="line">k8s.gcr.io/kube-controller-manager:v1.12.6</span><br><span class="line">k8s.gcr.io/kube-scheduler:v1.12.6</span><br><span class="line">k8s.gcr.io/kube-proxy:v1.12.6</span><br><span class="line">k8s.gcr.io/pause:3.1</span><br><span class="line">k8s.gcr.io/etcd:3.2.24</span><br><span class="line">k8s.gcr.io/k8s-dns-kube-dns:1.14.13</span><br><span class="line">k8s.gcr.io/k8s-dns-sidecar:1.14.13</span><br><span class="line">k8s.gcr.io/k8s-dns-dnsmasq-nanny:1.14.13</span><br></pre></td></tr></table></figure>
+<p>由于gcr.io被墙，离线镜像：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">docker pull liupeng0518/gcr.io.google_containers.kube-apiserver-arm64:v1.12.6</span><br><span class="line">docker pull liupeng0518/gcr.io.google_containers.kube-controller-manager-arm64:v1.12.6</span><br><span class="line">docker pull liupeng0518/gcr.io.google_containers.kube-scheduler-arm64:v1.12.6</span><br><span class="line">docker pull liupeng0518/gcr.io.google_containers.kube-proxy-arm64:v1.12.6</span><br><span class="line">docker pull liupeng0518/gcr.io.google_containers.pause-arm64:3.1</span><br><span class="line"></span><br><span class="line">docker pull liupeng0518/gcr.io.google_containers.etcd-arm:3.2.24</span><br><span class="line">docker pull liupeng0518/gcr.io.google_containers.k8s-dns-kube-dns-arm64:1.14.13</span><br><span class="line">docker pull liupeng0518/gcr.io.google_containers.k8s-dns-sidecar-arm64:1.14.13</span><br><span class="line">docker pull liupeng0518/gcr.io.google_containers.k8s-dns-dnsmasq-nanny-arm64:1.14.13</span><br></pre></td></tr></table></figure></p>
+<p>重新打回k8s.gcr.io的镜像tag:</p>
+<p>由于yaml文件里指定的镜像都不带-arm，所以，还需要将镜像中的-arm去掉<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">docker tag liupeng0518/gcr.io.google_containers.kube-apiserver-arm64:v1.12.6 k8s.gcr.io/kube-apiserver:v1.12.6</span><br><span class="line">docker tag liupeng0518/gcr.io.google_containers.kube-controller-manager-arm64:v1.12.6 k8s.gcr.io/kube-controller-manager:v1.12.6</span><br><span class="line">docker tag liupeng0518/gcr.io.google_containers.kube-scheduler-arm64:v1.12.6 k8s.gcr.io/kube-scheduler:v1.12.6</span><br><span class="line">docker tag liupeng0518/gcr.io.google_containers.kube-proxy-arm64:v1.12.6 k8s.gcr.io/kube-proxy:v1.12.6</span><br><span class="line">docker tag liupeng0518/gcr.io.google_containers.pause-arm64:3.1 k8s.gcr.io/pause:3.1</span><br><span class="line">docker tag liupeng0518/gcr.io.google_containers.etcd-arm:3.2.24 k8s.gcr.io/etcd:3.2.24</span><br><span class="line">docker tag liupeng0518/gcr.io.google_containers.k8s-dns-kube-dns-arm64:1.14.13 k8s.gcr.io/k8s-dns-kube-dns:1.14.13</span><br><span class="line">docker tag liupeng0518/gcr.io.google_containers.k8s-dns-sidecar-arm64:1.14.13 k8s.gcr.io/k8s-dns-sidecar:1.14.13</span><br><span class="line">docker tag liupeng0518/gcr.io.google_containers.k8s-dns-dnsmasq-nanny-arm64:1.14.13 k8s.gcr.io/k8s-dns-dnsmasq-nanny:1.14.13</span><br></pre></td></tr></table></figure></p>
+<p>kubeadm init初始化集群</p>
+<p>1.加载所需的内核模块：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ sudo modprobe br_netfilter</span><br></pre></td></tr></table></figure></p>
+<p>设置开机自动加载，打开/etc/rc.local，加入如下内容：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">modprobe br_netfilter</span><br></pre></td></tr></table></figure></p>
+<p>2.部署：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo kubeadm init --apiserver-advertise-address=10.7.12.61 --pod-network-cidr=172.16.0.0/16 --service-cidr=10.233.0.0/16 --kubernetes-version=v1.12.6 --feature-gates CoreDNS=false</span><br></pre></td></tr></table></figure></p>
+<p>3.部署成功会输出如下内容：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">Your Kubernetes master has initialized successfully!</span><br><span class="line"></span><br><span class="line">To start using your cluster, you need to run the following as a regular user:</span><br><span class="line"></span><br><span class="line">  mkdir -p $HOME/.kube</span><br><span class="line">  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config</span><br><span class="line">  sudo chown $(id -u):$(id -g) $HOME/.kube/config</span><br><span class="line"></span><br><span class="line">You should now deploy a pod network to the cluster.</span><br><span class="line">Run &quot;kubectl apply -f [podnetwork].yaml&quot; with one of the options listed at:</span><br><span class="line">  https://kubernetes.io/docs/concepts/cluster-administration/addons/</span><br><span class="line"></span><br><span class="line">You can now join any number of machines by running the following on each node</span><br><span class="line">as root:</span><br><span class="line"></span><br><span class="line">  kubeadm join 10.7.12.61:6443 --token tvmqik.dtxavvmqe8h7u10l --discovery-token-ca-cert-hash sha256:cf2361bd15b4ebfc65a81d81b24cc8a357cc6937909f39d3ae41538d967f94d8</span><br></pre></td></tr></table></figure>
+<p>记下其中的token，加入node节点时会用到。</p>
+<p>备注：</p>
+<p>确保没有设置http_proxy和https_proxy代理，kubeadm init过程首先会检查代理服务器，确定跟kube-apiserver等的 http/https 连接方式，如果有代理设置可能会有问题导致不能访问自身和内网。 需要在/etc/profile中增加kubeadm init指定的apiserver-advertise-address、pod-network-cidr、service-cidr三个地址段到no_proxy里后重试:export no_proxy=10.142.232.155,192.168.0.0/16,10.233.0.0/16<br>集群初始化如果遇到问题，可以使用下面的命令进行清理再重新初始化：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo kubeadm reset</span><br></pre></td></tr></table></figure></p>
+<p>4.1.4 创建kubectl使用的kubeconfig文件<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ mkdir -p $HOME/.kube</span><br><span class="line">$ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config</span><br><span class="line">$ sudo chown $(id -u):$(id -g) $HOME/.kube/config</span><br></pre></td></tr></table></figure></p>
+<p>创建完成即可使用kubectl操作集群。</p>
+<p>4.1.5 设置master参与工作负载<br>使用kubeadm初始化的集群，将master节点做了taint（污点），使得默认情况下（不设置容忍）Pod不会被调度到master上。这里搭建的是测试环境可以使用下面的命令去掉master的taint，使master参与工作负载：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl taint nodes --all node-role.kubernetes.io/master-</span><br><span class="line"> node/raspberrypi untainted</span><br></pre></td></tr></table></figure></p>
+<p>4.2 网络部署<br>可以选择不同的网络插件，但是calico目前没有32位arm的镜像(只有arm64)，本文介绍flannel的部署。</p>
+<p>4.2.1 flannel网络部署<br>flannel的部署只会初始化一些cni的配置文件，并不会部署cni的可执行文件，需要手动部署，所以flannel部署分为两步：</p>
+<p>CNI插件部署</p>
+<p>flannel组价部署</p>
+<p>步骤一.CNI插件部署(所有节点)</p>
+<p>1.创建cni插件目录<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo mkdir -p /opt/cni/bin &amp;&amp; cd /opt/cni/bin</span><br></pre></td></tr></table></figure></p>
+<p>2.到release页面下载arm架构二进制文件<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget https://github.com/containernetworking/plugins/releases/download/v0.7.1/cni-plugins-arm-v0.7.1.tgz</span><br></pre></td></tr></table></figure></p>
+<p>3.在/opt/cni/bin目录下解压即安装好<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo tar -zxvf cni-plugins-arm-v0.7.1.tgz</span><br></pre></td></tr></table></figure></p>
+<p>添加了如下插件:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">[docker@k8s ]$ ll /opt/cni/bin</span><br><span class="line">总用量 60032</span><br><span class="line">-rwxr-xr-x 1 root root  3653505 4月  12  2018 bridge</span><br><span class="line">-rw-r--r-- 1 pi   pi   16051784 9月  27 17:37 cni-plugins-arm-v0.7.1.tgz</span><br><span class="line">-rwxr-xr-x 1 root root  8843152 4月  12  2018 dhcp</span><br><span class="line">-rwxr-xr-x 1 root root  2600302 4月  12  2018 flannel</span><br><span class="line">-rwxr-xr-x 1 root root  2886491 4月  12  2018 host-device</span><br><span class="line">-rwxr-xr-x 1 root root  2812425 4月  12  2018 host-local</span><br><span class="line">-rwxr-xr-x 1 root root  3300255 4月  12  2018 ipvlan</span><br><span class="line">-rwxr-xr-x 1 root root  2819115 4月  12  2018 loopback</span><br><span class="line">-rwxr-xr-x 1 root root  3303763 4月  12  2018 macvlan</span><br><span class="line">-rwxr-xr-x 1 root root  3232319 4月  12  2018 portmap</span><br><span class="line">-rwxr-xr-x 1 root root  3651705 4月  12  2018 ptp</span><br><span class="line">-rwxr-xr-x 1 root root  2392245 4月  12  2018 sample</span><br><span class="line">-rwxr-xr-x 1 root root  2602702 4月  12  2018 tuning</span><br><span class="line">-rwxr-xr-x 1 root root  3300211 4月  12  2018 vlan</span><br></pre></td></tr></table></figure></p>
+<p>步骤二.flannel部署</p>
+<p>1.获取yaml文件<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ wget https://raw.githubusercontent.com/coreos/flannel/v0.10.0/Documentation/kube-flannel.yml</span><br></pre></td></tr></table></figure></p>
+<p>2.修改配置文件</p>
+<p><1>保留arm的daemonset，删除其他架构的daemonset</1></p>
+<p><2>修改其中net-conf.json中的Network参数使其与kubeadm init时指定的–pod-network-cidr保持一致。</2></p>
+<p><2>这里v0.10.0版有一个bug，需要为启动flannel的daemonset添加toleration，以允许在尚未Ready的节点上部署flannel pod:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">tolerations:</span><br><span class="line">- key: node-role.kubernetes.io/master</span><br><span class="line">  operator: Exists</span><br><span class="line">  effect: NoSchedule</span><br><span class="line">#添加下面这个toleration</span><br><span class="line">- key: node.kubernetes.io/not-ready</span><br><span class="line">  operator: Exists</span><br><span class="line">  effect: NoSchedule</span><br></pre></td></tr></table></figure></2></p>
+<p>可以参考这个issue：<a href="https://github.com/coreos/flannel/issues/1044" target="_blank" rel="noopener">https://github.com/coreos/flannel/issues/1044</a></p>
+<p>3.提前下载所需镜像</p>
+<p>下载arm架构的镜像，并重新打tag成x64的，以骗过daemonset：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker pull fishead/quay.io.coreos.flannel:v0.10.0-arm</span><br><span class="line">docker tag fishead/quay.io.coreos.flannel:v0.10.0-arm quay.io/coreos/flannel:v0.10.0-arm</span><br></pre></td></tr></table></figure></p>
+<p>4.部署<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f kube-flannel.yml</span><br></pre></td></tr></table></figure></p>
+<p>部署好后集群就可以正常运行了。</p>
+<p>备注：</p>
+<p>假如网络部署失败或出问题需要重新部署，执行以下内容清除生成的网络接口：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">sudo ifconfig cni0 down</span><br><span class="line">sudo ip link delete cni0</span><br><span class="line">sudo ifconfig flannel.1 down</span><br><span class="line">sudo ip link delete flannel.1</span><br><span class="line">sudo rm -rf /var/lib/cni/</span><br></pre></td></tr></table></figure></p>
+<p>4.3 slave节点部署<br>同样按照上述步骤安装好docker、kubelet，然后在slave节点上执行以下命令即可加入集群：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubeadm join 192.168.1.192:6443 --token 4k5jyn.2ss2zcn44c7e7zc1 --discovery-token-ca-cert-hash sha256:0e3e9348b5372aceedab8ca5f3e6537d5eaf7134dce24523f512c0ef2f1a54f6</span><br></pre></td></tr></table></figure></p>
+<h1 id="部署Kubernetes-Dashboard"><a href="#部署Kubernetes-Dashboard" class="headerlink" title="部署Kubernetes Dashboard"></a>部署Kubernetes Dashboard</h1><ol>
+<li><p>下载官方提供的 Dashboard 组件部署的 yaml 文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard-arm.yaml</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>修改 yaml 文件中的镜像<br>k8s.gcr.io 修改为 liupeng0518/gcr.io.google_containers.kubernetes-dashboard-arm64:v1.10.1</p>
+</li>
+<li><p>修改 yaml 文件中的 Dashboard Service，暴露服务使外部能够访问</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">kind: Service</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    k8s-app: kubernetes-dashboard</span><br><span class="line">  name: kubernetes-dashboard</span><br><span class="line">  namespace: kube-system</span><br><span class="line">spec:</span><br><span class="line">  ports:</span><br><span class="line">    - port: 443</span><br><span class="line">      targetPort: 8443</span><br><span class="line">  selector:</span><br><span class="line">    k8s-app: kubernetes-dashboard</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>修改为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">kind: Service</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    k8s-app: kubernetes-dashboard</span><br><span class="line">  name: kubernetes-dashboard</span><br><span class="line">  namespace: kube-system</span><br><span class="line">spec:</span><br><span class="line">  ports:</span><br><span class="line">    - port: 443</span><br><span class="line">      targetPort: 8443</span><br><span class="line">      nodePort: 31111</span><br><span class="line">  selector:</span><br><span class="line">    k8s-app: kubernetes-dashboard</span><br><span class="line">  type: NodePort</span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li><p>启动 Dashboard</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f kubernetes-dashboard.yaml</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>访问 Dashboard<br>地址： https://<your-ip>:31111/<br>​<br>注意：必须是 https</your-ip></p>
+</li>
+<li><p>创建能够访问 Dashboard 的用户</p>
+</li>
+</ol>
+<p>新建文件 account.yaml ，内容如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"># Create Service Account</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: ServiceAccount</span><br><span class="line">metadata:</span><br><span class="line">  name: admin-user</span><br><span class="line">  namespace: kube-system</span><br><span class="line">---</span><br><span class="line"># Create ClusterRoleBinding</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1beta1</span><br><span class="line">kind: ClusterRoleBinding</span><br><span class="line">metadata:</span><br><span class="line">  name: admin-user</span><br><span class="line">roleRef:</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line">  kind: ClusterRole</span><br><span class="line">  name: cluster-admin</span><br><span class="line">subjects:</span><br><span class="line">- kind: ServiceAccount</span><br><span class="line">  name: admin-user</span><br><span class="line">  namespace: kube-system</span><br></pre></td></tr></table></figure></p>
+<p>7.获取登录 Dashboard 的令牌 （Token）<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk &apos;&#123;print $1&#125;&apos;)</span><br></pre></td></tr></table></figure></p>
+<p>输出如下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Name: admin-user-token-f6tct</span><br><span class="line">Namespace: kube-system</span><br><span class="line">Labels: &lt;none&gt;</span><br><span class="line">Annotations: kubernetes.io/service-account.name=admin-user</span><br><span class="line">              kubernetes.io/service-account.uid=81cb9047-7087-11e8-95da-00163e0c5bd1</span><br><span class="line">​</span><br><span class="line">Type: kubernetes.io/service-account-token</span><br><span class="line">​</span><br><span class="line">Data</span><br><span class="line">====</span><br><span class="line">ca.crt: 1025 bytes</span><br><span class="line">namespace: 11 bytes</span><br><span class="line">token: &lt;超长字符串&gt;</span><br></pre></td></tr></table></figure></p>
+<h1 id="helm"><a href="#helm" class="headerlink" title="helm"></a>helm</h1><p>去github下载对应的安装包 下载 <a href="https://github.com/helm/helm/releases" target="_blank" rel="noopener">https://github.com/helm/helm/releases</a> </p>
+<p>下载2.12.3版本的helm</p>
+<p>解压安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">tar zxvf helm-v2.12.3-linux-arm64.tar.gz </span><br><span class="line"></span><br><span class="line">cd linux-arm64/</span><br><span class="line"></span><br><span class="line">mv helm /usr/local/bin/helm</span><br></pre></td></tr></table></figure>
+<p>部署helm<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">helm init</span><br></pre></td></tr></table></figure></p>
+<p>修改镜像地址:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl edit deployment tiller-deploy   -n kube-system</span><br></pre></td></tr></table></figure></p>
+<p>将image地址改为:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">image: liupeng0518/tiller-arm64:2.12.3</span><br></pre></td></tr></table></figure></p>
+<p>创建rbac.yaml文件<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: ServiceAccount</span><br><span class="line">metadata:</span><br><span class="line">  name: tiller</span><br><span class="line">  namespace: kube-system</span><br><span class="line">---</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1beta1</span><br><span class="line">kind: ClusterRoleBinding</span><br><span class="line">metadata:</span><br><span class="line">  name: tiller</span><br><span class="line">roleRef:</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line">  kind: ClusterRole</span><br><span class="line">  name: cluster-admin</span><br><span class="line">subjects:</span><br><span class="line">  - kind: ServiceAccount</span><br><span class="line">    name: tiller</span><br><span class="line">    namespace: kube-system</span><br></pre></td></tr></table></figure></p>
+<p>然后使用kubectl创建：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl create -f rbac-config.yaml</span><br><span class="line">serviceaccount &quot;tiller&quot; created</span><br><span class="line">clusterrolebinding &quot;tiller&quot; created</span><br></pre></td></tr></table></figure></p>
+<p>创建了tiller的 ServceAccount 后还没完，因为我们的 Tiller 之前已经就部署成功了，而且是没有指定 ServiceAccount 的，所以我们需要给 Tiller 打上一个 ServiceAccount 的补丁：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl patch deploy --namespace kube-system tiller-deploy -p &apos;&#123;&quot;spec&quot;:&#123;&quot;template&quot;:&#123;&quot;spec&quot;:&#123;&quot;serviceAccount&quot;:&quot;tiller&quot;&#125;&#125;&#125;&#125;&apos;</span><br></pre></td></tr></table></figure></p>
+<h1 id="nfs"><a href="#nfs" class="headerlink" title="nfs"></a>nfs</h1><p><a href="https://github.com/kubernetes-incubator/external-storage/tree/master/nfs-client" target="_blank" rel="noopener">https://github.com/kubernetes-incubator/external-storage/tree/master/nfs-client</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/kubeadm/" rel="tag"># kubeadm</a>
+          
+            <a href="/tags/arm/" rel="tag"># arm</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/10/linux/性能/stress/" rel="next" title="Stress使用">
+                <i class="fa fa-chevron-left"></i> Stress使用
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/03/26/k8s/deploy/我的minikube/" rel="prev" title="我的minikube">
+                我的minikube <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#准备"><span class="nav-number">1.</span> <span class="nav-text">准备</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#部署Kubernetes-Dashboard"><span class="nav-number">2.</span> <span class="nav-text">部署Kubernetes Dashboard</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#helm"><span class="nav-number">3.</span> <span class="nav-text">helm</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#nfs"><span class="nav-number">4.</span> <span class="nav-text">nfs</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

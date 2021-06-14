@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="docker,mips64el,source,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="目前需要在mips64el 3B4000 下适配编译UOS 20的docker-ce 18.09/18.06版本。 这里记录下18.06的编译，09如法炮制： 编译环境 OS: UOS 20 ARCH: mips64el go: 1.12.5  containerd1234567891011121314151617181920212223242526272829303132333435363738">
+<meta name="keywords" content="docker,mips64el,source">
+<meta property="og:type" content="article">
+<meta property="og:title" content="源码编译docker-ce">
+<meta property="og:url" content="http://liupeng0518.github.io/2020/01/09/docker/build/build docker bin/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="目前需要在mips64el 3B4000 下适配编译UOS 20的docker-ce 18.09/18.06版本。 这里记录下18.06的编译，09如法炮制： 编译环境 OS: UOS 20 ARCH: mips64el go: 1.12.5  containerd1234567891011121314151617181920212223242526272829303132333435363738">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.956Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="源码编译docker-ce">
+<meta name="twitter:description" content="目前需要在mips64el 3B4000 下适配编译UOS 20的docker-ce 18.09/18.06版本。 这里记录下18.06的编译，09如法炮制： 编译环境 OS: UOS 20 ARCH: mips64el go: 1.12.5  containerd1234567891011121314151617181920212223242526272829303132333435363738">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2020/01/09/docker/build/build docker bin/">
+
+
+
+
+
+  <title>源码编译docker-ce | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2020/01/09/docker/build/build docker bin/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">源码编译docker-ce</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-01-09T09:47:19+00:00">
+                2020-01-09
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index">
+                    <span itemprop="name">docker</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>目前需要在mips64el 3B4000 下适配编译<code>UOS 20</code>的<code>docker-ce 18.09/18.06</code>版本。</p>
+<p>这里记录下18.06的编译，09如法炮制：</p>
+<h1 id="编译环境"><a href="#编译环境" class="headerlink" title="编译环境"></a>编译环境</h1><ul>
+<li>OS: UOS 20</li>
+<li>ARCH: mips64el</li>
+<li>go: 1.12.5</li>
+</ul>
+<h1 id="containerd"><a href="#containerd" class="headerlink" title="containerd"></a>containerd</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line"> Makefile.linux                                     |   2 +-</span><br><span class="line"> cmd/ctr/commands/signal_map_linux.go               |   1 -</span><br><span class="line"> vendor/github.com/boltdb/bolt/bolt_mips64le.go     |  12 +++</span><br><span class="line"> .../continuity/sysx/xattr_linux_mips64le.go        | 112 +++++++++++++++++++++</span><br><span class="line"> .../docker/docker/pkg/signal/signal_linux.go       |   1 -</span><br><span class="line"> .../docker/docker/pkg/system/stat_linux.go         |   2 +-</span><br><span class="line"> .../runc/libcontainer/devices/devices.go           |   2 +-</span><br><span class="line"> 7 files changed, 127 insertions(+), 5 deletions(-)</span><br><span class="line"> create mode 100644 vendor/github.com/boltdb/bolt/bolt_mips64le.go</span><br><span class="line"> create mode 100644 vendor/github.com/containerd/continuity/sysx/xattr_linux_mips64le.go</span><br><span class="line"></span><br><span class="line">diff --git a/Makefile.linux b/Makefile.linux</span><br><span class="line">index 23dffad..58f8bc2 100644</span><br><span class="line">--- a/Makefile.linux</span><br><span class="line">+++ b/Makefile.linux</span><br><span class="line">@@ -18,7 +18,7 @@ COMMANDS += containerd-shim</span><br><span class="line"> </span><br><span class="line"> # check GOOS for cross compile builds</span><br><span class="line"> ifeq ($(GOOS),linux)</span><br><span class="line">-	GO_GCFLAGS += -buildmode=pie</span><br><span class="line">+	GO_GCFLAGS +=</span><br><span class="line"> endif</span><br><span class="line"> </span><br><span class="line"> # amd64 supports go test -race</span><br><span class="line">diff --git a/cmd/ctr/commands/signal_map_linux.go b/cmd/ctr/commands/signal_map_linux.go</span><br><span class="line">index 11799ea..728099a 100644</span><br><span class="line">--- a/cmd/ctr/commands/signal_map_linux.go</span><br><span class="line">+++ b/cmd/ctr/commands/signal_map_linux.go</span><br><span class="line">@@ -42,7 +42,6 @@ var signalMap = map[string]syscall.Signal&#123;</span><br><span class="line"> 	&quot;PWR&quot;:    unix.SIGPWR,</span><br><span class="line"> 	&quot;QUIT&quot;:   unix.SIGQUIT,</span><br><span class="line"> 	&quot;SEGV&quot;:   unix.SIGSEGV,</span><br><span class="line">-	&quot;STKFLT&quot;: unix.SIGSTKFLT,</span><br><span class="line"> 	&quot;STOP&quot;:   unix.SIGSTOP,</span><br><span class="line"> 	&quot;SYS&quot;:    unix.SIGSYS,</span><br><span class="line"> 	&quot;TERM&quot;:   unix.SIGTERM,</span><br><span class="line">diff --git a/vendor/github.com/boltdb/bolt/bolt_mips64le.go b/vendor/github.com/boltdb/bolt/bolt_mips64le.go</span><br><span class="line">new file mode 100644</span><br><span class="line">index 0000000..a46a9de</span><br><span class="line">--- /dev/null</span><br><span class="line">+++ b/vendor/github.com/boltdb/bolt/bolt_mips64le.go</span><br><span class="line">@@ -0,0 +1,12 @@</span><br><span class="line">+// +build mips64le</span><br><span class="line">+</span><br><span class="line">+package bolt</span><br><span class="line">+</span><br><span class="line">+// maxMapSize represents the largest mmap size supported by Bolt.</span><br><span class="line">+const maxMapSize = 0xFFFFFFFFFFFF // 256TB</span><br><span class="line">+</span><br><span class="line">+// maxAllocSize is the size used when creating array pointers.</span><br><span class="line">+const maxAllocSize = 0x7FFFFFFF</span><br><span class="line">+</span><br><span class="line">+// Are unaligned load/stores broken on this arch?</span><br><span class="line">+var brokenUnaligned = false</span><br><span class="line">diff --git a/vendor/github.com/containerd/continuity/sysx/xattr_linux_mips64le.go b/vendor/github.com/containerd/continuity/sysx/xattr_linux_mips64le.go</span><br><span class="line">new file mode 100644</span><br><span class="line">index 0000000..240ccf9</span><br><span class="line">--- /dev/null</span><br><span class="line">+++ b/vendor/github.com/containerd/continuity/sysx/xattr_linux_mips64le.go</span><br><span class="line">@@ -0,0 +1,112 @@</span><br><span class="line">+// mksyscall.pl xattr_linux.go</span><br><span class="line">+// MACHINE GENERATED BY THE COMMAND ABOVE; DO NOT EDIT</span><br><span class="line">+</span><br><span class="line">+package sysx</span><br><span class="line">+</span><br><span class="line">+import (</span><br><span class="line">+       &quot;syscall&quot;</span><br><span class="line">+       &quot;unsafe&quot;</span><br><span class="line">+)</span><br><span class="line">+</span><br><span class="line">+// THIS FILE IS GENERATED BY THE COMMAND AT THE TOP; DO NOT EDIT</span><br><span class="line">+</span><br><span class="line">+func llistxattr(path string, dest []byte) (sz int, err error) &#123;</span><br><span class="line">+       var _p0 *byte</span><br><span class="line">+       _p0, err = syscall.BytePtrFromString(path)</span><br><span class="line">+       if err != nil &#123;</span><br><span class="line">+               return</span><br><span class="line">+       &#125;</span><br><span class="line">+       var _p1 unsafe.Pointer</span><br><span class="line">+       if len(dest) &gt; 0 &#123;</span><br><span class="line">+               _p1 = unsafe.Pointer(&amp;dest[0])</span><br><span class="line">+       &#125; else &#123;</span><br><span class="line">+               _p1 = unsafe.Pointer(&amp;_zero)</span><br><span class="line">+       &#125;</span><br><span class="line">+       r0, _, e1 := syscall.Syscall(syscall.SYS_LLISTXATTR, uintptr(unsafe.Pointer(_p0)), uintptr(_p1), uintptr(len(dest)))</span><br><span class="line">+       use(unsafe.Pointer(_p0))</span><br><span class="line">+       sz = int(r0)</span><br><span class="line">+       if e1 != 0 &#123;</span><br><span class="line">+               err = errnoErr(e1)</span><br><span class="line">+       &#125;</span><br><span class="line">+       return</span><br><span class="line">+&#125;</span><br><span class="line">+</span><br><span class="line">+// THIS FILE IS GENERATED BY THE COMMAND AT THE TOP; DO NOT EDIT</span><br><span class="line">+</span><br><span class="line">+func lremovexattr(path string, attr string) (err error) &#123;</span><br><span class="line">+       var _p0 *byte</span><br><span class="line">+       _p0, err = syscall.BytePtrFromString(path)</span><br><span class="line">+       if err != nil &#123;</span><br><span class="line">+               return</span><br><span class="line">+       &#125;</span><br><span class="line">+       var _p1 *byte</span><br><span class="line">+       _p1, err = syscall.BytePtrFromString(attr)</span><br><span class="line">+       if err != nil &#123;</span><br><span class="line">+               return</span><br><span class="line">+       &#125;</span><br><span class="line">+       _, _, e1 := syscall.Syscall(syscall.SYS_LREMOVEXATTR, uintptr(unsafe.Pointer(_p0)), uintptr(unsafe.Pointer(_p1)), 0)</span><br><span class="line">+       use(unsafe.Pointer(_p0))</span><br><span class="line">+       use(unsafe.Pointer(_p1))</span><br><span class="line">+       if e1 != 0 &#123;</span><br><span class="line">+               err = errnoErr(e1)</span><br><span class="line">+       &#125;</span><br><span class="line">+       return</span><br><span class="line">+&#125;</span><br><span class="line">+</span><br><span class="line">+// THIS FILE IS GENERATED BY THE COMMAND AT THE TOP; DO NOT EDIT</span><br><span class="line">+</span><br><span class="line">+func lsetxattr(path string, attr string, data []byte, flags int) (err error) &#123;</span><br><span class="line">+       var _p0 *byte</span><br><span class="line">+       _p0, err = syscall.BytePtrFromString(path)</span><br><span class="line">+       if err != nil &#123;</span><br><span class="line">+               return</span><br><span class="line">+       &#125;</span><br><span class="line">+       var _p1 *byte</span><br><span class="line">+       _p1, err = syscall.BytePtrFromString(attr)</span><br><span class="line">+       if err != nil &#123;</span><br><span class="line">+               return</span><br><span class="line">+       &#125;</span><br><span class="line">+       var _p2 unsafe.Pointer</span><br><span class="line">+       if len(data) &gt; 0 &#123;</span><br><span class="line">+               _p2 = unsafe.Pointer(&amp;data[0])</span><br><span class="line">+       &#125; else &#123;</span><br><span class="line">+               _p2 = unsafe.Pointer(&amp;_zero)</span><br><span class="line">+       &#125;</span><br><span class="line">+       _, _, e1 := syscall.Syscall6(syscall.SYS_LSETXATTR, uintptr(unsafe.Pointer(_p0)), uintptr(unsafe.Pointer(_p1)), uintptr(_p2), uintptr(len(data)), uintptr(flags), 0)</span><br><span class="line">+       use(unsafe.Pointer(_p0))</span><br><span class="line">+       use(unsafe.Pointer(_p1))</span><br><span class="line">+       if e1 != 0 &#123;</span><br><span class="line">+               err = errnoErr(e1)</span><br><span class="line">+       &#125;</span><br><span class="line">+       return</span><br><span class="line">+&#125;</span><br><span class="line">+</span><br><span class="line">+// THIS FILE IS GENERATED BY THE COMMAND AT THE TOP; DO NOT EDIT</span><br><span class="line">+</span><br><span class="line">+func lgetxattr(path string, attr string, dest []byte) (sz int, err error) &#123;</span><br><span class="line">+       var _p0 *byte</span><br><span class="line">+       _p0, err = syscall.BytePtrFromString(path)</span><br><span class="line">+       if err != nil &#123;</span><br><span class="line">+               return</span><br><span class="line">+       &#125;</span><br><span class="line">+       var _p1 *byte</span><br><span class="line">+       _p1, err = syscall.BytePtrFromString(attr)</span><br><span class="line">+       if err != nil &#123;</span><br><span class="line">+               return</span><br><span class="line">+       &#125;</span><br><span class="line">+       var _p2 unsafe.Pointer</span><br><span class="line">+       if len(dest) &gt; 0 &#123;</span><br><span class="line">+               _p2 = unsafe.Pointer(&amp;dest[0])</span><br><span class="line">+       &#125; else &#123;</span><br><span class="line">+               _p2 = unsafe.Pointer(&amp;_zero)</span><br><span class="line">+       &#125;</span><br><span class="line">+       r0, _, e1 := syscall.Syscall6(syscall.SYS_LGETXATTR, uintptr(unsafe.Pointer(_p0)), uintptr(unsafe.Pointer(_p1)), uintptr(_p2), uintptr(len(dest)), 0, 0)</span><br><span class="line">+       use(unsafe.Pointer(_p0))</span><br><span class="line">+       use(unsafe.Pointer(_p1))</span><br><span class="line">+       sz = int(r0)</span><br><span class="line">+       if e1 != 0 &#123;</span><br><span class="line">+               err = errnoErr(e1)</span><br><span class="line">+       &#125;</span><br><span class="line">+       return</span><br><span class="line">+&#125;</span><br><span class="line">+</span><br><span class="line">diff --git a/vendor/github.com/docker/docker/pkg/signal/signal_linux.go b/vendor/github.com/docker/docker/pkg/signal/signal_linux.go</span><br><span class="line">index 66c85c8..4987aca 100644</span><br><span class="line">--- a/vendor/github.com/docker/docker/pkg/signal/signal_linux.go</span><br><span class="line">+++ b/vendor/github.com/docker/docker/pkg/signal/signal_linux.go</span><br><span class="line">@@ -32,7 +32,6 @@ var SignalMap = map[string]syscall.Signal&#123;</span><br><span class="line"> 	&quot;PWR&quot;:      unix.SIGPWR,</span><br><span class="line"> 	&quot;QUIT&quot;:     unix.SIGQUIT,</span><br><span class="line"> 	&quot;SEGV&quot;:     unix.SIGSEGV,</span><br><span class="line">-	&quot;STKFLT&quot;:   unix.SIGSTKFLT,</span><br><span class="line"> 	&quot;STOP&quot;:     unix.SIGSTOP,</span><br><span class="line"> 	&quot;SYS&quot;:      unix.SIGSYS,</span><br><span class="line"> 	&quot;TERM&quot;:     unix.SIGTERM,</span><br><span class="line">diff --git a/vendor/github.com/docker/docker/pkg/system/stat_linux.go b/vendor/github.com/docker/docker/pkg/system/stat_linux.go</span><br><span class="line">index 1939f95..af7af20 100644</span><br><span class="line">--- a/vendor/github.com/docker/docker/pkg/system/stat_linux.go</span><br><span class="line">+++ b/vendor/github.com/docker/docker/pkg/system/stat_linux.go</span><br><span class="line">@@ -8,7 +8,7 @@ func fromStatT(s *syscall.Stat_t) (*StatT, error) &#123;</span><br><span class="line"> 		mode: s.Mode,</span><br><span class="line"> 		uid:  s.Uid,</span><br><span class="line"> 		gid:  s.Gid,</span><br><span class="line">-		rdev: s.Rdev,</span><br><span class="line">+		rdev: uint64(s.Rdev),</span><br><span class="line"> 		mtim: s.Mtim&#125;, nil</span><br><span class="line"> &#125;</span><br><span class="line"> </span><br><span class="line">diff --git a/vendor/github.com/opencontainers/runc/libcontainer/devices/devices.go b/vendor/github.com/opencontainers/runc/libcontainer/devices/devices.go</span><br><span class="line">index 3619258..3079ffd 100644</span><br><span class="line">--- a/vendor/github.com/opencontainers/runc/libcontainer/devices/devices.go</span><br><span class="line">+++ b/vendor/github.com/opencontainers/runc/libcontainer/devices/devices.go</span><br><span class="line">@@ -30,7 +30,7 @@ func DeviceFromPath(path, permissions string) (*configs.Device, error) &#123;</span><br><span class="line"> 	&#125;</span><br><span class="line"> </span><br><span class="line"> 	var (</span><br><span class="line">-		devNumber = stat.Rdev</span><br><span class="line">+		devNumber = uint64(stat.Rdev)</span><br><span class="line"> 		major     = unix.Major(devNumber)</span><br><span class="line"> 	)</span><br><span class="line"> 	if major == 0 &#123;</span><br><span class="line">--</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line"> vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go | 1 +</span><br><span class="line"> 1 file changed, 1 insertion(+)</span><br><span class="line"></span><br><span class="line">diff --git a/vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go b/vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go</span><br><span class="line">index bbe08d7..48798cc 100644</span><br><span class="line">--- a/vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go</span><br><span class="line">+++ b/vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go</span><br><span class="line">@@ -637,6 +637,7 @@ type Ustat_t struct &#123;</span><br><span class="line"> </span><br><span class="line"> type EpollEvent struct &#123;</span><br><span class="line"> 	Events uint32</span><br><span class="line">+	PadFd  int32</span><br><span class="line"> 	Fd     int32</span><br><span class="line"> 	Pad    int32</span><br><span class="line"> &#125;</span><br><span class="line">--</span><br></pre></td></tr></table></figure>
+<h1 id="libnetwork"><a href="#libnetwork" class="headerlink" title="libnetwork"></a>libnetwork</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line"> vendor/golang.org/x/sys/unix/ztypes_linux_mips64.go | 1 +</span><br><span class="line"> 1 file changed, 1 insertion(+)</span><br><span class="line"></span><br><span class="line">diff --git a/vendor/golang.org/x/sys/unix/ztypes_linux_mips64.go b/vendor/golang.org/x/sys/unix/ztypes_linux_mips64.go</span><br><span class="line">index 01e8f65..5539bec 100644</span><br><span class="line">--- a/vendor/golang.org/x/sys/unix/ztypes_linux_mips64.go</span><br><span class="line">+++ b/vendor/golang.org/x/sys/unix/ztypes_linux_mips64.go</span><br><span class="line">@@ -677,6 +677,7 @@ type Ustat_t struct &#123;</span><br><span class="line"> </span><br><span class="line"> type EpollEvent struct &#123;</span><br><span class="line"> 	Events uint32</span><br><span class="line">+	PadFd  int32</span><br><span class="line"> 	Fd     int32</span><br><span class="line"> 	Pad    int32</span><br><span class="line"> &#125;</span><br><span class="line">--</span><br></pre></td></tr></table></figure>
+<h1 id="runc"><a href="#runc" class="headerlink" title="runc"></a>runc</h1><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line"> vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go | 1 +</span><br><span class="line"> 1 file changed, 1 insertion(+)</span><br><span class="line"></span><br><span class="line">diff --git a/vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go b/vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go</span><br><span class="line">index f9bd1ab..19bdb3f 100644</span><br><span class="line">--- a/vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go</span><br><span class="line">+++ b/vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go</span><br><span class="line">@@ -637,6 +637,7 @@ type Ustat_t struct &#123;</span><br><span class="line"> </span><br><span class="line"> type EpollEvent struct &#123;</span><br><span class="line"> 	Events uint32</span><br><span class="line">+	PadFd  int32</span><br><span class="line"> 	Fd     int32</span><br><span class="line"> 	Pad    int32</span><br><span class="line"> &#125;</span><br><span class="line">--</span><br></pre></td></tr></table></figure>
+<h1 id="dockerd-cli"><a href="#dockerd-cli" class="headerlink" title="dockerd/cli"></a>dockerd/cli</h1><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br><span class="line">318</span><br><span class="line">319</span><br><span class="line">320</span><br><span class="line">321</span><br><span class="line">322</span><br><span class="line">323</span><br><span class="line">324</span><br><span class="line">325</span><br><span class="line">326</span><br><span class="line">327</span><br><span class="line">328</span><br><span class="line">329</span><br><span class="line">330</span><br><span class="line">331</span><br><span class="line">332</span><br><span class="line">333</span><br><span class="line">334</span><br><span class="line">335</span><br><span class="line">336</span><br><span class="line">337</span><br><span class="line">338</span><br><span class="line">339</span><br><span class="line">340</span><br><span class="line">341</span><br><span class="line">342</span><br><span class="line">343</span><br><span class="line">344</span><br><span class="line">345</span><br><span class="line">346</span><br><span class="line">347</span><br><span class="line">348</span><br><span class="line">349</span><br><span class="line">350</span><br><span class="line">351</span><br><span class="line">352</span><br><span class="line">353</span><br><span class="line">354</span><br><span class="line">355</span><br><span class="line">356</span><br><span class="line">357</span><br><span class="line">358</span><br><span class="line">359</span><br><span class="line">360</span><br><span class="line">361</span><br><span class="line">362</span><br><span class="line">363</span><br><span class="line">364</span><br><span class="line">365</span><br><span class="line">366</span><br><span class="line">367</span><br><span class="line">368</span><br><span class="line">369</span><br><span class="line">370</span><br><span class="line">371</span><br><span class="line">372</span><br><span class="line">373</span><br><span class="line">374</span><br><span class="line">375</span><br><span class="line">376</span><br><span class="line">377</span><br><span class="line">378</span><br><span class="line">379</span><br><span class="line">380</span><br><span class="line">381</span><br><span class="line">382</span><br><span class="line">383</span><br><span class="line">384</span><br><span class="line">385</span><br><span class="line">386</span><br><span class="line">387</span><br><span class="line">388</span><br><span class="line">389</span><br><span class="line">390</span><br><span class="line">391</span><br><span class="line">392</span><br><span class="line">393</span><br><span class="line">394</span><br><span class="line">395</span><br><span class="line">396</span><br><span class="line">397</span><br><span class="line">398</span><br><span class="line">399</span><br><span class="line">400</span><br><span class="line">401</span><br><span class="line">402</span><br><span class="line">403</span><br><span class="line">404</span><br><span class="line">405</span><br><span class="line">406</span><br><span class="line">407</span><br><span class="line">408</span><br><span class="line">409</span><br><span class="line">410</span><br><span class="line">411</span><br><span class="line">412</span><br><span class="line">413</span><br><span class="line">414</span><br><span class="line">415</span><br><span class="line">416</span><br><span class="line">417</span><br><span class="line">418</span><br><span class="line">419</span><br><span class="line">420</span><br><span class="line">421</span><br><span class="line">422</span><br><span class="line">423</span><br><span class="line">424</span><br><span class="line">425</span><br><span class="line">426</span><br><span class="line">427</span><br><span class="line">428</span><br><span class="line">429</span><br><span class="line">430</span><br><span class="line">431</span><br><span class="line">432</span><br><span class="line">433</span><br><span class="line">434</span><br><span class="line">435</span><br><span class="line">436</span><br><span class="line">437</span><br><span class="line">438</span><br><span class="line">439</span><br><span class="line">440</span><br><span class="line">441</span><br><span class="line">442</span><br><span class="line">443</span><br><span class="line">444</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line"> .../docker/docker/pkg/signal/signal_linux.go       |   1 -</span><br><span class="line"> .../docker/docker/pkg/system/stat_linux.go         |   2 +-</span><br><span class="line"> .../golang.org/x/sys/unix/ztypes_linux_mips64le.go |   1 +</span><br><span class="line"> engine/daemon/graphdriver/copy/copy.go             |   2 +-</span><br><span class="line"> engine/daemon/graphdriver/devmapper/deviceset.go   |   4 +-</span><br><span class="line"> .../hack/dockerfile/install/containerd.installer   |  13 +--</span><br><span class="line"> engine/hack/dockerfile/install/install.sh          |   2 +-</span><br><span class="line"> engine/hack/dockerfile/install/proxy.installer     |   7 +-</span><br><span class="line"> engine/hack/dockerfile/install/runc.installer      |   8 +-</span><br><span class="line"> engine/hack/dockerfile/install/tini.installer      |   6 +-</span><br><span class="line"> engine/hack/make/.binary                           |   6 +-</span><br><span class="line"> engine/pkg/loopback/loopback.go                    |   2 +-</span><br><span class="line"> engine/pkg/signal/signal_linux.go                  |   1 -</span><br><span class="line"> engine/pkg/system/stat_linux.go                    |   2 +-</span><br><span class="line"> .../vendor/github.com/boltdb/bolt/bolt_mips64le.go |  13 +++</span><br><span class="line"> .../continuity/sysx/xattr_linux_mips64le.go        | 112 +++++++++++++++++++++</span><br><span class="line"> .../runc/libcontainer/devices/devices.go           |   2 +-</span><br><span class="line"> .../vishvananda/netns/netns_linux_mips64le.go      |   8 ++</span><br><span class="line"> .../golang.org/x/sys/unix/ztypes_linux_mips64le.go |   1 +</span><br><span class="line"> 19 files changed, 165 insertions(+), 28 deletions(-)</span><br><span class="line"> create mode 100644 engine/vendor/github.com/boltdb/bolt/bolt_mips64le.go</span><br><span class="line"> create mode 100644 engine/vendor/github.com/containerd/continuity/sysx/xattr_linux_mips64le.go</span><br><span class="line"> create mode 100644 engine/vendor/github.com/vishvananda/netns/netns_linux_mips64le.go</span><br><span class="line"></span><br><span class="line">diff --git a/cli/vendor/github.com/docker/docker/pkg/signal/signal_linux.go b/cli/vendor/github.com/docker/docker/pkg/signal/signal_linux.go</span><br><span class="line">index caed97c..c9bab45 100644</span><br><span class="line">--- a/cli/vendor/github.com/docker/docker/pkg/signal/signal_linux.go</span><br><span class="line">+++ b/cli/vendor/github.com/docker/docker/pkg/signal/signal_linux.go</span><br><span class="line">@@ -32,7 +32,6 @@ var SignalMap = map[string]syscall.Signal&#123;</span><br><span class="line"> 	"PWR":      unix.SIGPWR,</span><br><span class="line"> 	"QUIT":     unix.SIGQUIT,</span><br><span class="line"> 	"SEGV":     unix.SIGSEGV,</span><br><span class="line">-	"STKFLT":   unix.SIGSTKFLT,</span><br><span class="line"> 	"STOP":     unix.SIGSTOP,</span><br><span class="line"> 	"SYS":      unix.SIGSYS,</span><br><span class="line"> 	"TERM":     unix.SIGTERM,</span><br><span class="line">diff --git a/cli/vendor/github.com/docker/docker/pkg/system/stat_linux.go b/cli/vendor/github.com/docker/docker/pkg/system/stat_linux.go</span><br><span class="line">index 98c9eb1..8a090a5 100644</span><br><span class="line">--- a/cli/vendor/github.com/docker/docker/pkg/system/stat_linux.go</span><br><span class="line">+++ b/cli/vendor/github.com/docker/docker/pkg/system/stat_linux.go</span><br><span class="line">@@ -8,7 +8,7 @@ func fromStatT(s *syscall.Stat_t) (*StatT, error) &#123;</span><br><span class="line"> 		mode: s.Mode,</span><br><span class="line"> 		uid:  s.Uid,</span><br><span class="line"> 		gid:  s.Gid,</span><br><span class="line">-		rdev: s.Rdev,</span><br><span class="line">+		rdev: uint64(s.Rdev),</span><br><span class="line"> 		mtim: s.Mtim&#125;, nil</span><br><span class="line"> &#125;</span><br><span class="line"> </span><br><span class="line">diff --git a/cli/vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go b/cli/vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go</span><br><span class="line">index 6f9452d..0b279cc 100644</span><br><span class="line">--- a/cli/vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go</span><br><span class="line">+++ b/cli/vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go</span><br><span class="line">@@ -677,6 +677,7 @@ type Ustat_t struct &#123;</span><br><span class="line"> </span><br><span class="line"> type EpollEvent struct &#123;</span><br><span class="line"> 	Events uint32</span><br><span class="line">+	PadFd  int32</span><br><span class="line"> 	Fd     int32</span><br><span class="line"> 	Pad    int32</span><br><span class="line"> &#125;</span><br><span class="line">diff --git a/engine/daemon/graphdriver/copy/copy.go b/engine/daemon/graphdriver/copy/copy.go</span><br><span class="line">index 86316fd..d3e862e 100644</span><br><span class="line">--- a/engine/daemon/graphdriver/copy/copy.go</span><br><span class="line">+++ b/engine/daemon/graphdriver/copy/copy.go</span><br><span class="line">@@ -154,7 +154,7 @@ func DirCopy(srcDir, dstDir string, copyMode Mode, copyXattrs bool) error &#123;</span><br><span class="line"> </span><br><span class="line"> 		switch f.Mode() &amp; os.ModeType &#123;</span><br><span class="line"> 		case 0: // Regular file</span><br><span class="line">-			id := fileID&#123;dev: stat.Dev, ino: stat.Ino&#125;</span><br><span class="line">+			id := fileID&#123;dev: uint64(stat.Dev), ino: stat.Ino&#125;</span><br><span class="line"> 			if copyMode == Hardlink &#123;</span><br><span class="line"> 				isHardlink = true</span><br><span class="line"> 				if err2 := os.Link(srcPath, dstPath); err2 != nil &#123;</span><br><span class="line">diff --git a/engine/daemon/graphdriver/devmapper/deviceset.go b/engine/daemon/graphdriver/devmapper/deviceset.go</span><br><span class="line">index 2bfbf05..b2017ec 100644</span><br><span class="line">--- a/engine/daemon/graphdriver/devmapper/deviceset.go</span><br><span class="line">+++ b/engine/daemon/graphdriver/devmapper/deviceset.go</span><br><span class="line">@@ -1527,7 +1527,7 @@ func getDeviceMajorMinor(file *os.File) (uint64, uint64, error) &#123;</span><br><span class="line"> 		return 0, 0, err</span><br><span class="line"> 	&#125;</span><br><span class="line"> </span><br><span class="line">-	dev := stat.Rdev</span><br><span class="line">+	dev := uint64(stat.Rdev)</span><br><span class="line"> 	majorNum := major(dev)</span><br><span class="line"> 	minorNum := minor(dev)</span><br><span class="line"> </span><br><span class="line">@@ -1738,7 +1738,7 @@ func (devices *DeviceSet) initDevmapper(doInit bool) (retErr error) &#123;</span><br><span class="line"> 	//	- Managed by docker</span><br><span class="line"> 	//	- The target of this device is at major &lt;maj&gt; and minor &lt;min&gt;</span><br><span class="line"> 	//	- If &lt;inode&gt; is defined, use that file inside the device as a loopback image. Otherwise use the device itself.</span><br><span class="line">-	devices.devicePrefix = fmt.Sprintf("docker-%d:%d-%d", major(st.Dev), minor(st.Dev), st.Ino)</span><br><span class="line">+	devices.devicePrefix = fmt.Sprintf("docker-%d:%d-%d", major(uint64(st.Dev)), minor(uint64(st.Dev)), st.Ino)</span><br><span class="line"> 	logger.Debugf("Generated prefix: %s", devices.devicePrefix)</span><br><span class="line"> </span><br><span class="line"> 	// Check for the existence of the thin-pool device</span><br><span class="line">diff --git a/engine/hack/dockerfile/install/containerd.installer b/engine/hack/dockerfile/install/containerd.installer</span><br><span class="line">index dceae49..07a27d2 100755</span><br><span class="line">--- a/engine/hack/dockerfile/install/containerd.installer</span><br><span class="line">+++ b/engine/hack/dockerfile/install/containerd.installer</span><br><span class="line">@@ -8,10 +8,11 @@ CONTAINERD_COMMIT=468a545b9edcd5932818eb9de8e72413e616e86e # v1.1.2</span><br><span class="line"> </span><br><span class="line"> install_containerd() &#123;</span><br><span class="line"> 	echo "Install containerd version $CONTAINERD_COMMIT"</span><br><span class="line">-	git clone https://github.com/containerd/containerd.git "$GOPATH/src/github.com/containerd/containerd"</span><br><span class="line">+	#git clone https://github.com/containerd/containerd.git "$GOPATH/src/github.com/containerd/containerd"</span><br><span class="line"> 	cd "$GOPATH/src/github.com/containerd/containerd"</span><br><span class="line"> 	git checkout -q "$CONTAINERD_COMMIT"</span><br><span class="line">-</span><br><span class="line">+	patch -p1 &lt; 0001-containerd-fix-build-error-on-mips64le-platform.patch</span><br><span class="line">+	patch -p1 &lt; 0001-containerd-Fix-EpollEvent-define-for-mips64le.patch</span><br><span class="line"> 	(</span><br><span class="line"> </span><br><span class="line"> 		export BUILDTAGS='static_build netgo'</span><br><span class="line">@@ -28,9 +29,9 @@ install_containerd() &#123;</span><br><span class="line"> 		make</span><br><span class="line"> 	)</span><br><span class="line"> </span><br><span class="line">-	mkdir -p $&#123;PREFIX&#125;</span><br><span class="line">+	mkdir -p $&#123;BIN_DIR&#125;</span><br><span class="line"> </span><br><span class="line">-	cp bin/containerd $&#123;PREFIX&#125;/docker-containerd</span><br><span class="line">-	cp bin/containerd-shim $&#123;PREFIX&#125;/docker-containerd-shim</span><br><span class="line">-	cp bin/ctr $&#123;PREFIX&#125;/docker-containerd-ctr</span><br><span class="line">+	cp bin/containerd $&#123;BIN_DIR&#125;/docker-containerd</span><br><span class="line">+	cp bin/containerd-shim $&#123;BIN_DIR&#125;/docker-containerd-shim</span><br><span class="line">+	cp bin/ctr $&#123;BIN_DIR&#125;/docker-containerd-ctr</span><br><span class="line"> &#125;</span><br><span class="line">diff --git a/engine/hack/dockerfile/install/install.sh b/engine/hack/dockerfile/install/install.sh</span><br><span class="line">index a0ff09d..249182b 100755</span><br><span class="line">--- a/engine/hack/dockerfile/install/install.sh</span><br><span class="line">+++ b/engine/hack/dockerfile/install/install.sh</span><br><span class="line">@@ -7,7 +7,7 @@ RM_GOPATH=0</span><br><span class="line"> </span><br><span class="line"> TMP_GOPATH=$&#123;TMP_GOPATH:-""&#125;</span><br><span class="line"> </span><br><span class="line">-: $&#123;PREFIX:="/usr/local/bin"&#125;</span><br><span class="line">+: $&#123;BIN_DIR:="$&#123;HOME&#125;/docker-bin"&#125;</span><br><span class="line"> </span><br><span class="line"> if [ -z "$TMP_GOPATH" ]; then</span><br><span class="line"> 	export GOPATH="$(mktemp -d)"</span><br><span class="line">diff --git a/engine/hack/dockerfile/install/proxy.installer b/engine/hack/dockerfile/install/proxy.installer</span><br><span class="line">index 4983d90..19350fc 100755</span><br><span class="line">--- a/engine/hack/dockerfile/install/proxy.installer</span><br><span class="line">+++ b/engine/hack/dockerfile/install/proxy.installer</span><br><span class="line">@@ -23,16 +23,17 @@ install_proxy() &#123;</span><br><span class="line"> </span><br><span class="line"> install_proxy_dynamic() &#123;</span><br><span class="line"> 	export PROXY_LDFLAGS="-linkmode=external" install_proxy</span><br><span class="line">-	export BUILD_MODE="-buildmode=pie"</span><br><span class="line">+	#export BUILD_MODE="-buildmode=pie"</span><br><span class="line"> 	_install_proxy</span><br><span class="line"> &#125;</span><br><span class="line"> </span><br><span class="line"> _install_proxy() &#123;</span><br><span class="line"> 	echo "Install docker-proxy version $LIBNETWORK_COMMIT"</span><br><span class="line">-	git clone https://github.com/docker/libnetwork.git "$GOPATH/src/github.com/docker/libnetwork"</span><br><span class="line">+	#git clone https://github.com/docker/libnetwork.git "$GOPATH/src/github.com/docker/libnetwork"</span><br><span class="line"> 	cd "$GOPATH/src/github.com/docker/libnetwork"</span><br><span class="line"> 	git checkout -q "$LIBNETWORK_COMMIT"</span><br><span class="line">-	go build $BUILD_MODE -ldflags="$PROXY_LDFLAGS" -o $&#123;PREFIX&#125;/docker-proxy github.com/docker/libnetwork/cmd/proxy</span><br><span class="line">+	patch -p1 &lt; 0001-libnetwork-Fix-EpollEvent-define-for-mips64le.patch</span><br><span class="line">+	go build $BUILD_MODE -ldflags="$PROXY_LDFLAGS" -o $&#123;BIN_DIR&#125;/docker-proxy github.com/docker/libnetwork/cmd/proxy</span><br><span class="line"> &#125;</span><br><span class="line"> </span><br><span class="line"> </span><br><span class="line">diff --git a/engine/hack/dockerfile/install/runc.installer b/engine/hack/dockerfile/install/runc.installer</span><br><span class="line">index 43b5504..17d834e 100755</span><br><span class="line">--- a/engine/hack/dockerfile/install/runc.installer</span><br><span class="line">+++ b/engine/hack/dockerfile/install/runc.installer</span><br><span class="line">@@ -8,9 +8,11 @@ install_runc() &#123;</span><br><span class="line"> 	RUNC_BUILDTAGS="$&#123;RUNC_BUILDTAGS:-"seccomp apparmor selinux"&#125;"</span><br><span class="line"> </span><br><span class="line"> 	echo "Install runc version $RUNC_COMMIT"</span><br><span class="line">-	git clone https://github.com/docker/runc.git "$GOPATH/src/github.com/opencontainers/runc"</span><br><span class="line">+	#git clone https://github.com/docker/runc.git "$GOPATH/src/github.com/opencontainers/runc"</span><br><span class="line"> 	cd "$GOPATH/src/github.com/opencontainers/runc"</span><br><span class="line"> 	git checkout -q "$RUNC_COMMIT"</span><br><span class="line">+	patch -p1 &lt; 0001-runc-Fix-EpollEvent-define-for-mips64le.patch</span><br><span class="line">+	sed -i 's@-buildmode=pie @@g' Makefile</span><br><span class="line"> 	if [ -z "$1" ]; then</span><br><span class="line"> 		target=static</span><br><span class="line"> 	else</span><br><span class="line">@@ -18,6 +20,6 @@ install_runc() &#123;</span><br><span class="line"> 	fi</span><br><span class="line"><span class="meta"> 	#</span><span class="bash"> TODO: Remove me before 18.06.4</span></span><br><span class="line"> 	make BUILDTAGS="$RUNC_BUILDTAGS" VERSION="1.0.0-rc5+dev.docker-18.06" "$target"</span><br><span class="line">-	mkdir -p $&#123;PREFIX&#125;</span><br><span class="line">-	cp runc $&#123;PREFIX&#125;/docker-runc</span><br><span class="line">+	mkdir -p $&#123;BIN_DIR&#125;</span><br><span class="line">+	cp runc $&#123;BIN_DIR&#125;/docker-runc</span><br><span class="line"> &#125;</span><br><span class="line">diff --git a/engine/hack/dockerfile/install/tini.installer b/engine/hack/dockerfile/install/tini.installer</span><br><span class="line">index 34f43f1..fba49b4 100755</span><br><span class="line">--- a/engine/hack/dockerfile/install/tini.installer</span><br><span class="line">+++ b/engine/hack/dockerfile/install/tini.installer</span><br><span class="line">@@ -4,11 +4,11 @@ TINI_COMMIT=fec3683b971d9c3ef73f284f176672c44b448662 # v0.18.0</span><br><span class="line"> </span><br><span class="line"> install_tini() &#123;</span><br><span class="line"> 	echo "Install tini version $TINI_COMMIT"</span><br><span class="line">-	git clone https://github.com/krallin/tini.git "$GOPATH/tini"</span><br><span class="line">+	#git clone https://github.com/krallin/tini.git "$GOPATH/tini"</span><br><span class="line"> 	cd "$GOPATH/tini"</span><br><span class="line"> 	git checkout -q "$TINI_COMMIT"</span><br><span class="line"> 	cmake .</span><br><span class="line"> 	make tini-static</span><br><span class="line">-	mkdir -p $&#123;PREFIX&#125;</span><br><span class="line">-	cp tini-static $&#123;PREFIX&#125;/docker-init</span><br><span class="line">+	mkdir -p $&#123;BIN_DIR&#125;</span><br><span class="line">+	cp tini-static $&#123;BIN_DIR&#125;/docker-init</span><br><span class="line"> &#125;</span><br><span class="line">diff --git a/engine/hack/make/.binary b/engine/hack/make/.binary</span><br><span class="line">index 9375926..23a039c 100644</span><br><span class="line">--- a/engine/hack/make/.binary</span><br><span class="line">+++ b/engine/hack/make/.binary</span><br><span class="line">@@ -51,9 +51,9 @@ if [ "$(go env GOOS)/$(go env GOARCH)" != "$(go env GOHOSTOS)/$(go env GOHOSTARC</span><br><span class="line"> fi</span><br><span class="line"> </span><br><span class="line"><span class="meta"> #</span><span class="bash"> -buildmode=pie is not supported on Windows.</span></span><br><span class="line">-if [ "$(go env GOOS)" != "windows" ]; then</span><br><span class="line">-	BUILDFLAGS+=( "-buildmode=pie" )</span><br><span class="line">-fi</span><br><span class="line">+#if [ "$(go env GOOS)" != "windows" ]; then</span><br><span class="line">+#	BUILDFLAGS+=( "-buildmode=pie" )</span><br><span class="line">+#fi</span><br><span class="line"> </span><br><span class="line"> echo "Building: $DEST/$BINARY_FULLNAME"</span><br><span class="line"> go build \</span><br><span class="line">diff --git a/engine/pkg/loopback/loopback.go b/engine/pkg/loopback/loopback.go</span><br><span class="line">index 086655b..b5d0bfc 100644</span><br><span class="line">--- a/engine/pkg/loopback/loopback.go</span><br><span class="line">+++ b/engine/pkg/loopback/loopback.go</span><br><span class="line">@@ -54,7 +54,7 @@ func FindLoopDeviceFor(file *os.File) *os.File &#123;</span><br><span class="line"> 		&#125;</span><br><span class="line"> </span><br><span class="line"> 		dev, inode, err := getLoopbackBackingFile(file)</span><br><span class="line">-		if err == nil &amp;&amp; dev == targetDevice &amp;&amp; inode == targetInode &#123;</span><br><span class="line">+		if err == nil &amp;&amp; dev == uint64(targetDevice) &amp;&amp; inode == targetInode &#123;</span><br><span class="line"> 			return file</span><br><span class="line"> 		&#125;</span><br><span class="line"> 		file.Close()</span><br><span class="line">diff --git a/engine/pkg/signal/signal_linux.go b/engine/pkg/signal/signal_linux.go</span><br><span class="line">index caed97c..c9bab45 100644</span><br><span class="line">--- a/engine/pkg/signal/signal_linux.go</span><br><span class="line">+++ b/engine/pkg/signal/signal_linux.go</span><br><span class="line">@@ -32,7 +32,6 @@ var SignalMap = map[string]syscall.Signal&#123;</span><br><span class="line"> 	"PWR":      unix.SIGPWR,</span><br><span class="line"> 	"QUIT":     unix.SIGQUIT,</span><br><span class="line"> 	"SEGV":     unix.SIGSEGV,</span><br><span class="line">-	"STKFLT":   unix.SIGSTKFLT,</span><br><span class="line"> 	"STOP":     unix.SIGSTOP,</span><br><span class="line"> 	"SYS":      unix.SIGSYS,</span><br><span class="line"> 	"TERM":     unix.SIGTERM,</span><br><span class="line">diff --git a/engine/pkg/system/stat_linux.go b/engine/pkg/system/stat_linux.go</span><br><span class="line">index 98c9eb1..8a090a5 100644</span><br><span class="line">--- a/engine/pkg/system/stat_linux.go</span><br><span class="line">+++ b/engine/pkg/system/stat_linux.go</span><br><span class="line">@@ -8,7 +8,7 @@ func fromStatT(s *syscall.Stat_t) (*StatT, error) &#123;</span><br><span class="line"> 		mode: s.Mode,</span><br><span class="line"> 		uid:  s.Uid,</span><br><span class="line"> 		gid:  s.Gid,</span><br><span class="line">-		rdev: s.Rdev,</span><br><span class="line">+		rdev: uint64(s.Rdev),</span><br><span class="line"> 		mtim: s.Mtim&#125;, nil</span><br><span class="line"> &#125;</span><br><span class="line"> </span><br><span class="line">diff --git a/engine/vendor/github.com/boltdb/bolt/bolt_mips64le.go b/engine/vendor/github.com/boltdb/bolt/bolt_mips64le.go</span><br><span class="line">new file mode 100644</span><br><span class="line">index 0000000..0876965</span><br><span class="line">--- /dev/null</span><br><span class="line">+++ b/engine/vendor/github.com/boltdb/bolt/bolt_mips64le.go</span><br><span class="line">@@ -0,0 +1,13 @@</span><br><span class="line">+// +build mips64le</span><br><span class="line">+</span><br><span class="line">+package bolt</span><br><span class="line">+</span><br><span class="line">+// maxMapSize represents the largest mmap size supported by Bolt.</span><br><span class="line">+const maxMapSize = 0xFFFFFFFFFFFF // 256TB</span><br><span class="line">+</span><br><span class="line">+// maxAllocSize is the size used when creating array pointers.</span><br><span class="line">+const maxAllocSize = 0x7FFFFFFF</span><br><span class="line">+</span><br><span class="line">+// Are unaligned load/stores broken on this arch?</span><br><span class="line">+var brokenUnaligned = false</span><br><span class="line">+</span><br><span class="line">diff --git a/engine/vendor/github.com/containerd/continuity/sysx/xattr_linux_mips64le.go b/engine/vendor/github.com/containerd/continuity/sysx/xattr_linux_mips64le.go</span><br><span class="line">new file mode 100644</span><br><span class="line">index 0000000..240ccf9</span><br><span class="line">--- /dev/null</span><br><span class="line">+++ b/engine/vendor/github.com/containerd/continuity/sysx/xattr_linux_mips64le.go</span><br><span class="line">@@ -0,0 +1,112 @@</span><br><span class="line">+// mksyscall.pl xattr_linux.go</span><br><span class="line">+// MACHINE GENERATED BY THE COMMAND ABOVE; DO NOT EDIT</span><br><span class="line">+</span><br><span class="line">+package sysx</span><br><span class="line">+</span><br><span class="line">+import (</span><br><span class="line">+       "syscall"</span><br><span class="line">+       "unsafe"</span><br><span class="line">+)</span><br><span class="line">+</span><br><span class="line">+// THIS FILE IS GENERATED BY THE COMMAND AT THE TOP; DO NOT EDIT</span><br><span class="line">+</span><br><span class="line">+func llistxattr(path string, dest []byte) (sz int, err error) &#123;</span><br><span class="line">+       var _p0 *byte</span><br><span class="line">+       _p0, err = syscall.BytePtrFromString(path)</span><br><span class="line">+       if err != nil &#123;</span><br><span class="line">+               return</span><br><span class="line">+       &#125;</span><br><span class="line">+       var _p1 unsafe.Pointer</span><br><span class="line">+       if len(dest) &gt; 0 &#123;</span><br><span class="line">+               _p1 = unsafe.Pointer(&amp;dest[0])</span><br><span class="line">+       &#125; else &#123;</span><br><span class="line">+               _p1 = unsafe.Pointer(&amp;_zero)</span><br><span class="line">+       &#125;</span><br><span class="line">+       r0, _, e1 := syscall.Syscall(syscall.SYS_LLISTXATTR, uintptr(unsafe.Pointer(_p0)), uintptr(_p1), uintptr(len(dest)))</span><br><span class="line">+       use(unsafe.Pointer(_p0))</span><br><span class="line">+       sz = int(r0)</span><br><span class="line">+       if e1 != 0 &#123;</span><br><span class="line">+               err = errnoErr(e1)</span><br><span class="line">+       &#125;</span><br><span class="line">+       return</span><br><span class="line">+&#125;</span><br><span class="line">+</span><br><span class="line">+// THIS FILE IS GENERATED BY THE COMMAND AT THE TOP; DO NOT EDIT</span><br><span class="line">+</span><br><span class="line">+func lremovexattr(path string, attr string) (err error) &#123;</span><br><span class="line">+       var _p0 *byte</span><br><span class="line">+       _p0, err = syscall.BytePtrFromString(path)</span><br><span class="line">+       if err != nil &#123;</span><br><span class="line">+               return</span><br><span class="line">+       &#125;</span><br><span class="line">+       var _p1 *byte</span><br><span class="line">+       _p1, err = syscall.BytePtrFromString(attr)</span><br><span class="line">+       if err != nil &#123;</span><br><span class="line">+               return</span><br><span class="line">+       &#125;</span><br><span class="line">+       _, _, e1 := syscall.Syscall(syscall.SYS_LREMOVEXATTR, uintptr(unsafe.Pointer(_p0)), uintptr(unsafe.Pointer(_p1)), 0)</span><br><span class="line">+       use(unsafe.Pointer(_p0))</span><br><span class="line">+       use(unsafe.Pointer(_p1))</span><br><span class="line">+       if e1 != 0 &#123;</span><br><span class="line">+               err = errnoErr(e1)</span><br><span class="line">+       &#125;</span><br><span class="line">+       return</span><br><span class="line">+&#125;</span><br><span class="line">+</span><br><span class="line">+// THIS FILE IS GENERATED BY THE COMMAND AT THE TOP; DO NOT EDIT</span><br><span class="line">+</span><br><span class="line">+func lsetxattr(path string, attr string, data []byte, flags int) (err error) &#123;</span><br><span class="line">+       var _p0 *byte</span><br><span class="line">+       _p0, err = syscall.BytePtrFromString(path)</span><br><span class="line">+       if err != nil &#123;</span><br><span class="line">+               return</span><br><span class="line">+       &#125;</span><br><span class="line">+       var _p1 *byte</span><br><span class="line">+       _p1, err = syscall.BytePtrFromString(attr)</span><br><span class="line">+       if err != nil &#123;</span><br><span class="line">+               return</span><br><span class="line">+       &#125;</span><br><span class="line">+       var _p2 unsafe.Pointer</span><br><span class="line">+       if len(data) &gt; 0 &#123;</span><br><span class="line">+               _p2 = unsafe.Pointer(&amp;data[0])</span><br><span class="line">+       &#125; else &#123;</span><br><span class="line">+               _p2 = unsafe.Pointer(&amp;_zero)</span><br><span class="line">+       &#125;</span><br><span class="line">+       _, _, e1 := syscall.Syscall6(syscall.SYS_LSETXATTR, uintptr(unsafe.Pointer(_p0)), uintptr(unsafe.Pointer(_p1)), uintptr(_p2), uintptr(len(data)), uintptr(flags), 0)</span><br><span class="line">+       use(unsafe.Pointer(_p0))</span><br><span class="line">+       use(unsafe.Pointer(_p1))</span><br><span class="line">+       if e1 != 0 &#123;</span><br><span class="line">+               err = errnoErr(e1)</span><br><span class="line">+       &#125;</span><br><span class="line">+       return</span><br><span class="line">+&#125;</span><br><span class="line">+</span><br><span class="line">+// THIS FILE IS GENERATED BY THE COMMAND AT THE TOP; DO NOT EDIT</span><br><span class="line">+</span><br><span class="line">+func lgetxattr(path string, attr string, dest []byte) (sz int, err error) &#123;</span><br><span class="line">+       var _p0 *byte</span><br><span class="line">+       _p0, err = syscall.BytePtrFromString(path)</span><br><span class="line">+       if err != nil &#123;</span><br><span class="line">+               return</span><br><span class="line">+       &#125;</span><br><span class="line">+       var _p1 *byte</span><br><span class="line">+       _p1, err = syscall.BytePtrFromString(attr)</span><br><span class="line">+       if err != nil &#123;</span><br><span class="line">+               return</span><br><span class="line">+       &#125;</span><br><span class="line">+       var _p2 unsafe.Pointer</span><br><span class="line">+       if len(dest) &gt; 0 &#123;</span><br><span class="line">+               _p2 = unsafe.Pointer(&amp;dest[0])</span><br><span class="line">+       &#125; else &#123;</span><br><span class="line">+               _p2 = unsafe.Pointer(&amp;_zero)</span><br><span class="line">+       &#125;</span><br><span class="line">+       r0, _, e1 := syscall.Syscall6(syscall.SYS_LGETXATTR, uintptr(unsafe.Pointer(_p0)), uintptr(unsafe.Pointer(_p1)), uintptr(_p2), uintptr(len(dest)), 0, 0)</span><br><span class="line">+       use(unsafe.Pointer(_p0))</span><br><span class="line">+       use(unsafe.Pointer(_p1))</span><br><span class="line">+       sz = int(r0)</span><br><span class="line">+       if e1 != 0 &#123;</span><br><span class="line">+               err = errnoErr(e1)</span><br><span class="line">+       &#125;</span><br><span class="line">+       return</span><br><span class="line">+&#125;</span><br><span class="line">+</span><br><span class="line">diff --git a/engine/vendor/github.com/opencontainers/runc/libcontainer/devices/devices.go b/engine/vendor/github.com/opencontainers/runc/libcontainer/devices/devices.go</span><br><span class="line">index 3619258..3079ffd 100644</span><br><span class="line">--- a/engine/vendor/github.com/opencontainers/runc/libcontainer/devices/devices.go</span><br><span class="line">+++ b/engine/vendor/github.com/opencontainers/runc/libcontainer/devices/devices.go</span><br><span class="line">@@ -30,7 +30,7 @@ func DeviceFromPath(path, permissions string) (*configs.Device, error) &#123;</span><br><span class="line"> 	&#125;</span><br><span class="line"> </span><br><span class="line"> 	var (</span><br><span class="line">-		devNumber = stat.Rdev</span><br><span class="line">+		devNumber = uint64(stat.Rdev)</span><br><span class="line"> 		major     = unix.Major(devNumber)</span><br><span class="line"> 	)</span><br><span class="line"> 	if major == 0 &#123;</span><br><span class="line">diff --git a/engine/vendor/github.com/vishvananda/netns/netns_linux_mips64le.go b/engine/vendor/github.com/vishvananda/netns/netns_linux_mips64le.go</span><br><span class="line">new file mode 100644</span><br><span class="line">index 0000000..90d3031</span><br><span class="line">--- /dev/null</span><br><span class="line">+++ b/engine/vendor/github.com/vishvananda/netns/netns_linux_mips64le.go</span><br><span class="line">@@ -0,0 +1,8 @@</span><br><span class="line">+// +build linux,mips64le</span><br><span class="line">+</span><br><span class="line">+package netns</span><br><span class="line">+</span><br><span class="line">+const (</span><br><span class="line">+       SYS_SETNS = 5303</span><br><span class="line">+)</span><br><span class="line">+</span><br><span class="line">diff --git a/engine/vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go b/engine/vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go</span><br><span class="line">index 6f9452d..0b279cc 100644</span><br><span class="line">--- a/engine/vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go</span><br><span class="line">+++ b/engine/vendor/golang.org/x/sys/unix/ztypes_linux_mips64le.go</span><br><span class="line">@@ -677,6 +677,7 @@ type Ustat_t struct &#123;</span><br><span class="line"> </span><br><span class="line"> type EpollEvent struct &#123;</span><br><span class="line"> 	Events uint32</span><br><span class="line">+	PadFd  int32</span><br><span class="line"> 	Fd     int32</span><br><span class="line"> 	Pad    int32</span><br><span class="line"> &#125;</span><br><span class="line">--</span><br></pre></td></tr></table></figure>
+<h1 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h1><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"> <span class="keyword">type</span> EpollEvent <span class="keyword">struct</span> &#123;</span><br><span class="line"> 	Events <span class="keyword">uint32</span></span><br><span class="line">+	PadFd  <span class="keyword">int32</span></span><br><span class="line"> 	Fd     <span class="keyword">int32</span></span><br><span class="line"> 	Pad    <span class="keyword">int32</span></span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p>EpollEvent 这个struct都需要添加PadFd，否则会有问题，例如docker exec 会卡住等。</p>
+<h1 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h1><p>我这里是手工编译的，例如：</p>
+<p>dockerd/cli:<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">VERSION=v18.09.8 GITCOMMIT=456712c5b8 ./hack/make.sh</span><br><span class="line">VERSION=v18.09.8 make</span><br></pre></td></tr></table></figure></p>
+<p>runc:</p>
+<p><del>make BUILDTAGS=’seccomp apparmor’ static</del></p>
+<p>这里注意如果静态编译runc/docker的话，是不支持systemd的cgroup driver。相关<a href="https://github.com/moby/moby/issues/38753#issuecomment-465290976" target="_blank" rel="noopener">issues</a>。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make BUILDTAGS=&apos;seccomp apparmor&apos;</span><br></pre></td></tr></table></figure>
+<p>docker-proxy</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CGO_ENABLED=0 go build -ldflags=&quot;-linkmode=external&quot;         -o ./docker-proxy         github.com/docker/libnetwork/cmd/proxy</span><br></pre></td></tr></table></figure>
+<p>init:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cmake . &amp;&amp; make tini-static</span><br></pre></td></tr></table></figure></p>
+<p>containerd:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make</span><br></pre></td></tr></table></figure></p>
+<h1 id="构建deb"><a href="#构建deb" class="headerlink" title="构建deb"></a>构建deb</h1><p>这里二进制生成后，构建deb即可。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/docker/" rel="tag"># docker</a>
+          
+            <a href="/tags/mips64el/" rel="tag"># mips64el</a>
+          
+            <a href="/tags/source/" rel="tag"># source</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/12/24/k8s/op/understanding-the-pleg-is-not-healthy/" rel="next" title="Understanding: PLEG is not healthy">
+                <i class="fa fa-chevron-left"></i> Understanding: PLEG is not healthy
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/01/09/linux/安全/nftables/" rel="prev" title="nftables">
+                nftables <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#编译环境"><span class="nav-number">1.</span> <span class="nav-text">编译环境</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#containerd"><span class="nav-number">2.</span> <span class="nav-text">containerd</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#libnetwork"><span class="nav-number">3.</span> <span class="nav-text">libnetwork</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#runc"><span class="nav-number">4.</span> <span class="nav-text">runc</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#dockerd-cli"><span class="nav-number">5.</span> <span class="nav-text">dockerd/cli</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#注意"><span class="nav-number">6.</span> <span class="nav-text">注意</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#编译"><span class="nav-number">7.</span> <span class="nav-text">编译</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#构建deb"><span class="nav-number">8.</span> <span class="nav-text">构建deb</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

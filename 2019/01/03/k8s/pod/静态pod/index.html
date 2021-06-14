@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="k8s,pod,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="原文：https://www.qikqiak.com/k8s-book/docs/19.%E9%9D%99%E6%80%81%20Pod.html  静态 Pod在Kubernetes集群中除了我们经常使用到的普通的 Pod 外，还有一种特殊的 Pod，叫做Static Pod，就是我们说的静态 Pod，静态 Pod 有什么特殊的地方呢？ 静态 Pod 直接由特定节点上的kubelet进程来管理">
+<meta name="keywords" content="k8s,pod">
+<meta property="og:type" content="article">
+<meta property="og:title" content="静态pod">
+<meta property="og:url" content="http://liupeng0518.github.io/2019/01/03/k8s/pod/静态pod/index.html">
+<meta property="og:site_name" content="Life is short, you need Python">
+<meta property="og:description" content="原文：https://www.qikqiak.com/k8s-book/docs/19.%E9%9D%99%E6%80%81%20Pod.html  静态 Pod在Kubernetes集群中除了我们经常使用到的普通的 Pod 外，还有一种特殊的 Pod，叫做Static Pod，就是我们说的静态 Pod，静态 Pod 有什么特殊的地方呢？ 静态 Pod 直接由特定节点上的kubelet进程来管理">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-06-14T17:19:06.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="静态pod">
+<meta name="twitter:description" content="原文：https://www.qikqiak.com/k8s-book/docs/19.%E9%9D%99%E6%80%81%20Pod.html  静态 Pod在Kubernetes集群中除了我们经常使用到的普通的 Pod 外，还有一种特殊的 Pod，叫做Static Pod，就是我们说的静态 Pod，静态 Pod 有什么特殊的地方呢？ 静态 Pod 直接由特定节点上的kubelet进程来管理">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://liupeng0518.github.io/2019/01/03/k8s/pod/静态pod/">
+
+
+
+
+
+  <title>静态pod | Life is short, you need Python</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-155243829-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="alternate" href="/atom.xml" title="Life is short, you need Python" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Life is short, you need Python</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Peng Liu`s Blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://liupeng0518.github.io/2019/01/03/k8s/pod/静态pod/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peng Liu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/ingress.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Life is short, you need Python">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">静态pod</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-03T16:47:19+00:00">
+                2019-01-03
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>原文：<a href="https://www.qikqiak.com/k8s-book/docs/19.%E9%9D%99%E6%80%81%20Pod.html" target="_blank" rel="noopener">https://www.qikqiak.com/k8s-book/docs/19.%E9%9D%99%E6%80%81%20Pod.html</a></p>
+</blockquote>
+<h1 id="静态-Pod"><a href="#静态-Pod" class="headerlink" title="静态 Pod"></a>静态 Pod</h1><p>在Kubernetes集群中除了我们经常使用到的普通的 Pod 外，还有一种特殊的 Pod，叫做<code>Static Pod</code>，就是我们说的静态 Pod，静态 Pod 有什么特殊的地方呢？</p>
+<p>静态 Pod 直接由特定节点上的<code>kubelet</code>进程来管理，不通过 master 节点上的<code>apiserver</code>。无法与我们常用的控制器<code>Deployment</code>或者<code>DaemonSet</code>进行关联，它由<code>kubelet</code>进程自己来监控，当<code>pod</code>崩溃时重启该<code>pod</code>，<code>kubelete</code>也无法对他们进行健康检查。静态 pod 始终绑定在某一个<code>kubelet</code>，并且始终运行在同一个节点上。<br><code>kubelet</code>会自动为每一个静态 pod 在 Kubernetes 的 apiserver 上创建一个镜像 Pod（Mirror Pod），因此我们可以在 apiserver 中查询到该 pod，但是不能通过 apiserver 进行控制（例如不能删除）。</p>
+<p>创建静态 Pod 有两种方式：配置文件和 HTTP 两种方式</p>
+<h3 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h3><p>配置文件就是放在特定目录下的标准的 JSON 或 YAML 格式的 pod 定义文件。用<code>kubelet --pod-manifest-path=&lt;the directory&gt;</code>来启动<code>kubelet</code>进程，kubelet 定期的去扫描这个目录，根据这个目录下出现或消失的 YAML/JSON 文件来创建或删除静态 pod。</p>
+<p>比如我们在 node01 这个节点上用静态 pod 的方式来启动一个 nginx 的服务。我们登录到node01节点上面，可以通过下面命令找到kubelet对应的启动配置文件<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> systemctl status kubelet</span></span><br></pre></td></tr></table></figure></p>
+<p>配置文件路径为：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> /etc/systemd/system/kubelet.service.d/10-kubeadm.conf</span></span><br></pre></td></tr></table></figure></p>
+<p>打开这个文件我们可以看到其中有一条如下的环境变量配置：<br><code>Environment=&quot;KUBELET_SYSTEM_PODS_ARGS=--pod-manifest-path=/etc/kubernetes/manifests --allow-privileged=true&quot;</code></p>
+<p>所以如果我们通过<code>kubeadm</code>的方式来安装的集群环境，对应的<code>kubelet</code>已经配置了我们的静态 Pod 文件的路径，那就是<code>/etc/kubernetes/manifests</code>，所以我们只需要在该目录下面创建一个标准的 Pod 的 JSON 或者 YAML 文件即可：</p>
+<p>如果你的 kubelet 启动参数中没有配置上面的<code>--pod-manifest-path</code>参数的话，那么添加上这个参数然后重启 kubelet 即可。<br><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">[root@</span> <span class="string">node01</span> <span class="string">~]</span> <span class="string">$</span> <span class="string">cat</span> <span class="string">&lt;&lt;EOF</span> <span class="string">&gt;/etc/kubernetes/manifest/static-web.yaml</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">static-web</span></span><br><span class="line">  <span class="attr">labels:</span></span><br><span class="line">    <span class="attr">app:</span> <span class="string">static</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">web</span></span><br><span class="line">      <span class="attr">image:</span> <span class="string">nginx</span></span><br><span class="line">      <span class="attr">ports:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">web</span></span><br><span class="line">          <span class="attr">containerPort:</span> <span class="number">80</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure></p>
+<h3 id="通过-HTTP-创建静态-Pods"><a href="#通过-HTTP-创建静态-Pods" class="headerlink" title="通过 HTTP 创建静态 Pods"></a>通过 HTTP 创建静态 Pods</h3><p>kubelet 周期地从<code>–manifest-url=</code>参数指定的地址下载文件，并且把它翻译成 JSON/YAML 格式的 pod 定义。此后的操作方式与<code>–pod-manifest-path=</code>相同，kubelet 会不时地重新下载该文件，当文件变化时对应地终止或启动静态 pod。</p>
+<h3 id="静态pods的动作行为"><a href="#静态pods的动作行为" class="headerlink" title="静态pods的动作行为"></a>静态pods的动作行为</h3><p>kubelet 启动时，由<code>--pod-manifest-path= or --manifest-url=</code>参数指定的目录下定义的所有 pod 都会自动创建，例如，我们示例中的 static-web。（可能要花些时间拉取nginx 镜像，耐心等待…）<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@node01 ~] $ docker ps</span><br><span class="line">CONTAINER ID IMAGE         COMMAND  CREATED        STATUS         PORTS     NAMES</span><br><span class="line">f6d05272b57e nginx:latest  "nginx"  8 minutes ago  Up 8 minutes             k8s_web.6f802af4_static-web-fk-node1_default_67e24ed9466ba55986d120c867395f3c_378e5f3c</span><br></pre></td></tr></table></figure></p>
+<p>现在我们通过<code>kubectl</code>工具可以看到这里创建了一个新的镜像 Pod：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@node01 ~] $ kubectl get pods</span><br><span class="line">NAME                       READY     STATUS    RESTARTS   AGE</span><br><span class="line">static-web-my-node01        1/1       Running   0          2m</span><br></pre></td></tr></table></figure></p>
+<p>静态 pod 的标签会传递给镜像 Pod，可以用来过滤或筛选。<br>需要注意的是，我们不能通过 API 服务器来删除静态 pod（例如，通过<a href="https://kubernetes.io/docs/user-guide/kubectl/" target="_blank" rel="noopener">kubectl</a>命令），kebelet 不会删除它。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@node01 ~] $ kubectl delete pod static-web-my-node01</span><br><span class="line">[root@node01 ~] $ kubectl get pods</span><br><span class="line">NAME                       READY     STATUS    RESTARTS   AGE</span><br><span class="line">static-web-my-node01        1/1       Running   0          12s</span><br></pre></td></tr></table></figure></p>
+<p>我们尝试手动终止容器，可以看到kubelet很快就会自动重启容器。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@node01 ~] $ docker ps</span><br><span class="line">CONTAINER ID        IMAGE         COMMAND                CREATED       ...</span><br><span class="line">5b920cbaf8b1        nginx:latest  "nginx -g 'daemon of   2 seconds ago ...</span><br></pre></td></tr></table></figure></p>
+<h3 id="静态pods的动态增加和删除"><a href="#静态pods的动态增加和删除" class="headerlink" title="静态pods的动态增加和删除"></a>静态pods的动态增加和删除</h3><p>运行中的kubelet周期扫描配置的目录（我们这个例子中就是/etc/kubernetes/manifests）下文件的变化，当这个目录中有文件出现或消失时创建或删除pods。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@node01 ~] $ mv /etc/kubernetes/manifests/static-web.yaml /tmp</span><br><span class="line">[root@node01 ~] $ sleep 20</span><br><span class="line">[root@node01 ~] $ docker ps</span><br><span class="line">// no nginx container is running</span><br><span class="line">[root@node01 ~] $ mv /tmp/static-web.yaml  /etc/kubernetes/manifests</span><br><span class="line">[root@node01 ~] $ sleep 20</span><br><span class="line">[root@node01 ~] $ docker ps</span><br><span class="line">CONTAINER ID        IMAGE         COMMAND                CREATED           ...</span><br><span class="line">e7a62e3427f1        nginx:latest  "nginx -g 'daemon of   27 seconds ago</span><br></pre></td></tr></table></figure></p>
+<p>其实我们用 kubeadm 安装的集群，master 节点上面的几个重要组件都是用静态 Pod 的方式运行的，我们登录到 master 节点上查看<code>/etc/kubernetes/manifests</code>目录：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~]# ls /etc/kubernetes/manifests/</span><br><span class="line">etcd.yaml  kube-apiserver.yaml  kube-controller-manager.yaml  kube-scheduler.yaml</span><br></pre></td></tr></table></figure></p>
+<p>同样okd里也是使用同样方式维护的组件服务。</p>
+<p>现在明白了吧，这种方式也为我们将集群的一些组件容器化提供了可能，因为这些 Pod 都不会受到 apiserver 的控制，不然我们这里<code>kube-apiserver</code>怎么自己去控制自己呢？万一不小心把这个 Pod 删掉了呢？所以只能有<code>kubelet</code>自己来进行控制，这就是我们所说的静态 Pod。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/pod/" rel="tag"># pod</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/03/k8s/Monitor/使用Prometheus监控Kubernetes/" rel="next" title="使用Prometheus监控Kubernetes">
+                <i class="fa fa-chevron-left"></i> 使用Prometheus监控Kubernetes
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/01/05/hadoop/hdfs/如何从根源上解决 HDFS 小文件问题/" rel="prev" title="如何从根源上解决 HDFS 小文件问题">
+                如何从根源上解决 HDFS 小文件问题 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/ingress.png" alt="Peng Liu">
+          <p class="site-author-name" itemprop="name">Peng Liu</p>
+           
+              <p class="site-description motion-element" itemprop="description">搬砖爱好者</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">136</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">88</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liupeng0518" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/liupeng0518" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/youngmario" target="_blank" title="微博">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      微博
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/mario007" target="_blank" title="知乎">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      知乎
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#静态-Pod"><span class="nav-number">1.</span> <span class="nav-text">静态 Pod</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#配置文件"><span class="nav-number">1.0.1.</span> <span class="nav-text">配置文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#通过-HTTP-创建静态-Pods"><span class="nav-number">1.0.2.</span> <span class="nav-text">通过 HTTP 创建静态 Pods</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#静态pods的动作行为"><span class="nav-number">1.0.3.</span> <span class="nav-text">静态pods的动作行为</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#静态pods的动态增加和删除"><span class="nav-number">1.0.4.</span> <span class="nav-text">静态pods的动态增加和删除</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peng Liu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
